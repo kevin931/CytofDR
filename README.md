@@ -73,6 +73,7 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--concat`` | None | File IO | Concatenate files in case mutiple files are read. |
 | ``--delim`` | String | File IO | File delimiter (Default: \t). |
 | ``-o`` or ``--out`` | String | File IO | New directory name for saving results. |
+| ``--no_new_dir`` | None | File IO | Disable the default ``--o`` behavior to create a new directory |
 | ``--file_col_names`` | None | File IO | Whether the first line of the original file is column names. |
 | ``--file_drop_col`` | Integers | File IO | The indicies of columns of the original file to be dropped. |
 | ``--add_sample_index`` | None | File IO | Whether sample indicies are added as the first column. |
@@ -124,10 +125,21 @@ python main.py \
     -m open_tsne
 ```
 
-To read original files and embeding for evaluation:
+Placing results in the ``-o`` directory as-is without creating a new directory by adding the ``--no_new_dir`` flag:
 
 ```shell
+python main.py \
+    -f <PATH_TO_FILE> \
+    --delim , \
+    -o ./results/open_tsne \
+    --no_new_dir \
+    --dr \
+    -m open_tsne
+```
 
+To read original files and embedding for evaluation:
+
+```shell
 python main.py \
     -f <PATH TO file> \
     --delim , \
@@ -135,7 +147,6 @@ python main.py \
     -o ./results/open_tsne \
     --evaluate \
     -m all
-
 ```
 
 Note: It is acceptable to pass in a directory for ``-f`` and ``--embedding``, in which case call files in the directory will be read. Also, flags such as ``--delim``, ``file_drop_col``, and ``--file_col_names`` are optional.
