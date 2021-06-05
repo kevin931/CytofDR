@@ -2,12 +2,17 @@ import phenograph as pg
 import numpy as np
 from scipy.sparse.base import spmatrix
 
-from typing import Tuple, Dict, List, Union
+from fileio import FileIO
+
+from typing import Tuple, Dict, List, Union, Optional
 
 class Cluster():
     
     @classmethod
-    def cluster(cls, data: "np.ndarray", methods: Union[str, List[str]]):
+    def cluster(cls,
+                data: "np.ndarray",
+                methods: Union[str, List[str]],
+                out: Optional[str]=None):
         
         if not isinstance(methods, list):
             methods = [methods]
@@ -16,19 +21,23 @@ class Cluster():
         
         if "phenograph" in methods:
             labels["phenograph"] = cls.phenograph(data)[0]
+            
+        if out is not None:
+            cls.save_results(labels=labels, out=out)
                 
         return labels
     
     
     @classmethod
-    def save_results(cls, labels: Dict[str, "np.ndarray"], out: str) -> None:
+    def save_results(cls,
+                     labels: Dict[str, "np.ndarray"],
+                     out: str) -> None:
         
         method: str
         label: "np.ndarray"
         
         for method, label in labels.items():
-            save_path = "{}/{}.txt".format(out, method)
-            np.savetxt(save_path, label, delimiter="\t")
+            FileIO.save_np_array(array=label, dir_path=out, file_name=method)
         
     
     @staticmethod

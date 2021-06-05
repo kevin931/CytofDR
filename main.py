@@ -1,40 +1,39 @@
 import numpy as np
+from numpy.lib.function_base import _corrcoef_dispatcher
 import dr
 import metric
 import cluster
+from fileio import FileIO
 
-import _csv
-import csv
-import os
 import argparse
 from typing import Optional, Union, List, Dict, Any
 
 
 def main(cmdargs: Dict[str, Any]):
     
-    data: List["np.ndarray"] = load_data(files=cmdargs["file"],
-                                         col_names=cmdargs["file_col_names"],
-                                         add_sample_index=cmdargs["add_sample_index"],
-                                         drop_columns=cmdargs["file_drop_col"],
-                                         delim=cmdargs["delim"])
+    data: List["np.ndarray"] = FileIO.load_data(files=cmdargs["file"],
+                                                col_names=cmdargs["file_col_names"],
+                                                add_sample_index=cmdargs["add_sample_index"],
+                                                drop_columns=cmdargs["file_drop_col"],
+                                                delim=cmdargs["delim"])
     
     if cmdargs["evaluate"]:
         
-        embedding: List["np.ndarray"] = load_data(files=cmdargs["embedding"],
-                                                   col_names=cmdargs["embedding_col_names"],
-                                                   concat=cmdargs["concat"],
-                                                   add_sample_index=cmdargs["add_sample_index"],
-                                                   drop_columns=cmdargs["embedding_drop_col"])
-        
+        embedding: List["np.ndarray"] = FileIO.load_data(files=cmdargs["embedding"],
+                                                         col_names=cmdargs["embedding_col_names"],
+                                                         concat=cmdargs["concat"],
+                                                         add_sample_index=cmdargs["add_sample_index"],
+                                                         drop_columns=cmdargs["embedding_drop_col"])
+                 
         label: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         
         if cmdargs["label"] is not None:
             
-            label = load_data(files=cmdargs["label"],
-                              col_names=cmdargs["label_col_names"],
-                              concat=cmdargs["concat"],
-                              add_sample_index=cmdargs["add_sample_index"],
-                              drop_columns=cmdargs["label_drop_col"])
+            label = FileIO.load_data(files=cmdargs["label"],
+                                     col_names=cmdargs["label_col_names"],
+                                     concat=cmdargs["concat"],
+                                     add_sample_index=cmdargs["add_sample_index"],
+                                     drop_columns=cmdargs["label_drop_col"])
             
             if cmdargs["label_col_names"]:
                 label = label[1]
@@ -46,7 +45,7 @@ def main(cmdargs: Dict[str, Any]):
         embedding_names: "np.ndarray"
         
         if len(cmdargs["embedding"]) == 1:
-            embedding_names = np.array(_check_dir(cmdargs["embedding"][0]))
+            embedding_names = np.array(FileIO._check_dir(cmdargs["embedding"][0]))
         else:
             embedding_names = np.array(cmdargs["embedding"])
                       
@@ -67,108 +66,28 @@ def main(cmdargs: Dict[str, Any]):
                                                            embedding_names=embedding_names,
                                                            downsample=cmdargs["downsample"],
                                                            n_fold=cmdargs["k_fold"])
-            
-        save_list_to_csv(results, cmdargs["out"], "eval_metric")
+
+        FileIO.save_list_to_csv(results, cmdargs["out"], "eval_metric")
         
     
     if cmdargs["cluster"]:
-        labels: Dict[str, "np.ndarray"] = cluster.Cluster.cluster(data[1], methods=cmdargs["methods"])
-        cluster.Cluster.save_results(labels, cmdargs["out"])
+        cluster.Cluster.cluster(data[1],
+                                methods=cmdargs["methods"],
+                                out=cmdargs["out"])
     
     
     if cmdargs["dr"]:
-        time = dr.DR.run_methods(data=data[1],
-                                 out=cmdargs["out"],
-                                 methods=cmdargs["methods"],
-                                 out_dims=cmdargs["out_dims"],
-                                 perp=cmdargs["perp"],
-                                 early_exaggeration=cmdargs["early_exaggeration"],
-                                 early_exaggeration_iter=cmdargs["early_exaggeration_iter"],
-                                 tsne_learning_rate=cmdargs["tsne_learning_rate"],
-                                 max_iter=cmdargs["max_iter"],
-                                 init=cmdargs["init"],
-                                 open_tsne_method=cmdargs["open_tsne_method"])
-        save_list_to_csv(time, cmdargs["out"], "time")
-
-
-def _check_dir(path: str) -> List[str]:
-    if os.path.isdir(path):
-        files: List[str] = os.listdir(path)
-        files = [path+"/"+f for f in files]
-        return files
-    else:
-        return [path]
-        
-
-def load_data(files: Union[List[str], str],
-              concat: bool=False,
-              col_names: bool=True,
-              add_sample_index: bool=True,
-              drop_columns: Optional[Union[int, List[int]]]=None,
-              delim: str="\t"
-              ) -> List["np.ndarray"]:
-    
-    exprs: Optional["np.ndarray"] = None
-    return_files: List["np.ndarray"] = []
-    
-    if not isinstance(files, list):
-        files = _check_dir(files)
-    elif len(files)==1:
-        files = _check_dir(files[0])
-        
-    skiprows: int=0
-    
-    for i, file in enumerate(files):
-        # Load column names
-        if i==0 and col_names:
-            names: "np.ndarray" = np.loadtxt(fname=file, dtype ="str", max_rows=1, delimiter=delim)
-            if add_sample_index:
-                names = np.concatenate((np.array(["index"]), names))
-            if drop_columns is not None:
-                names = np.delete(names, drop_columns)
-            return_files.append(names)
-            skiprows = 1
-            
-            print(names)
-        
-        # Load Data and add sample index
-        f: "np.ndarray" = np.loadtxt(fname=file, dtype="float", skiprows=skiprows, delimiter=delim)
-        
-        if add_sample_index:
-            index: "np.ndarray" = np.repeat(i, f.shape[0]).reshape(f.shape[0],1)
-            f = np.column_stack((index, f))
-            
-        if drop_columns is not None:
-            f = np.delete(f, drop_columns, axis=1)
-        
-        # Concatenate
-        if concat:
-            if i==0:
-                exprs = f
-            else:
-                exprs = np.concatenate((exprs, f))
-        else:
-            return_files.append(f)
-            
-    if exprs is not None:
-        return_files.append(exprs)
-        
-    return return_files
-    
-    
-def save_list_to_csv(data: List[List[Any]], dir_path: str, file_name:str):
-    
-    file_path: str = "{}/{}.csv".format(dir_path, file_name)
-    
-    w: "_csv._writer" = csv.writer(open(file_path, "w"))
-    
-    i: int
-    j: int    
-    for i in range(len(data[0])):
-        row: List[Any] = []
-        for j in range(len(data)):
-            row.append(data[j][i])
-        w.writerow(row)
+        dr.DR.run_methods(data=data[1],
+                          out=cmdargs["out"],
+                          methods=cmdargs["methods"],
+                          out_dims=cmdargs["out_dims"],
+                          perp=cmdargs["perp"],
+                          early_exaggeration=cmdargs["early_exaggeration"],
+                          early_exaggeration_iter=cmdargs["early_exaggeration_iter"],
+                          tsne_learning_rate=cmdargs["tsne_learning_rate"],
+                          max_iter=cmdargs["max_iter"],
+                          init=cmdargs["init"],
+                          open_tsne_method=cmdargs["open_tsne_method"])
         
         
 class _Arguments():
@@ -199,6 +118,8 @@ class _Arguments():
                                  help="File delimiter.")
         self.parser.add_argument("-o", "--out", type=str, action="store",
                                  help="Directory name for saving results")
+        self.parser.add_argument("--no_new_dir", action="store_true",
+                                 help="Save results directly in -o without creating new directory.")
         self.parser.add_argument("--embedding", nargs="+", action="store",
                                  help="Load embedding from directory or file path.")
         self.parser.add_argument("--embedding_col_names", action="store_true",
@@ -249,6 +170,7 @@ class _Arguments():
         arguments = self.parser.parse_args(args)
         arguments = vars(arguments)
         
+        arguments["out"] = self.new_dir(arguments["out"], no_new_dir=arguments["no_new_dir"])
         arguments["out_dims"] = 2 if arguments["out_dims"] is None else arguments["out_dims"]
         arguments["delim"] = "\t" if arguments["delim"] is None else arguments["delim"]
         arguments["perp"] = 30 if arguments["perp"] is None else arguments["perp"]
@@ -260,6 +182,14 @@ class _Arguments():
         arguments["early_exaggeration_iter"] = 250 if arguments["early_exaggeration_iter"] is None else arguments["early_exaggeration_iter"]
 
         return arguments
+    
+    
+    def new_dir(self, path:str, no_new_dir:bool):
+        if no_new_dir:
+            return path
+        else:
+            path = FileIO.make_dir(path)
+            return path
 
 
 if __name__ == "__main__":

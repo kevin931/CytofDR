@@ -7,6 +7,8 @@ from openTSNE import TSNEEmbedding
 from openTSNE import affinity
 from openTSNE import initialization
 
+from main import FileIO
+
 import time
 import os
 from typing import Tuple, Union, Optional, List, Dict
@@ -49,8 +51,8 @@ class DR():
                     open_tsne_method="fft"
                     ) -> List[List[Union[str, float]]]:
         
-        dir_path = cls._make_dir(out)
-        os.mkdir(dir_path+"/embedding")
+        dir_path: str = out+"/embedding"
+        os.mkdir(dir_path)
         
         if not isinstance(methods, list):
             methods = [methods]
@@ -95,7 +97,7 @@ class DR():
         if "pca" in methods:
             try:
                 time_PCA, embedding_PCA = LinearMethods.PCA(data, out_dims=out_dims)
-                cls.save_embedding(embedding_PCA, dir_path, "PCA")
+                FileIO.save_np_array(embedding_PCA, dir_path, "PCA")
                 time[0].append("PCA")
                 time[1].append(time_PCA)
             except Exception as e:
@@ -104,7 +106,7 @@ class DR():
         if "ica" in methods:
             try:
                 time_ICA, embedding_ICA = LinearMethods.ICA(data, out_dim=out_dims)
-                cls.save_embedding(embedding_ICA, dir_path, "ICA")
+                FileIO.save_np_array(embedding_ICA, dir_path, "ICA")
                 time[0].append("ICA")
                 time[1].append(time_ICA)
             except Exception as e:
@@ -118,7 +120,7 @@ class DR():
                     init_umap: str = init
                     
                 time_UMAP, embedding_UMAP = NonLinearMethods.UMAP(data, out_dims=out_dims, init=init_umap)
-                cls.save_embedding(embedding_UMAP, dir_path, "UMAP")
+                FileIO.save_np_array(embedding_UMAP, dir_path, "UMAP")
                 time[0].append("UMAP")
                 time[1].append(time_UMAP)
             except Exception as e:
@@ -127,7 +129,7 @@ class DR():
         if "saucie" in methods:
             try:
                 time_saucie, embedding_saucie = NonLinearMethods.saucie(data)
-                cls.save_embedding(embedding_saucie, dir_path, "SAUCIE")
+                FileIO.save_np_array(embedding_saucie, dir_path, "SAUCIE")
                 time[0].append("SAUCIE")
                 time[1].append(time_saucie)
             except Exception as e:
@@ -144,7 +146,7 @@ class DR():
                                                                                 max_iter=max_iter,
                                                                                 method="exact",
                                                                                 init=init)
-                cls.save_embedding(embedding_tsne_original, dir_path, "tsne_original")
+                FileIO.save_np_array(embedding_tsne_original, dir_path, "tsne_original")
                 time[0].append("sklearn_tsne_original")
                 time[1].append(time_tsne_original)
             except Exception as e:
@@ -160,7 +162,7 @@ class DR():
                                                                                     learning_rate=tsne_learning_rate,
                                                                                     max_iter=max_iter,
                                                                                     init=init)
-                cls.save_embedding(embedding_sklearn_tsne_bh, dir_path, "sklearn_tsne_bh")
+                FileIO.save_np_array(embedding_sklearn_tsne_bh, dir_path, "sklearn_tsne_bh")
                 time[0].append("sklearn_tsne_bh")
                 time[1].append(time_sklearn_tsne_bh)
             except Exception as e:
@@ -172,7 +174,7 @@ class DR():
                                                                 out_dims=out_dims,
                                                                 perp=perp[0],
                                                                 max_iter=max_iter)
-                cls.save_embedding(embedding_bh_tsne, dir_path, "bh_tsne")
+                FileIO.save_np_array(embedding_bh_tsne, dir_path, "bh_tsne")
                 time[0].append("bh_tsne")
                 time[1].append(time_bh_tsne)
             except Exception as e:
@@ -196,7 +198,7 @@ class DR():
                                                                 max_iter=max_iter,
                                                                 perplexity_list=perp_list, #type:ignore
                                                                 init=init) 
-                cls.save_embedding(embedding_fit_sne, dir_path, "fit_sne")
+                FileIO.save_np_array(embedding_fit_sne, dir_path, "fit_sne")
                 time[0].append("fit_sne")
                 time[1].append(time_fit_sne)
             except Exception as e:
@@ -218,41 +220,16 @@ class DR():
                                                                         max_iter=max_iter,
                                                                         init=init,
                                                                         negative_gradient_method=open_tsne_method)
-                cls.save_embedding(embedding_open_tsne, dir_path, "open_tsne")
+                FileIO.save_np_array(embedding_open_tsne, dir_path, "open_tsne")
                 time[0].append("open_tsne")
                 time[1].append(time_open_tsne)
             except Exception as e:
                 print(e)
+                
+        FileIO.save_list_to_csv(time, out, "time")
             
         return time
         
-    
-    @staticmethod
-    def save_embedding(embedding: "np.ndarray",
-                       dir_path: str,
-                       method: str) -> None:
-    
-        save_path: str = "{}/embedding/{}.txt".format(dir_path, method)
-        print(save_path)
-        np.savetxt(save_path, embedding, delimiter="\t")
-        
-        
-    
-    @staticmethod
-    def _make_dir(dir_path: str, counter: int=0):
-    
-        if counter==0:
-            local_dir_path = dir_path
-        else:
-            local_dir_path = dir_path + str(counter)
-        
-        try:
-            os.mkdir(local_dir_path)
-        except FileExistsError:
-            local_dir_path = DR._make_dir(dir_path, counter+1)
-            
-        return local_dir_path
-
 
 class LinearMethods():
     

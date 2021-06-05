@@ -1,5 +1,5 @@
 import numpy as np
-from main import load_data
+from fileio import FileIO
 
 import sys
 import argparse
@@ -30,11 +30,11 @@ def simulate_fcs_downsample(n: Union[int, List[int]],
                             col_index: bool=True
                             ) -> None:
     
-    data: List["np.ndarray"] = load_data(files,
-                                   concat=concat,
-                                   col_names=file_col_names,
-                                   drop_columns=file_drop_col,
-                                   add_sample_index=add_sample_index)
+    data: List["np.ndarray"] = FileIO.load_data(files,
+                                                concat=concat,
+                                                col_names=file_col_names,
+                                                drop_columns=file_drop_col,
+                                                add_sample_index=add_sample_index)
     names = data[0]
     exprs: "np.ndarray" = data[1]
     
@@ -50,8 +50,8 @@ def simulate_fcs_downsample(n: Union[int, List[int]],
         else:
             mat = exprs[indices]
             
-        save_dir = "{}/{}.txt".format(out, i)
-        np.savetxt(save_dir, mat, fmt='%s',  delimiter="\t")
+        file_path: str = "{}/{}.txt".format(out, i)
+        np.savetxt(file_path, mat, fmt='%s',  delimiter="\t")
         
 
 class _Arguments():
@@ -113,9 +113,9 @@ if __name__ == "__main__":
                               p=cmdargs["p"][0],
                               col_index=cmdargs["col_index"],
                               row_index=cmdargs["row_index"])
-        
-        save_dir = "{}/{}_{}.txt".format(cmdargs["out"], cmdargs["shape"][0], cmdargs["shape"][1])
-        np.savetxt(save_dir, mat, delimiter="\t")
+
+        file_path: str = "{}/{}_{}.txt".format(cmdargs["out"], cmdargs["n"][0], cmdargs["p"][0])
+        np.savetxt(file_path, mat, delimiter="\t")
         
     if  cmdargs["method"] == "fcs_downsample":
         simulate_fcs_downsample(n=cmdargs["n"], 
@@ -125,4 +125,4 @@ if __name__ == "__main__":
                                 file_col_names=cmdargs["file_col_names"],
                                 add_sample_index=cmdargs["add_sample_index"],
                                 file_drop_col=cmdargs["file_drop_col"],
-                                col_index=cmdargs["col_index"]) #TODO: fix concat
+                                col_index=cmdargs["col_index"])

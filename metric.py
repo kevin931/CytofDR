@@ -30,8 +30,6 @@ class Metric():
         results: List[List[Union[str, float]]] = []
         results_numeric: List[List[Any]] = []
         
-        e: "np.ndarray"
-        
         for _ in range(n_fold):
             index: Union["np.ndarray", int] = np.random.randint(0, data.shape[0], size=downsample)
             
