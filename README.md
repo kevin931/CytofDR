@@ -105,8 +105,8 @@ To simply read expression matrices from a file (with first line as column names 
 python main.py \
     -f <PATH_TO_FILE> \
     --delim , \
-    -o ./results/open_tsne
-    --dr
+    -o ./results/open_tsne \
+    --dr \
     -m open_tsne
 
 ```
@@ -119,8 +119,8 @@ python main.py \
     --delim , \
     --file_col_names \
     --file_drop_col 40 41 \
-    -o ./results/open_tsne
-    --dr
+    -o ./results/open_tsne \
+    --dr \
     -m open_tsne
 ```
 
@@ -131,9 +131,9 @@ To read original files and embeding for evaluation:
 python main.py \
     -f <PATH TO file> \
     --delim , \
-    --embedding <PATH_TO_EMBEDDING>
-    -o ./results/open_tsne
-    --evaluate
+    --embedding <PATH_TO_EMBEDDING> \
+    -o ./results/open_tsne \
+    --evaluate \
     -m all
 
 ```
@@ -151,15 +151,15 @@ To run t-SNE (I recommend ``open_tsne`` through the openTSNE package):
 python main.py \
     -f <PATH TO file> \
     --delim , \
-    -o ./results/open_tsne
-    --dr
+    -o ./results/open_tsne \
+    --dr \
     -m open_tsne
 
 ```
 
 All other methods use similar commands. All file IO commands apply.
 
-#### t-SNE Optimization
+## t-SNE Optimization
 
 As demonstrated by [Kobak & Berens (2019)](https://www.nature.com/articles/s41467-019-13056-x) and [Belkinas et al. (2019)](https://www.nature.com/articles/s41467-019-13055-y), t-SNE parameters are important for single-cell data. To perform some optimizations, an example will be like this (Note: I have not benchmarked all these optimizations. See the original paper and [the documentation](https://opentsne.readthedocs.io/en/latest/parameters.html) for recommendations.)
 
@@ -167,13 +167,17 @@ As demonstrated by [Kobak & Berens (2019)](https://www.nature.com/articles/s4146
 python main.py \
     -f <PATH TO file> \
     --delim , \
-    -o ./results/open_tsne
-    --dr
-    -m open_tsne
-    --init pca
-    --perp 30 500
+    -o ./results/open_tsne \
+    --dr \
+    -m open_tsne \
+    --init pca \
+    --perp 30 500 \
     --tsne_learning_rate auto
 ```
 
 ## Future Directions
 This is quite complex! More documentation will be added, inclusing docstrings, examples, etc. More methods will also be considered. Contributions are welcomed!
+
+## References
+- Belkina, A. C., Ciccolella, C. O., Anno, R., Halpert, R., Spidlen, J., & Snyder-Cappione, J. E. (2019). “Automated optimized parameters for T-distributed stochastic neighbor embedding improve visualization and analysis of large datasets.” Nature Communications, 10(5415). https://doi.org/10.1038/s41467-019-13055-y.
+- Kobak, D., & Linderman, G. C. (2021). “Initialization is critical for preserving global data structure in both t-SNE and UMAP.” Nature Biotechnology, 39, 156-157. https://doi.org/10.1038/s41587-020-00809-z.
