@@ -159,6 +159,24 @@ python main.py \
 
 All other methods use similar commands. All file IO commands apply.
 
+
+### PhenoGraph Clustering
+
+Currently, only PhenoGraph clustering is supported. To cluster, use the following example as a guide:
+
+```shell
+
+python main.py \
+    -f <PATH TO file> \
+    --delim , \
+    -o ./results/phenograph \
+    --cluster \
+    -m open_tsne
+
+```
+The results will be save in the format of a tab-separated file in ``phenograph.txt`` of the output directory.
+
+
 ## t-SNE Optimization
 
 As demonstrated by [Kobak & Berens (2019)](https://www.nature.com/articles/s41467-019-13056-x) and [Belkinas et al. (2019)](https://www.nature.com/articles/s41467-019-13055-y), t-SNE parameters are important for single-cell data. To perform some optimizations, an example will be like this (Note: I have not benchmarked all these optimizations. See the original paper and [the documentation](https://opentsne.readthedocs.io/en/latest/parameters.html) for recommendations.)
@@ -174,6 +192,28 @@ python main.py \
     --perp 30 500 \
     --tsne_learning_rate auto
 ```
+
+## Optional Installations
+
+A few methods cannot be easily installed with conda or pip packages. Therefore, more care is needed if usgae is required. 
+
+### FIt-SNE
+
+The original implementation of FIt-SNE can be found [here](https://github.com/KlugerLab/FIt-SNE), which is written in C++ with a python wrapper. For ease of use, I personally recommend openTSNE, which is a Python implementation of FIt-SNE, unless every bit performance is critical. From internal benchmark and benchmark published [here](https://opentsne.readthedocs.io/en/latest/benchmarks.html), openTSNE is only slighly slower thaFIt-SNE while vastly outperforming other traditional implementations.
+
+To install FIt-SNE, ``git clone`` the FIt-SNE repository, and place it as a subfolder called "fitsne" inside this project directory. Compile the program according to instructions of FIt-SNE.  ``FFTW`` is a required dependency for FIt-SNE; therefore, it needs to be installed for the respective operating system. For Linux users, see [this issue](https://github.com/KlugerLab/FIt-SNE/issues/35) if you do not have root access.
+
+### SAUCIE
+
+SAUCIE does not have an official python package. Thus, we will need to pull the [GitHub repo](https://github.com/KrishnaswamyLab/SAUCIE). Place the pulled repo in a sub-directory called "saucie" inside this project directory.
+
+Note: Only tensoflow 1.x is supported. This may cause issues with other dependencies in the future.
+
+### BH t-SNE
+
+The project already supports two implementations of BH t-SNE: sklearn and openTSNE. Both the former can be called with the flag ``-m sklearn_tsne_bh`` and the latter can be used with the combination of ``-m open_tsne --open_tsne_method bh``. Both, especially open_tsne, offer more flexibility and ease of use.
+
+However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.  
 
 ## Future Directions
 This is quite complex! More documentation will be added, inclusing docstrings, examples, etc. More methods will also be considered. Contributions are welcomed!
