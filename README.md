@@ -171,7 +171,7 @@ python main.py \
     --delim , \
     -o ./results/phenograph \
     --cluster \
-    -m open_tsne
+    -m phenograph
 
 ```
 The results will be save in the format of a tab-separated file in ``phenograph.txt`` of the output directory.
