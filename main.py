@@ -49,8 +49,6 @@ def main(cmdargs: Dict[str, Any]):
             embedding_names = np.array(_check_dir(cmdargs["embedding"][0]))
         else:
             embedding_names = np.array(cmdargs["embedding"])
-        
-        print(embedding_names)
                       
         if cmdargs["downsample"] is None:
         
