@@ -5,6 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 import scipy.spatial
 import scipy.stats
+import sklearn.metrics
 
 from typing import Optional, Any, Union, List
 
@@ -16,11 +17,32 @@ class Metric():
                                embedding: Union["np.ndarray", List["np.ndarray"]],
                                downsample: int,
                                n_fold: int=1,
-                               methods: Optional[Union[str, List[str]]]="all",
+                               methods: Union[str, List[str]]="all",
                                labels: Optional["np.ndarray"]=None,
                                embedding_names: Optional["np.ndarray"]=None,
                                k: int=5
                                ) -> List[List[Union[str, float]]]:
+        
+        '''Run methods with downsampling.
+        
+        This method first downsamples and runs the methods with the ``run_metrics`` method. This
+        is done for efficiency reasons as the current pairwise distance metric is can be memory
+        intensive with large datasets.
+        
+        Parameters:
+            data (np.ndarray): The input high-dimensional array.
+            embedding (np.ndarray): The low-dimensional embedding.
+            downsample (int): The sample size of downsampling.
+            n_fold (int): Downsample n times and average the results.
+            methods (Union[str, List[str]]): The metrics to run.
+            labels ("np.ndarray", optional): True labels or labels from the original space.
+            labels_embedding ("np.ndarray", optional): Classification or clustering labels from the embedding space.
+            embedding_names ("np.ndarray", optional): Names of the embedding methods to be saved.
+            k (int): The number of neighbors for KNN.
+
+        Returns:
+            List[List[Union[str, float]]]: A nested list of results with names of metrics, names of embedding, and metrics results.
+        '''
         
         
         if not isinstance(embedding, list):
@@ -60,11 +82,30 @@ class Metric():
     def run_metrics(cls,
                     data: "np.ndarray",
                     embedding: Union["np.ndarray", List["np.ndarray"]],
-                    methods: Optional[Union[str, List[str]]]="all",
+                    methods: Union[str, List[str]]="all",
                     labels: Optional["np.ndarray"]=None,
+                    labels_embedding: Optional["np.ndarray"]=None,
                     embedding_names: Optional["np.ndarray"]=None,
                     k: int=5
                     ) -> List[List[Union[str, float]]]:
+        
+        '''Dispatcher to run methods.
+        
+        This method runs the methods and metrics in this class with the function of
+        running multiple or all the metrics. 
+        
+        Parameters:
+            data (np.ndarray): The input high-dimensional array.
+            embedding (np.ndarray): The low-dimensional embedding.
+            methods (Union[str, List[str]]): The metrics to run.
+            labels ("np.ndarray", optional): True labels or labels from the original space.
+            labels_embedding ("np.ndarray", optional): Classification or clustering labels from the embedding space.
+            embedding_names ("np.ndarray", optional): Names of the embedding methods to be saved.
+            k (int, optional): The number of neighbors for KNN.
+
+        Returns:
+            List[List[Union[str, float]]]: A nested list of results with names of metrics, names of embedding, and metrics results.
+        '''
             
         if isinstance(methods, list):
             methods = [m.lower() for m in methods]
@@ -80,10 +121,15 @@ class Metric():
         if "all" in methods:
             methods = ["pearsonr", "spearmanr", "residual_variance", "knn", "neighborhood_agreement", "neighborhood_trustworthiness", "emd"]
             if labels is not None:
-                methods.extend(["npe", "random_forest"])
+                methods.extend(["npe", "random_forest", "silhouette"])
+            if labels and labels_embedding is not None:
+                methods.extend(["ari", "mni"])
             
-        if any(m in methods for m in ["npe"]) and labels is None: 
-            raise ValueError("'labels' must be provided for NPE and KNC.")
+        if any(m in methods for m in ["npe", "random_forest", "silhouette", "ari", "mni"]) and labels is None: 
+            raise ValueError("'labels' must be provided for NPE, random forest, silhouette, ARI, and MNI.")
+        
+        if any(m in methods for m in ["ari", "mni"]) and labels_embedding is None: 
+            raise ValueError("'labels_embedding' must be provided for ARI, and MNI.")
         
         if any(m in methods for m in ["knn", "npe", "neighborhood_agreement", "neighborhood_trustworthiness"]) and not isinstance(k, int): 
             raise TypeError("'k' must be an integer for NPE, KNN, Neighborhood Agreement, or Neighborhood Trustworthiness.")
@@ -164,6 +210,24 @@ class Metric():
                 results[0].append("random_forest")
                 results[1].append(cls.random_forest(embedding=e, labels=labels))
                 results[2].append(embedding_names[i])
+                
+            if "silhouette" in methods:
+                assert labels is not None
+                results[0].append("silhouette")
+                results[1].append(cls.silhouette(embedding=e, labels=labels))
+                results[2].append(embedding_names[i])
+                
+            if "nmi" in methods:
+                assert labels and labels_embedding is not None
+                results[0].append("nmi")
+                results[1].append(cls.NMI(labels=labels, labels_embedding=labels_embedding))
+                results[2].append(embedding_names[i])
+                
+            if "ari" in methods:
+                assert labels and labels_embedding is not None
+                results[0].append("ari")
+                results[1].append(cls.ARI(labels=labels, labels_embedding=labels_embedding))
+                results[2].append(embedding_names[i])
             
         return results
         
@@ -183,6 +247,19 @@ class Metric():
                     y: "np.ndarray",
                     metric: str="Pearson") -> float:
         
+        '''Correlation
+        
+        This method computes the pearson or spearman correlation between the inputs.
+        
+        Parameters:
+            x (np.ndarray): The first dimension. 
+            y (np.ndarray): The second dimension.
+            metric (str): The metric to use. 'Pearson' or 'Spearman'.
+
+        Returns:
+            float: Correlation.
+        '''
+        
         if metric.lower() == "pearson":
             cor: float=scipy.stats.pearsonr(x, y)[0]
         elif metric.lower() == "spearman":
@@ -197,6 +274,20 @@ class Metric():
     def residual_variance(x: Optional["np.ndarray"]=None,
                           y: Optional["np.ndarray"]=None,
                           r: Optional[float]=None) -> float:
+        
+        '''Residual Variance
+        
+        The residual variance is computed with the following formuation with r as the
+        pearson correlation: 1-r**2. If r is provided, x and y are optional for efficiency.
+        
+        Parameters:
+            x (np.ndarray, optional): The first dimension. 
+            y (np.ndarray, optional): The second dimension.
+            r (float, optional): Pearson correlation between x and y.
+
+        Returns:
+            float: Redisual variance.
+        '''
         
         if r is None:
             if x is None or y is None:
@@ -216,6 +307,25 @@ class Metric():
             k: int=None,
             knn_model_data: "NearestNeighbors"=None,
             knn_model_embedding: "NearestNeighbors"=None) -> float:
+        
+        '''K-Nearest Neighbors Preservation (KNN)
+        
+        The KNN metric computes the percentage of k-neighbors of each point is preserved in the
+        embedding space, and it is average across the entire dataset.
+        
+        Parameters:
+            data (np.ndarray): The input high-dimensional array.
+            embedding (np.ndarray): The low-dimensional embedding.
+            k (int, optional): The number of neighbors for KNN. This is required when either knn_model_data
+                or knn_model_embedding is not supplied.
+            knn_model_data (sklearn.neighbors.NearestNeighbors, optional):
+                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``data``.
+            knn_model_embedding (sklearn.neighbors.NearestNeighbors, optional): 
+                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``embedding``.
+
+        Returns:
+            float: K-nearest neighbors preservation.
+        '''
         
         data_neighbors: "np.ndarray"
         embedding_neighbors: "np.ndarray"
@@ -246,7 +356,7 @@ class Metric():
     def NPE(data: "np.ndarray",
             embedding: "np.ndarray",
             labels: "np.ndarray",
-            k: int=400,
+            k: int=5,
             knn_model_data: Optional["NearestNeighbors"]=None,
             knn_model_embedding: Optional["NearestNeighbors"]=None) -> float:
         
@@ -268,8 +378,7 @@ class Metric():
                 A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``embedding``.
 
         Returns:
-            agreement (float): Neighborhood agreement.
-        
+            float: Neighborhood proportion error.
         '''
         
         if knn_model_data is None and k is None:
@@ -285,8 +394,6 @@ class Metric():
             embedding_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors()[1]
         else:
             embedding_neighbors: "np.ndarray" = knn_model_embedding.kneighbors()[1]
-            
-        print(data_neighbors[1:10])
         
         classes: "np.ndarray"
         classes_index: "np.ndarray"
@@ -431,6 +538,21 @@ class Metric():
             dist_data: Optional["np.ndarray"]=None,
             dist_embedding: Optional["np.ndarray"]=None) -> float:
         
+        '''Earth Mover's Distance (EMD)
+        
+        This metric computes the EMD between the pairwise distance of between points in the
+        high and low dimensional space. This implementation uses the ``scipy.stats.wasserstein_distance``.
+        The usage of EMD is proposed in Heiser & Lou (2020).
+        
+        Parameters:
+            embedding (np.ndarray): The low-dimensional embedding.
+            labels (np.ndarray): The class labels of each observation.
+
+        Returns:
+            float: Earth mover's distance.
+        
+        '''
+        
         if dist_data is None:
             dist_data = Metric._pairwise_distance(data, metric="euclidean")
             
@@ -444,9 +566,103 @@ class Metric():
     def random_forest(embedding: "np.ndarray",
                       labels: "np.ndarray") -> float:
         
+        '''Random Forest Classification Accuracy
+        
+        This function trains a random forest classifer using the embedding data and the labels
+        generated or manually classified from the original space. It then tests the accuracy
+        of the classifier using the 33% of the embedding data. This metric was first proposed in
+        Becht et al. (2019).
+        
+        Parameters:
+            embedding (np.ndarray): The low-dimensional embedding.
+            labels (np.ndarray): The class labels of each observation.
+
+        Returns:
+            float: Random forest accuracy.
+        
+        '''
+        
         embedding_train, embedding_test, labels_train, labels_test = train_test_split(embedding, labels, test_size=0.33)
 
         rf: "RandomForestClassifier" = RandomForestClassifier().fit(embedding_train, labels_train)
         predictions: "np.ndarray" = rf.predict(embedding_test)
         
-        return float(np.mean(np.equal(predictions, labels_test)))
+        return sklearn.metrics.accuracy_score(labels_test, predictions)
+    
+    
+    @staticmethod
+    def silhouette(embedding: "np.ndarray",
+                   labels: "np.ndarray") -> float:
+        
+        '''Silhouette Score
+        
+        This metric computes the silhouette score of clusters in the embedding space. Ideally,
+        clusters should be coherent, and using labels obtained from the original space can
+        evaluate the effectiveness of the embedding technique. This metric is used in 
+        Xiang et al. (2021).
+        
+        Parameters:
+            embedding (np.ndarray): The low-dimensional embedding.
+            labels (np.ndarray): The class labels of each observation.
+
+        Returns:
+            float: Silhouette score.
+        
+        '''
+        
+        return sklearn.metrics.silhouette_score(embedding, labels)
+    
+    
+    @staticmethod
+    def NMI(labels: "np.ndarray",
+            labels_embedding: "np.ndarray") -> float:
+        
+        '''Normalized Mutual Information (NMI)
+        
+        The NMI metric computes the mutual information between labels of the original space
+        and the embeeding space and then normalizes it with the larger entroy of the two vectors.
+        This metric is a measure of clustering performance before and after dimension reduction,
+        and it is used in Xiang et al. (2021).
+        
+        Parameters:
+            labels (np.ndarray): The class labels of of the original space.
+            labels_embedding (np.ndarray): The class labels generated from the embedding space.
+
+        Returns:
+            float: Silhouette score.
+        '''
+        
+        mi: float = sklearn.metrics.mutual_info_score(labels, labels_embedding)
+        
+        labels_count: "np.ndarray"
+        embedding_count: "np.ndarray"
+        
+        _ , labels_count = np.unique(labels, return_counts=True)
+        _ , embedding_count = np.unique(labels_embedding, return_counts=True)
+        
+        labels_count = labels_count/labels.size
+        embedding_count = embedding_count/labels_embedding.size
+        normalization: float = np.maximum(scipy.stats.entropy(labels_count),
+                                          scipy.stats.entropy(embedding_count))
+        
+        return mi/normalization
+    
+    
+    @staticmethod
+    def ARI(labels: "np.ndarray",
+            labels_embedding: "np.ndarray") -> float:
+        
+        '''Adjusted Rand Index (ARI)
+        
+        The ARI uses the labels from the original space and the embedding space to measure
+        the similarity between them using pairs. It is used in Xiang et al. (2021).
+        
+        Parameters:
+            labels (np.ndarray): The class labels of of the original space.
+            labels_embedding (np.ndarray): The class labels generated from the embedding space.
+
+        Returns:
+            float: ARI.
+        '''
+        
+        return sklearn.metrics.adjusted_rand_score(labels, labels_embedding)
