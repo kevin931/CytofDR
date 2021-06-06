@@ -283,7 +283,7 @@ class LinearMethods():
         
         start_time: float = time.perf_counter()
         
-        embedding: "np.ndarray" = FastICA(n_components=out_dim, max_iter=max_iter).fit_transform(data)
+        embedding: "np.ndarray" = FastICA(n_components=out_dim, max_iter=max_iter).fit_transform(data) #type:ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
@@ -326,7 +326,7 @@ class NonLinearMethods():
                                                min_dist=min_dist,
                                                metric=metric,
                                                init=init
-                                               ).fit_transform(data)
+                                               ).fit_transform(data) #type: ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
@@ -344,7 +344,7 @@ class NonLinearMethods():
         saucie.train(train, steps=1000)
         
         eval: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=False)
-        embedding: "np.ndarray" = saucie.get_embedding(eval)
+        embedding: "np.ndarray" = saucie.get_embedding(eval) #type: ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
@@ -391,7 +391,7 @@ class TSNE():
         print("Running Scikit-Learn t-SNE: {}".format(method))
         
         start_time: float = time.perf_counter()
-        embedding: "np.ndarray" = sklearn.manifold.TSNE(n_components=out_dims,
+        embedding: "np.ndarray" = sklearn.manifold.TSNE(n_components=out_dims, #type: ignore
                                                            perplexity=perp,
                                                            early_exaggeration=early_exaggeration,
                                                            learning_rate=learning_rate,
@@ -545,7 +545,7 @@ class TSNE():
                                             load_affinities=load_affinities,
                                             perplexity_list=perplexity_list,
                                             df=df,
-                                            max_step_norm=max_step_norm)
+                                            max_step_norm=max_step_norm) #type: ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time

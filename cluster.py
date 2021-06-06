@@ -35,7 +35,6 @@ class Cluster():
         
         method: str
         label: "np.ndarray"
-        
         for method, label in labels.items():
             FileIO.save_np_array(array=label, dir_path=out, file_name=method)
         
@@ -46,6 +45,6 @@ class Cluster():
         communities: "np.ndarray"
         graph: "spmatrix"
         Q: float        
-        communities, graph, Q = pg.cluster(data=data)
+        communities, graph, Q = pg.cluster(data=data) #type: ignore
             
         return communities, graph, Q

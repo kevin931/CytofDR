@@ -2,7 +2,9 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-import scipy
+
+import scipy.spatial
+import scipy.stats
 
 from typing import Optional, Any, Union, List
 
@@ -89,29 +91,37 @@ class Metric():
         e: "np.ndarray"
         i: int
         
+        data_pairwise_distance: Optional["np.ndarray"] = None
+        embedding_pairwise_distance: Optional[List["np.ndarray"]] = None
+        
         if any(m in methods for m in ["pearsonr", "spearmanr", "residual_variance", "neighborhood_trustworthiness", "emd"]): 
-            data_pairwise_distance: "np.ndarray" = cls._pairwise_distance(data=data, metric="euclidean")
-            embedding_pairwise_distance: List["np.ndarray"] = []
+            data_pairwise_distance = cls._pairwise_distance(data=data, metric="euclidean")
+            embedding_pairwise_distance = []
             for e in embedding:
                 embedding_pairwise_distance.append(cls._pairwise_distance(data=e, metric="euclidean"))
-            
+        
+        knn_model_data: Optional["NearestNeighbors"] = None
+        knn_model_embedding: Optional[List["NearestNeighbors"]] = None
+        
         if any(m in methods for m in ["knn", "npe", "neighborhood_agreement", "neighborhood_trustworthiness"]):
-            knn_model_data: "NearestNeighbors" = NearestNeighbors(n_neighbors=k).fit(data)
-            knn_model_embedding: List["NearestNeighbors"] = []
+            knn_model_data = NearestNeighbors(n_neighbors=k).fit(data)
+            knn_model_embedding = []
             for e in embedding:
                 knn_model_embedding.append(NearestNeighbors(n_neighbors=k).fit(e))
             
         results: List[List[Any]] = [[],[], []]
         
-        for i, e in enumerate(embedding):            
+        for i, e in enumerate(embedding):
         
             if "pearsonr" in methods:
+                assert data_pairwise_distance and embedding_pairwise_distance is not None
                 cor: float=cls.correlation(x=data_pairwise_distance, y=embedding_pairwise_distance[i], metric="Pearson")
                 results[0].append("correlation_pearson")
                 results[1].append(cor)
                 results[2].append(embedding_names[i])
                 
             if "spearmanr" in methods:
+                assert data_pairwise_distance and embedding_pairwise_distance is not None
                 cor: float=cls.correlation(x=data_pairwise_distance, y=embedding_pairwise_distance[i], metric="Spearman")
                 results[0].append("correlation_spearman")
                 results[1].append(cor)
@@ -129,6 +139,7 @@ class Metric():
                 results[2].append(embedding_names[i])
             
             if "npe" in methods:
+                assert labels is not None
                 results[0].append("npe")
                 results[1].append(cls.NPE(data=data, embedding=e, labels=labels, k=k, knn_model_data=knn_model_data, knn_model_embedding=knn_model_embedding[i]))
                 results[2].append(embedding_names[i])
@@ -149,6 +160,7 @@ class Metric():
                 results[2].append(embedding_names[i])
                 
             if "random_forest" in methods:
+                assert labels is not None
                 results[0].append("random_forest")
                 results[1].append(cls.random_forest(embedding=e, labels=labels))
                 results[2].append(embedding_names[i])
@@ -187,8 +199,11 @@ class Metric():
                           r: Optional[float]=None) -> float:
         
         if r is None:
-            cor = Metric.correlation(x, y, metric="Pearson")
-            return 1 - cor**2
+            if x is None or y is None:
+                raise ValueError("Either 'r' or both 'x' and 'y' is needed.")
+            else:
+                cor = Metric.correlation(x, y, metric="Pearson")
+                return 1 - cor**2
         elif r > 1 or r < -1:
             raise ValueError("'r' must be between -1 and 1.")
         else:
@@ -208,16 +223,16 @@ class Metric():
         if knn_model_data is None and k is None:
             raise ValueError("'k' is required if 'knn_model_data' not supplied")
         elif knn_model_data is None:
-            data_neighbors = NearestNeighbors(n_neighbors=k).fit(data).kneighbors(return_distance=False) #type:ignore
+            data_neighbors = NearestNeighbors(n_neighbors=k).fit(data).kneighbors()[1]
         else:
-            data_neighbors = knn_model_data.kneighbors(return_distance=False) #type:ignore
+            data_neighbors = knn_model_data.kneighbors()[1]
             
         if knn_model_embedding is None and k is None:
             raise ValueError("'k' is required if 'knn_model_embedding' not supplied")
         elif knn_model_embedding is None:
-            embedding_neighbors = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors(return_distance=False) #type:ignore
+            embedding_neighbors = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors()[1]
         else:
-            embedding_neighbors = knn_model_embedding.kneighbors(return_distance=False) #type:ignore
+            embedding_neighbors = knn_model_embedding.kneighbors()[1] 
         
         i: int
         intersect: int = 0
@@ -231,7 +246,7 @@ class Metric():
     def NPE(data: "np.ndarray",
             embedding: "np.ndarray",
             labels: "np.ndarray",
-            k: Optional[int]=None,
+            k: int=400,
             knn_model_data: Optional["NearestNeighbors"]=None,
             knn_model_embedding: Optional["NearestNeighbors"]=None) -> float:
         
@@ -260,26 +275,32 @@ class Metric():
         if knn_model_data is None and k is None:
             raise ValueError("'k' is required if 'knn_model_data' not supplied")
         elif knn_model_data is None:
-            knn_model_data = NearestNeighbors(n_neighbors=k).fit(data).kneighbors(return_distance=False)
+            data_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(data).kneighbors()[1]
         else:
-            knn_model_data.kneighbors(return_distance=False)
+            data_neighbors: "np.ndarray" = knn_model_data.kneighbors()[1]
             
         if knn_model_embedding is None and k is None:
             raise ValueError("'k' is required if 'knn_model_embedding' not supplied")
         elif knn_model_embedding is None:
-            knn_model_embedding = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors(return_distance=False)
+            embedding_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors()[1]
         else:
-            knn_model_embedding.kneighbors(return_distance=False)
+            embedding_neighbors: "np.ndarray" = knn_model_embedding.kneighbors()[1]
+            
+        print(data_neighbors[1:10])
         
+        classes: "np.ndarray"
+        classes_index: "np.ndarray"
         classes, classes_index = np.unique(labels, return_inverse=True)
         
-        same_class_data: "np.ndarray" = np.zeros(data.shape(0))
-        same_class_embedding: "np.ndarray" = np.zeros(data.shape(0)) 
+        same_class_data: "np.ndarray" = np.zeros(data.shape[0])
+        same_class_embedding: "np.ndarray" = np.zeros(data.shape[0]) 
+        
         i: int 
         for  i in range(data.shape[0]):
             i_index = classes_index[i]
-            i_neighbors_data = knn_model_data[i]
-            i_neighbors_embedding = knn_model_embedding[i]
+            i_neighbors_data = data_neighbors[i]
+            i_neighbors_embedding = embedding_neighbors[i]
+            
             same_class_data[i] = np.count_nonzero(classes_index[i_neighbors_data]==i_index)/k
             same_class_embedding[i] = np.count_nonzero(classes_index[i_neighbors_embedding]==i_index)/k
         
@@ -297,7 +318,7 @@ class Metric():
     @staticmethod
     def neighborhood_agreement(data: "np.ndarray",
                                embedding: "np.ndarray",
-                               k: Optional[int]=None,
+                               k: int=5,
                                knn_model_data: Optional["NearestNeighbors"]=None,
                                knn_model_embedding: Optional["NearestNeighbors"]=None) -> float:
         '''Neighborhood Agreement
@@ -327,21 +348,21 @@ class Metric():
         if knn_model_data is None and k is None:
             raise ValueError("'k' is required if 'knn_model_data' not supplied")
         elif knn_model_data is None:
-            knn_model_data = NearestNeighbors(n_neighbors=k).fit(data).kneighbors(return_distance=False)
+            data_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(data).kneighbors()[1]
         else:
-            knn_model_data = knn_model_data.kneighbors(return_distance=False)
+            data_neighbors: "np.ndarray" = knn_model_data.kneighbors()[1]
             
         if knn_model_embedding is None and k is None:
             raise ValueError("'k' is required if 'knn_model_embedding' not supplied")
         elif knn_model_embedding is None:
-            knn_model_embedding = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors(return_distance=False)
+            embedding_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors()[1]
         else:
-            knn_model_embedding = knn_model_embedding.kneighbors(return_distance=False)
+            embedding_neighbors: "np.ndarray" = knn_model_embedding.kneighbors()[1]
         
         i: int
         agreement: float = 0.0
         for i in range(data.shape[0]):
-            agreement += np.intersect1d(knn_model_data[i], knn_model_embedding[i]).shape[0]
+            agreement += np.intersect1d(data_neighbors[i], embedding_neighbors[i]).shape[0]
         
         agreement = (agreement/(k*data.shape[0])*(data.shape[0]-1)-k)/(data.shape[0]-1-k)
         
@@ -352,7 +373,7 @@ class Metric():
     def neighborhood_trustworthiness(data: "np.ndarray",
                                      embedding: "np.ndarray",
                                      dist_data: Optional["np.ndarray"]=None,
-                                     k: int=None,
+                                     k: int=5,
                                      knn_model_data: "NearestNeighbors"=None,
                                      knn_model_embedding: "NearestNeighbors"=None) -> float:
         '''Neighborhood Trustworthiness 
@@ -375,16 +396,16 @@ class Metric():
         if knn_model_data is None and k is None:
             raise ValueError("'k' is required if 'knn_model_data' not supplied")
         elif knn_model_data is None:
-            knn_model_data = NearestNeighbors(n_neighbors=k).fit(data).kneighbors(return_distance=False)
+            data_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(data).kneighbors()[1]
         else:
-            knn_model_data = knn_model_data.kneighbors(return_distance=False)
+            data_neighbors: "np.ndarray" = knn_model_data.kneighbors()[1]
             
         if knn_model_embedding is None and k is None:
             raise ValueError("'k' is required if 'knn_model_y' not supplied")
         elif knn_model_embedding is None:
-            knn_model_embedding = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors(return_distance=False)
+            embedding_neighbors: "np.ndarray" = NearestNeighbors(n_neighbors=k).fit(embedding).kneighbors()[1]
         else:
-            knn_model_embedding = knn_model_embedding.kneighbors(return_distance=False)
+            embedding_neighbors: "np.ndarray" = knn_model_embedding.kneighbors()[1]
 
         if dist_data is None:
             dist_data = scipy.spatial.distance.squareform(Metric._pairwise_distance(data, metric="euclidean"))
@@ -396,7 +417,7 @@ class Metric():
         score: float = 0
         i: int
         for i in range(data.shape[0]):
-            neighbor_diff: "np.ndarray" = np.setdiff1d(knn_model_embedding[i], knn_model_data[i], assume_unique=True)
+            neighbor_diff: "np.ndarray" = np.setdiff1d(embedding_neighbors[i], data_neighbors[i], assume_unique=True)
             score += np.sum(dist_data[i, neighbor_diff] - k)
             
         score = 1 - 2*score/(data.shape[0]*k*(2*data.shape[0]-3*k-1))
@@ -429,15 +450,3 @@ class Metric():
         predictions: "np.ndarray" = rf.predict(embedding_test)
         
         return float(np.mean(np.equal(predictions, labels_test)))
-
-
-if __name__ == "__main__":
-    a = np.random.rand(100, 5)
-    b = np.random.rand(100, 2)
-    
-    results = Metric.run_metrics_downsample(a,
-                                            b, 
-                                            50, 
-                                            n_fold=3, 
-                                            methods=["pearsonr", "knn"])
-    print(results)
