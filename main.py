@@ -33,12 +33,7 @@ def main(cmdargs: Dict[str, Any]):
                                      col_names=cmdargs["label_col_names"],
                                      concat=cmdargs["concat"],
                                      add_sample_index=cmdargs["add_sample_index"],
-                                     drop_columns=cmdargs["label_drop_col"])
-            
-            if cmdargs["label_col_names"]:
-                label = label[1]
-            else:
-                label=label[0]
+                                     drop_columns=cmdargs["label_drop_col"])[1]
 
         results: List[List[Union[str, float]]]
         

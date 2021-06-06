@@ -29,16 +29,18 @@ class FileIO():
         
         for i, file in enumerate(files):
             # Load column names
-            if i==0 and col_names:
-                names: "np.ndarray" = np.loadtxt(fname=file, dtype ="str", max_rows=1, delimiter=delim)
-                if add_sample_index:
-                    names = np.concatenate((np.array(["index"]), names))
-                if drop_columns is not None:
-                    names = np.delete(names, drop_columns)
-                return_files.append(names)
-                skiprows = 1
-                
-                print(names)
+            if i==0:
+                if col_names:
+                    names: "np.ndarray" = np.loadtxt(fname=file, dtype ="str", max_rows=1, delimiter=delim)
+                    if add_sample_index:
+                        names = np.concatenate((np.array(["index"]), names))
+                    if drop_columns is not None:
+                        names = np.delete(names, drop_columns)
+                    return_files.append(names)
+                    skiprows = 1
+                    print(names)
+                else:
+                    return_files.append(np.array(None))
             
             # Load Data and add sample index
             f: "np.ndarray" = np.loadtxt(fname=file, dtype="float", skiprows=skiprows, delimiter=delim)
