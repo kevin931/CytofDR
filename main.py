@@ -25,14 +25,21 @@ def main(cmdargs: Dict[str, Any]):
                                                          drop_columns=cmdargs["embedding_drop_col"])
                  
         label: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
+        label_embedding: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         
         if cmdargs["label"] is not None:
-            
             label = FileIO.load_data(files=cmdargs["label"],
                                      col_names=cmdargs["label_col_names"],
                                      concat=cmdargs["concat"],
                                      add_sample_index=cmdargs["add_sample_index"],
                                      drop_columns=cmdargs["label_drop_col"])[1]
+            
+        if cmdargs["label_embedding"] is not None:
+            label_embedding = FileIO.load_data(files=cmdargs["label_embedding"],
+                                               col_names=cmdargs["label_col_names"],
+                                               concat=cmdargs["concat"],
+                                               add_sample_index=cmdargs["add_sample_index"],
+                                               drop_columns=cmdargs["label_drop_col"])[1]
 
         results: List[List[Union[str, float]]]
         
@@ -81,7 +88,8 @@ def main(cmdargs: Dict[str, Any]):
                           tsne_learning_rate=cmdargs["tsne_learning_rate"],
                           max_iter=cmdargs["max_iter"],
                           init=cmdargs["init"],
-                          open_tsne_method=cmdargs["open_tsne_method"])
+                          open_tsne_method=cmdargs["open_tsne_method"],
+                          dist_metric=cmdargs["dist_metric"])
         
         
 class _Arguments():
@@ -120,6 +128,8 @@ class _Arguments():
                                  help="Whether embedding's first row is names.")
         self.parser.add_argument("--label", action="store",
                                  help="Path to pre-classified labels.")
+        self.parser.add_argument("--label_embedding", action="store",
+                                 help="Path to pre-classified labels of embedding.")
         self.parser.add_argument("--label_col_names", action="store_true",
                                  help="Whether embedding's first row is names.")
         self.parser.add_argument("--label_drop_col", type=int, nargs="+", action="store",
@@ -156,6 +166,8 @@ class _Arguments():
                                  help="Learning rate for t-SNE.")
         self.parser.add_argument("--open_tsne_method", action="store",
                                  help="Method for openTSNE.")
+        self.parser.add_argument("--dist_metric", type=str, action="store",
+                                 help="Distance metric for applicable methods.")
 
 
     def parse(self, args: Optional[List[str]]=None) -> Dict[str, Optional[str]]:
@@ -174,6 +186,7 @@ class _Arguments():
         arguments["tsne_learning_rate"] = 200 if arguments["tsne_learning_rate"] is None else arguments["tsne_learning_rate"]
         arguments["open_tsne_method"] = "fft" if arguments["open_tsne_method"] is None else arguments["open_tsne_method"].lower()
         arguments["early_exaggeration_iter"] = 250 if arguments["early_exaggeration_iter"] is None else arguments["early_exaggeration_iter"]
+        arguments["dist_metric"] = "euclidean" if arguments["dist_metric"] is None else arguments["dist_metric"]
 
         return arguments
     

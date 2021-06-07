@@ -19,6 +19,7 @@ class Metric():
                                n_fold: int=1,
                                methods: Union[str, List[str]]="all",
                                labels: Optional["np.ndarray"]=None,
+                               labels_embedding: Optional["np.ndarray"]=None,
                                embedding_names: Optional["np.ndarray"]=None,
                                k: int=5
                                ) -> List[List[Union[str, float]]]:
@@ -51,6 +52,7 @@ class Metric():
         data_downsample: "np.ndarray"
         embedding_downsample: List["np.ndarray"]
         labels_downsample: Optional["np.ndarray"]=None
+        labels_embedding_downsample: Optional["np.ndarray"]=None
         results: List[List[Union[str, float]]] = []
         results_numeric: List[List[Any]] = []
         
@@ -62,11 +64,14 @@ class Metric():
             
             if labels is not None:
                 labels_downsample = labels[index]
+            if labels_embedding_downsample is not None:
+                labels_embedding_downsample = labels_embedding[index]
             
             results = cls.run_metrics(data=data_downsample,
                                       embedding=embedding_downsample,
                                       methods=methods,
                                       labels=labels_downsample,
+                                      labels_embedding=labels_embedding_downsample,
                                       embedding_names=embedding_names,
                                       k=k)
             

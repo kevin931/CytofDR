@@ -48,6 +48,7 @@ class DR():
                     tsne_learning_rate: Optional[Union[float, str]]=None,
                     max_iter: int=1000,
                     init: str="random",
+                    dist_metric: str="euclidean",
                     open_tsne_method="fft"
                     ) -> List[List[Union[str, float]]]:
         
@@ -119,7 +120,10 @@ class DR():
                 else:
                     init_umap: str = init
                     
-                time_UMAP, embedding_UMAP = NonLinearMethods.UMAP(data, out_dims=out_dims, init=init_umap)
+                time_UMAP, embedding_UMAP = NonLinearMethods.UMAP(data,
+                                                                  out_dims=out_dims,
+                                                                  init=init_umap,
+                                                                  metric=dist_metric)
                 FileIO.save_np_array(embedding_UMAP, dir_path, "UMAP")
                 time[0].append("UMAP")
                 time[1].append(time_UMAP)
@@ -145,7 +149,8 @@ class DR():
                                                                                 learning_rate=tsne_learning_rate,
                                                                                 max_iter=max_iter,
                                                                                 method="exact",
-                                                                                init=init)
+                                                                                init=init,
+                                                                                metric=dist_metric)
                 FileIO.save_np_array(embedding_tsne_original, dir_path, "tsne_original")
                 time[0].append("sklearn_tsne_original")
                 time[1].append(time_tsne_original)
@@ -161,7 +166,8 @@ class DR():
                                                                                     early_exaggeration=early_exaggeration,
                                                                                     learning_rate=tsne_learning_rate,
                                                                                     max_iter=max_iter,
-                                                                                    init=init)
+                                                                                    init=init,
+                                                                                    metric=dist_metric)
                 FileIO.save_np_array(embedding_sklearn_tsne_bh, dir_path, "sklearn_tsne_bh")
                 time[0].append("sklearn_tsne_bh")
                 time[1].append(time_sklearn_tsne_bh)
@@ -219,7 +225,8 @@ class DR():
                                                                         early_exaggeration_iter=early_exaggeration_iter,
                                                                         max_iter=max_iter,
                                                                         init=init,
-                                                                        negative_gradient_method=open_tsne_method)
+                                                                        negative_gradient_method=open_tsne_method,
+                                                                        metric=dist_metric)
                 FileIO.save_np_array(embedding_open_tsne, dir_path, "open_tsne")
                 time[0].append("open_tsne")
                 time[1].append(time_open_tsne)
@@ -322,11 +329,11 @@ class NonLinearMethods():
         start_time: float = time.perf_counter()
         
         embedding: "np.ndarray" = umap.UMAP(n_components=out_dims,
-                                               n_neighbors=n_neighbors,
-                                               min_dist=min_dist,
-                                               metric=metric,
-                                               init=init
-                                               ).fit_transform(data) #type: ignore
+                                            n_neighbors=n_neighbors,
+                                            min_dist=min_dist,
+                                            metric=metric,
+                                            init=init
+                                            ).fit_transform(data) #type: ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
@@ -363,7 +370,8 @@ class TSNE():
                      max_iter: int=1000,
                      init: Union[str, "np.ndarray"]="random",
                      method: str="barnes_hut",
-                     angle: float=0.5
+                     angle: float=0.5,
+                     metric: str="euclidean"
                      )-> Tuple[float, "np.ndarray"]:
         
         ''' Scikit-Learn t-SNE
@@ -398,7 +406,8 @@ class TSNE():
                                                            n_iter=max_iter,
                                                            init=init,
                                                            method=method,
-                                                           angle=angle
+                                                           angle=angle,
+                                                           metric=metric
                                                            ).fit_transform(data)
         
         end_time: float = time.perf_counter()
@@ -561,7 +570,7 @@ class TSNE():
                   early_exaggeration_iter: int=250,
                   early_exaggeration: float=12,
                   max_iter: int=500,
-                  distance_metric: str="euclidean",
+                  metric: str="euclidean",
                   dof: int=1,
                   theta: float=0.5, 
                   init: Union["np.ndarray", str]="pca",
@@ -601,14 +610,14 @@ class TSNE():
         if isinstance(perp, list) and len(perp) > 1:
             affinities_array = affinity.Multiscale(data=data,
                                                    perplexities=perp,
-                                                   metric=distance_metric,
+                                                   metric=metric,
                                                    n_jobs=-1,
                                                    verbose=True)
         else:
             perp = perp[0] if isinstance(perp, list) else perp
             affinities_array = affinity.PerplexityBasedNN(data=data,
                                                           perplexity=perp,
-                                                          metric=distance_metric,
+                                                          metric=metric,
                                                           n_jobs=-1,
                                                           verbose=True)
 
