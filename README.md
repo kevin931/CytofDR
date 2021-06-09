@@ -43,7 +43,7 @@ See below for notes on how to get these installed.
 
 ### Conda Installation
 
-I personally recommend using ``conda`` to install everything because virtual environment is very important for different parts of this project. If you need help on how to get ``conda`` installed in the first place, take a look [here]().
+I personally recommend using ``conda`` to install everything because virtual environment is very important for different parts of this project. If you need help on how to get ``conda`` installed in the first place, take a look [here](https://docs.anaconda.com/anaconda/install/).
 
 To install all the required dependencies, run the following commands:
 
@@ -54,10 +54,9 @@ To install all the required dependencies, run the following commands:
 
     conda install python=3.8 numpy scikit-learn
     conda install -c conda-forge openTSNE umap-learn
+
+    pip install phenograph
 ```
-
-For installation issues and some caveats, take a look [here](https://poetic.readthedocs.io/en/latest/usage/Installation.html) for some common issues. Or, open an [issue](https://github.com/kevin931/poetic/issues) and I will be glad to help!
-
 
 ## Usage
 This project supports dimension reduction (DR), DR evaluation, and clustering. All these components are separate at this time. See examples for tutorials. 
