@@ -43,7 +43,7 @@ def simulate_fcs_downsample(n: Union[int, List[int]],
         
     i: int
     for i in n:
-        indices = np.random.randint(low=1, high=exprs.shape[0], size=i)
+        indices = np.random.choice(exprs.shape[0], i, replace=False)
         
         if (col_index):
             mat = np.concatenate((names.reshape(1, names.shape[0]), exprs[indices]))
