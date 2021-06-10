@@ -15,6 +15,7 @@
   - [Command-line Arguments](#command-line-arguments)
   - [File IO](#file-io)
   - [Dimension Reduction](#dimension-reduction)
+  - [Diffusion Map](#diffusion-map)
   - [PhenoGraph Clustering](#phenograph-clustering)
 - [t-SNE Optimization](#t-sne-optimization)
 - [Optional Installations](#optional-installations)
@@ -183,6 +184,20 @@ python main.py \
 All other methods use similar commands. All file IO commands apply.
 
 
+### Diffusion Map
+
+Currently, we only included the implementation of diffusion map in R with the ``destiny`` package. To run diffusion map, you will need to install ``destiny`` from ``bioconductor``. ``diffmap.R`` requires three mandatory commandline arguments: the path to original file, the distance metric, and the directory to save the file.
+
+```shell
+Rscript diffmap.R \
+    <PATH_TO_FILE> \
+    euclidean \
+    <PATH_TO_SAVE_DIRECTORY>
+
+```
+
+Note: This R implementation does not have as many options and checks as the python scripts.
+
 ### PhenoGraph Clustering
 
 Currently, only PhenoGraph clustering is supported. To cluster, use the following example as a guide:
@@ -249,8 +264,8 @@ The project already supports two implementations of BH t-SNE: sklearn and openTS
 However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
 
 ## Updates
-
 ### June 10, 2021
+- Added diffmap support through ``diffmap.R``. No python support.
 - Added support for ZIFA. See [instructions](#ZIFA) for installation details.
 - Added ``--umap_min_dist`` as a UMAP parameter.
 - Added ``--umap_neighbors`` as a UMAP parameter.
