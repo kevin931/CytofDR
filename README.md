@@ -15,8 +15,17 @@
   - [Command-line Arguments](#command-line-arguments)
   - [File IO](#file-io)
   - [Dimension Reduction](#dimension-reduction)
-    - [t-SNE Optimization](#t-sne-optimization)
+  - [PhenoGraph Clustering](#phenograph-clustering)
+- [t-SNE Optimization](#t-sne-optimization)
+- [Optional Installations](#optional-installations)
+  - [ZIFA](#zifa)
+  - [FIt-SNE](#fit-sne)
+  - [SAUCIE](#saucie)
+  - [BH t-SNE](#bh-t-sne)
+- [Updates](#updates)
+  - [June 10, 2021](#june-10-2021)
 - [Future Directions](#future-directions)
+- [References](#references)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -92,6 +101,9 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--tsne_learning_rate`` | Float | DR Parameters | Learning rate for t-SNE. (Default: 200.0) | 
 | ``--init`` | str | DR Parameters | Initialization method. (Default: "pca" for t-SNE and "spectral" for UMAP) |
 | ``--max_iter`` | Integer | DR Parameters | The maximum number of iterations to run. (Default: 1000) |
+| ``--dist_metric`` | String | DR Parameters | The distance metric of tsne and UMAP. (Default: Euclidean) |
+| ``--umap_min_dist`` | Float | DR Parameters | The minimum distance between points for UMAP. (Default: 0.1) |
+| ``--umap_neighbors`` | Integer | DR Parameters | The number of neighbors for UMAP. (Default: 15) |
 
 
 ### File IO
@@ -124,7 +136,7 @@ python main.py \
     -m open_tsne
 ```
 
-Placing results in the ``-o`` directory as-is without creating a new directory by adding the ``--no_new_dir`` flag:
+By default, the ``-o`` flag always creates a new directory and recursively so if necessary. However, it will not overwrite existing directories as it simply adds a number to it. To place results in the ``-o`` directory as-is without creating a new directory by adding the ``--no_new_dir`` flag:
 
 ```shell
 python main.py \
@@ -136,13 +148,14 @@ python main.py \
     -m open_tsne
 ```
 
-To read original files and embedding for evaluation:
+To read original files, embedding, and labels for DR performance evaluation:
 
 ```shell
 python main.py \
     -f <PATH TO file> \
     --delim , \
     --embedding <PATH_TO_EMBEDDING> \
+    --labels <PATH_TO_LABELS> \
     -o ./results/open_tsne \
     --evaluate \
     -m all
@@ -152,7 +165,7 @@ Note: It is acceptable to pass in a directory for ``-f`` and ``--embedding``, in
 
 ### Dimension Reduction
 
-To perform dimension reduction, the following arguments are required: ``-f``, ``-o``, ``--dr``, and ``-m``. The acceptable strings for methods are: ``pca``, ``ica``, ``umap``, ``sklearn_tsne_original``, ``sklearn_tsne_bh``, ``open_tsne``, ``fit_sne``, ``bh_tsne``, and ``saucie``.  (Note: ``fit_sne``, ``bh_tsne``, and ``saucie`` need additional installations.)
+To perform dimension reduction, the following arguments are required: ``-f``, ``-o``, ``--dr``, and ``-m``. The acceptable strings for methods are: ``pca``, ``ica``, ``umap``, ``sklearn_tsne_original``, ``sklearn_tsne_bh``, ``open_tsne``, ``fit_sne``, ``bh_tsne``, ``saucie``, and ``zifa``.  (Note: ``fit_sne``, ``bh_tsne``, ``saucie`` and ``zifa`` need additional installations. See instructions below.)
 
 To run t-SNE (I recommend ``open_tsne`` through the openTSNE package):
 
@@ -205,7 +218,17 @@ python main.py \
 
 ## Optional Installations
 
-A few methods cannot be easily installed with conda or pip packages. Therefore, more care is needed if usgae is required. 
+A few methods cannot be easily installed as conda or pip packages. Therefore, more care is needed if usgae is required. Given that not all users are expected to have these packages installed, it is therefore safe to use ``-m all`` as it checks for import errors. 
+
+### ZIFA
+
+[Zero-inflated Factor Analysis](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-015-0805-z) is implemented by the authors [here](https://github.com/epierson9/ZIFA). Its installation is relatively easy given most of its major dependencies should already be satisfied. To install, 
+
+```shell
+    git clone https://github.com/epierson9/ZIFA
+    cd ZIFA
+    python setup.py install
+```
 
 ### FIt-SNE
 
@@ -223,7 +246,15 @@ Note: Only tensoflow 1.x is supported. This may cause issues with other dependen
 
 The project already supports two implementations of BH t-SNE: sklearn and openTSNE. Both the former can be called with the flag ``-m sklearn_tsne_bh`` and the latter can be used with the combination of ``-m open_tsne --open_tsne_method bh``. Both, especially open_tsne, offer more flexibility and ease of use.
 
-However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.  
+However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
+
+## Updates
+
+### June 10, 2021
+- Added support for ZIFA. See [instructions](#ZIFA) for installation details.
+- Added ``--umap_min_dist`` as a UMAP parameter.
+- Added ``--umap_neighbors`` as a UMAP parameter.
+- Added ``dist_metric`` as a general parameter for distance metric in dimension reduction.
 
 ## Future Directions
 This is quite complex! More documentation will be added, inclusing docstrings, examples, etc. More methods will also be considered. Contributions are welcomed!

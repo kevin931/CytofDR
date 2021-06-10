@@ -56,6 +56,7 @@ def main(cmdargs: Dict[str, Any]):
                                                embedding=embedding,
                                                methods=cmdargs["methods"],
                                                labels=label,
+                                               labels_embedding=label_embedding,
                                                embedding_names=embedding_names)
             
         else:
@@ -64,6 +65,7 @@ def main(cmdargs: Dict[str, Any]):
                                                            embedding=embedding,
                                                            methods=cmdargs["methods"],
                                                            labels=label,
+                                                           labels_embedding=label_embedding,
                                                            embedding_names=embedding_names,
                                                            downsample=cmdargs["downsample"],
                                                            n_fold=cmdargs["k_fold"])
@@ -89,7 +91,9 @@ def main(cmdargs: Dict[str, Any]):
                           max_iter=cmdargs["max_iter"],
                           init=cmdargs["init"],
                           open_tsne_method=cmdargs["open_tsne_method"],
-                          dist_metric=cmdargs["dist_metric"])
+                          dist_metric=cmdargs["dist_metric"],
+                          umap_min_dist=cmdargs["umap_min_dist"],
+                          umap_neighbors=cmdargs["umap_neighbors"])
         
         
 class _Arguments():
@@ -168,6 +172,12 @@ class _Arguments():
                                  help="Method for openTSNE.")
         self.parser.add_argument("--dist_metric", type=str, action="store",
                                  help="Distance metric for applicable methods.")
+        
+        #UMAP
+        self.parser.add_argument("--umap_min_dist", type=float, action="store",
+                                 help="min_dist for UMAP.")
+        self.parser.add_argument("--umap_neighbors", type=int, action="store",
+                                 help="Number of neighbors for UMAP.")
 
 
     def parse(self, args: Optional[List[str]]=None) -> Dict[str, Optional[str]]:
@@ -187,6 +197,8 @@ class _Arguments():
         arguments["open_tsne_method"] = "fft" if arguments["open_tsne_method"] is None else arguments["open_tsne_method"].lower()
         arguments["early_exaggeration_iter"] = 250 if arguments["early_exaggeration_iter"] is None else arguments["early_exaggeration_iter"]
         arguments["dist_metric"] = "euclidean" if arguments["dist_metric"] is None else arguments["dist_metric"]
+        arguments["umap_min_dist"] = 0.1 if arguments["umap_min_dist"] is None else arguments["umap_min_dist"]
+        arguments["umap_neighbors"] = 15 if arguments["umap_neighbors"] is None else arguments["umap_neighbors"]
 
         return arguments
     

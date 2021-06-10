@@ -13,7 +13,7 @@ import time
 import os
 from typing import Tuple, Union, Optional, List, Dict
 
-METHODS: Dict[str, bool]  = {"fit_sne": True, "bh_tsne": True, "saucie": True}
+METHODS: Dict[str, bool]  = {"fit_sne": True, "bh_tsne": True, "saucie": True, "ZIFA": True}
 
 try:
     from fitsne.fast_tsne import fast_tsne
@@ -33,6 +33,12 @@ except:
     METHODS["saucie"] = False
     print("No 'saucie' implementation.")
     
+try:
+    from ZIFA import ZIFA
+except:
+    METHODS["ZIFA"] = False
+    print("No 'ZIFA' implementation.")
+    
 
 class DR():
 
@@ -49,7 +55,9 @@ class DR():
                     max_iter: int=1000,
                     init: str="random",
                     dist_metric: str="euclidean",
-                    open_tsne_method="fft"
+                    open_tsne_method="fft",
+                    umap_min_dist: float=0.1,
+                    umap_neighbors: int=15
                     ) -> List[List[Union[str, float]]]:
         
         dir_path: str = out+"/embedding"
@@ -67,6 +75,8 @@ class DR():
                 methods.append("bh_tsne")
             if METHODS["saucie"]:
                 methods.append("saucie")
+            if METHODS["zifa"]:
+                methods.append("zifa")
                 
         if not isinstance(perp, list):
             perp = [perp]
@@ -106,7 +116,7 @@ class DR():
                 
         if "ica" in methods:
             try:
-                time_ICA, embedding_ICA = LinearMethods.ICA(data, out_dim=out_dims)
+                time_ICA, embedding_ICA = LinearMethods.ICA(data, out_dims=out_dims)
                 FileIO.save_np_array(embedding_ICA, dir_path, "ICA")
                 time[0].append("ICA")
                 time[1].append(time_ICA)
@@ -123,7 +133,9 @@ class DR():
                 time_UMAP, embedding_UMAP = NonLinearMethods.UMAP(data,
                                                                   out_dims=out_dims,
                                                                   init=init_umap,
-                                                                  metric=dist_metric)
+                                                                  metric=dist_metric,
+                                                                  min_dist=umap_min_dist,
+                                                                  n_neighbors=umap_neighbors)
                 FileIO.save_np_array(embedding_UMAP, dir_path, "UMAP")
                 time[0].append("UMAP")
                 time[1].append(time_UMAP)
@@ -233,6 +245,16 @@ class DR():
             except Exception as e:
                 print(e)
                 
+        if "zifa" in methods:
+            try:
+                time_zifa, embedding_zifa = LinearMethods.ZIFA(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_zifa, dir_path, "zifa")
+                time[0].append("ZIFA")
+                time[1].append(time_zifa)
+            except Exception as e:
+                print(e)
+                
+                
         FileIO.save_list_to_csv(time, out, "time")
             
         return time
@@ -272,8 +294,8 @@ class LinearMethods():
     
     @staticmethod
     def ICA(data: "np.ndarray",
-            out_dim: int,
-            max_iter: int=200):
+            out_dims: int,
+            max_iter: int=200) -> Tuple[float, "np.ndarray"]:
         
         ''' Scikit-Learn Independent Component Analysis
         
@@ -290,12 +312,27 @@ class LinearMethods():
         
         start_time: float = time.perf_counter()
         
-        embedding: "np.ndarray" = FastICA(n_components=out_dim, max_iter=max_iter).fit_transform(data) #type:ignore
+        embedding: "np.ndarray" = FastICA(n_components=out_dims, max_iter=max_iter).fit_transform(data) #type:ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
         
         return run_time, embedding
+    
+    
+    @staticmethod
+    def ZIFA(data: "np.ndarray",
+             out_dims: int) -> Tuple[float, "np.ndarray"]:
+        
+        start_time: float = time.perf_counter()
+        
+        z: "np.ndarray"
+        z, _ = ZIFA.fitModel(data, out_dims)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, z
     
     
 class NonLinearMethods():
