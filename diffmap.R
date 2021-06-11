@@ -8,7 +8,7 @@ dist_metric <- args[2]
 save_path <- args[3]
 
 embedding_path <- paste0(save_path, "/embedding/")
-dir.create(embedding_path)
+dir.create(embedding_path, recursive = TRUE)
 embedding_path <- paste0(embedding_path, "diffmap.txt")
 
 time_path <- paste0(save_path, "/time.csv")
