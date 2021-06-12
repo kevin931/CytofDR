@@ -6,6 +6,7 @@ args <- commandArgs(trailingOnly = TRUE)
 read_path <- args[1]
 dist_metric <- args[2]
 save_path <- args[3]
+col_names <- args[4]
 
 embedding_path <- paste0(save_path, "/embedding/")
 dir.create(embedding_path, recursive = TRUE)
@@ -14,8 +15,13 @@ embedding_path <- paste0(embedding_path, "diffmap.txt")
 time_path <- paste0(save_path, "/time.csv")
 
 df <- read_delim(read_path,
-                 col_names = T,
+                 col_names = col_names,
                  delim="\t")
+
+if (length(args) > 4) {
+  drop_cols <- as.numeric(args[5:length(args)])
+  df <- df[, -drop_cols]
+}
 
 start_time <- Sys.time()
 diffmap <- DiffusionMap(df, distance = dist_metric)
