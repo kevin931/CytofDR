@@ -7,7 +7,7 @@ from openTSNE import TSNEEmbedding
 from openTSNE import affinity
 from openTSNE import initialization
 
-from main import FileIO
+from fileio import FileIO
 
 import time
 import os
@@ -662,7 +662,7 @@ class TSNE():
             if init == "pca":
                 init_array = initialization.pca(data, n_components=out_dims)
             elif init == "spectral":
-                init_array = initialization.spectral(data, n_components=out_dims)
+                init_array = initialization.spectral(affinities_array.P, n_components=out_dims)
             else:
                 init_array = initialization.random(data, n_components=out_dims)
         else:
