@@ -7,6 +7,8 @@ import scipy.spatial
 import scipy.stats
 import sklearn.metrics
 
+from fileio import FileIO
+
 from typing import Optional, Any, Union, List
 
 class Metric():
@@ -14,15 +16,17 @@ class Metric():
     @classmethod
     def run_metrics_downsample(cls,
                                data: "np.ndarray",
-                               embedding: Union["np.ndarray", List["np.ndarray"]],
-                               downsample: int,
+                               embedding: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                               downsample: Optional[int]=None,
+                               downsample_indices: Optional[List["np.ndarray"]]=None,
                                n_fold: int=1,
                                methods: Union[str, List[str]]="all",
                                labels: Optional["np.ndarray"]=None,
                                labels_embedding: Optional["np.ndarray"]=None,
                                embedding_names: Optional["np.ndarray"]=None,
-                               k: int=5
-                               ) -> List[List[Union[str, float]]]:
+                               k: int=5,
+                               save_indices_dir: Optional[str]=None
+                               ) -> Optional[List[List[Union[str, float]]]]:
         
         '''Run methods with downsampling.
         
@@ -45,8 +49,13 @@ class Metric():
             List[List[Union[str, float]]]: A nested list of results with names of metrics, names of embedding, and metrics results.
         '''
         
+        if downsample is None and downsample_indices is None:
+            raise ValueError("Either 'downsample' or 'downsample_indices' must be provided.")
         
-        if not isinstance(embedding, list):
+        if downsample_indices is not None:
+            n_fold = len(downsample_indices)
+        
+        if not isinstance(embedding, list) and embedding is not None:
             embedding = [embedding]
         
         data_downsample: "np.ndarray"
@@ -56,15 +65,28 @@ class Metric():
         results: List[List[Union[str, float]]] = []
         results_numeric: List[List[Any]] = []
         
-        for _ in range(n_fold):
-            index: Union["np.ndarray", int] = np.random.randint(0, data.shape[0], size=downsample)
+        n: int
+        for n in range(n_fold):
             
+            index: "np.ndarray"
+            if downsample_indices is None:
+                index = np.random.choice(data.shape[0], size=downsample)
+            else:
+                index = downsample_indices[n].astype(int)
+                  
+            if save_indices_dir is not None:
+                file_name: str = "index_{}".format(n)
+                FileIO.save_np_array(index, save_indices_dir, file_name=file_name)
+                
+            if embedding is None:
+                continue
+                
             data_downsample = data[index, :]
             embedding_downsample = [e[index, :] for e in embedding]
             
             if labels is not None:
                 labels_downsample = labels[index]
-            if labels_embedding_downsample is not None:
+            if labels_embedding is not None:
                 labels_embedding_downsample = labels_embedding[index]
             
             results = cls.run_metrics(data=data_downsample,
@@ -77,10 +99,14 @@ class Metric():
             
             results_numeric.append(results[1])
         
-        results_numeric = list(np.average(results_numeric, axis=0))
-        results[1] = results_numeric #type: ignore
+        if embedding is None:
+            return None
         
-        return results
+        else:  
+            results_numeric = list(np.average(results_numeric, axis=0))
+            results[1] = results_numeric #type: ignore
+            
+            return results
         
     
     @classmethod
@@ -111,7 +137,6 @@ class Metric():
         Returns:
             List[List[Union[str, float]]]: A nested list of results with names of metrics, names of embedding, and metrics results.
         '''
-            
         if isinstance(methods, list):
             methods = [m.lower() for m in methods]
         else:
@@ -127,13 +152,14 @@ class Metric():
             methods = ["pearsonr", "spearmanr", "residual_variance", "knn", "neighborhood_agreement", "neighborhood_trustworthiness", "emd"]
             if labels is not None:
                 methods.extend(["npe", "random_forest", "silhouette"])
-            if labels and labels_embedding is not None:
+            if labels is not None and labels_embedding is not None:
                 methods.extend(["ari", "mni"])
+            print(methods)
             
         if any(m in methods for m in ["npe", "random_forest", "silhouette", "ari", "mni"]) and labels is None: 
             raise ValueError("'labels' must be provided for NPE, random forest, silhouette, ARI, and MNI.")
         
-        if any(m in methods for m in ["ari", "mni"]) and labels_embedding is None: 
+        if any(m in methods for m in ["ari", "nmi"]) and labels_embedding is None: 
             raise ValueError("'labels_embedding' must be provided for ARI, and MNI.")
         
         if any(m in methods for m in ["knn", "npe", "neighborhood_agreement", "neighborhood_trustworthiness"]) and not isinstance(k, int): 
@@ -165,14 +191,14 @@ class Metric():
         for i, e in enumerate(embedding):
         
             if "pearsonr" in methods:
-                assert data_pairwise_distance and embedding_pairwise_distance is not None
+                assert data_pairwise_distance is not None and embedding_pairwise_distance is not None
                 cor: float=cls.correlation(x=data_pairwise_distance, y=embedding_pairwise_distance[i], metric="Pearson")
                 results[0].append("correlation_pearson")
                 results[1].append(cor)
                 results[2].append(embedding_names[i])
                 
             if "spearmanr" in methods:
-                assert data_pairwise_distance and embedding_pairwise_distance is not None
+                assert data_pairwise_distance is not None and embedding_pairwise_distance is not None
                 cor: float=cls.correlation(x=data_pairwise_distance, y=embedding_pairwise_distance[i], metric="Spearman")
                 results[0].append("correlation_spearman")
                 results[1].append(cor)
@@ -223,13 +249,13 @@ class Metric():
                 results[2].append(embedding_names[i])
                 
             if "nmi" in methods:
-                assert labels and labels_embedding is not None
+                assert labels is not None and labels_embedding is not None
                 results[0].append("nmi")
                 results[1].append(cls.NMI(labels=labels, labels_embedding=labels_embedding))
                 results[2].append(embedding_names[i])
                 
             if "ari" in methods:
-                assert labels and labels_embedding is not None
+                assert labels is not None and labels_embedding is not None
                 results[0].append("ari")
                 results[1].append(cls.ARI(labels=labels, labels_embedding=labels_embedding))
                 results[2].append(embedding_names[i])

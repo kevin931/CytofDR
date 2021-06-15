@@ -94,6 +94,8 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--label_drop_col`` | Integers | File IO | The indicies of columns of label to be dropped. |
 | ``--downsample`` | Integer | Evaluation | The number of n to randomly down-sample in evaluation. | 
 | ``--k-fold`` | Integer | Evaluation | The number of times to repeat down-sampling and compute average during evaluation. |
+| ``--save_downsample_index`` | String | Evaluation | Save the index of downsampling to the supplied directory. |
+| ``--downsample_index_files`` | String | Evaluation | Path/Directory to previously saved downsample indicies. |
 | ``--out_dims`` | Integer | DR Parameters | Output dimension. (Default: 2) |
 | ``--perp`` | Integers | DR Parameters | Perplexity or a list of perplexities for t-SNE. (Default: 30) | 
 | ``--early_exaggeration`` | Float | DR Parameters | Early exaggeration factor for t-SNE. (Default: 12.0) |
@@ -106,9 +108,7 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--umap_min_dist`` | Float | DR Parameters | The minimum distance between points for UMAP. (Default: 0.1) |
 | ``--umap_neighbors`` | Integer | DR Parameters | The number of neighbors for UMAP. (Default: 15) |
 
-
 ### File IO
-
 Only expression matrices saved in the format of text files (inclusing csv and tsv) are supported. File IO and analyses/evaluation are integrated into one step. In other words, you don't have to load file or save files separately if you are using the command-line mode.
 
 To simply read expression matrices from a file (with first line as column names and dropping columns at indicies 40 and 41) and run DR in a bare minimum fashion:
@@ -165,7 +165,6 @@ python main.py \
 Note: It is acceptable to pass in a directory for ``-f`` and ``--embedding``, in which case call files in the directory will be read. Also, flags such as ``--delim``, ``file_drop_col``, and ``--file_col_names`` are optional.
 
 ### Dimension Reduction
-
 To perform dimension reduction, the following arguments are required: ``-f``, ``-o``, ``--dr``, and ``-m``. The acceptable strings for methods are: ``pca``, ``ica``, ``umap``, ``sklearn_tsne_original``, ``sklearn_tsne_bh``, ``open_tsne``, ``fit_sne``, ``bh_tsne``, ``saucie``, and ``zifa``.  (Note: ``fit_sne``, ``bh_tsne``, ``saucie`` and ``zifa`` need additional installations. See instructions below.)
 
 To run t-SNE (I recommend ``open_tsne`` through the openTSNE package):
@@ -180,26 +179,9 @@ python main.py \
     -m open_tsne
 
 ```
-
 All other methods use similar commands. All file IO commands apply.
 
-
-### Diffusion Map
-
-Currently, we only included the implementation of diffusion map in R with the ``destiny`` package. To run diffusion map, you will need to install ``destiny`` from ``bioconductor``. ``diffmap.R`` requires three mandatory commandline arguments: the path to original file, the distance metric, and the directory to save the file.
-
-```shell
-Rscript diffmap.R \
-    <PATH_TO_FILE> \
-    euclidean \
-    <PATH_TO_SAVE_DIRECTORY>
-
-```
-
-Note: This R implementation does not have as many options and checks as the python scripts.
-
-### PhenoGraph Clustering
-
+### Clustering
 Currently, only PhenoGraph clustering is supported. To cluster, use the following example as a guide:
 
 ```shell
@@ -214,6 +196,89 @@ python main.py \
 ```
 The results will be save in the format of a tab-separated file in ``phenograph.txt`` of the output directory.
 
+### DR Evaluation
+The python program supports ten metrics for DR evaluation, and it is designed to be used in conjunction with DR methods in this program.
+
+To run evaluation:
+```shell
+python main.py \
+    -f <PATH_TO_ORIGINAL_FILE> \
+    --embedding <PATH_TO_EMBEDDING, file or directory> \
+    --label <PATH_TO_ORIGINAL_LABEL, optional> \
+    --label_embedding <PATH_TO_EMBEDDING_LABEL, optional> \
+    --evaluate \
+    -m all \
+    -o <SAVE_DIRECTORY>
+```
+
+To run evaluation with downsampling: 
+
+```shell
+python main.py \
+    -f <PATH_TO_ORIGINAL_FILE> \
+    --embedding <PATH_TO_EMBEDDING, file or directory> \
+    --label <PATH_TO_ORIGINAL_LABEL, optional> \
+    --label_embedding <PATH_TO_EMBEDDING_LABEL, optional> \
+    --evaluate \
+    -m all \
+    -o <SAVE_DIRECTORY> \
+    --save_downsample_index <PATH_TO_SAVE_SAMPLING_INDEX, optional> \
+    --downsample 5000 \
+    --k_fold 5
+```
+
+To downsample and save indicies without actually running evaluation: 
+
+```shell
+python main.py \
+    -f <PATH_TO_ORIGINAL_FILE> \
+    --evaluate \
+    --save_downsample_index <PATH_TO_SAVE_SAMPLING_INDEX, optional> \
+    --downsample 5000 \
+    --k_fold 5
+```
+
+To downsample with save index (If a directory with multiple index files is supplied to ``--downsample_index_files``, it will treat all the files as ``--k_fold`` to repeat average the results.): 
+
+```shell
+python main.py \
+    -f <PATH_TO_ORIGINAL_FILE> \
+    --evaluate \
+    --embedding <PATH_TO_EMBEDDING, file or directory> \
+    --label <PATH_TO_ORIGINAL_LABEL, optional> \
+    --label_embedding <PATH_TO_EMBEDDING_LABEL, optional> \
+    --evaluate \
+    -m all \
+    --downsample_index_files <PATH_TO_SAVE_SAMPLING_INDEX>
+
+```
+
+## Special Cases with R
+There are a few special cases that are not supported by the main python programs since they are implemented with R. 
+### Diffusion Map
+
+Currently, we only included the implementation of diffusion map in R with the ``destiny`` package. To run diffusion map, you will need to install ``destiny`` from ``bioconductor``. ``diffmap.R`` requires three mandatory commandline arguments: the path to original file, the distance metric, and the directory to save the file.
+
+```shell
+Rscript diffmap.R \
+    <PATH_TO_FILE> \
+    euclidean \
+    <PATH_TO_SAVE_DIRECTORY>
+
+```
+
+Note: This R implementation does not have as many options and checks as the python scripts.
+### FlowSOM CLustering
+FlowSOM iscurrently supported with an R script. To run FlowSOM, 
+
+```shell 
+Rscript ./flowsom.R \
+    <PATH_TO_INPUT_FILE> \
+    <Number of clusters, int> \
+    <EXACT_PATH_TO_OUTPUT_FILE> \
+    <Whether input file has column names, R Boolean>
+
+```
 
 ## t-SNE Optimization
 
@@ -264,6 +329,11 @@ The project already supports two implementations of BH t-SNE: sklearn and openTS
 However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
 
 ## Updates
+### June 14, 2021
+- Added FlowSome.R and documentation in README. 
+- Optimized README layout
+- Added support for saving downsampling index for ``--evaluate``
+- Added support for downsampling without actually running metrics 
 ### June 10, 2021
 - Added diffmap support through ``diffmap.R``. No python support.
 - Added support for ZIFA. See [instructions](#ZIFA) for installation details.

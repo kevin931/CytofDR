@@ -18,14 +18,18 @@ def main(cmdargs: Dict[str, Any]):
     
     if cmdargs["evaluate"]:
         
-        embedding: List["np.ndarray"] = FileIO.load_data(files=cmdargs["embedding"],
-                                                         col_names=cmdargs["embedding_col_names"],
-                                                         concat=cmdargs["concat"],
-                                                         add_sample_index=cmdargs["add_sample_index"],
-                                                         drop_columns=cmdargs["embedding_drop_col"])
-                 
+        embedding: Optional[List["np.ndarray"]] = None
         label: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         label_embedding: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
+        index: Optional[List["np.ndarray"]] = None
+        
+        if cmdargs["embedding"] is not None:
+            embedding = FileIO.load_data(files=cmdargs["embedding"],
+                                         col_names=cmdargs["embedding_col_names"],
+                                         concat=cmdargs["concat"],
+                                         add_sample_index=cmdargs["add_sample_index"],
+                                         drop_columns=cmdargs["embedding_drop_col"])
+            embedding.pop(0)
         
         if cmdargs["label"] is not None:
             label = FileIO.load_data(files=cmdargs["label"],
@@ -40,17 +44,30 @@ def main(cmdargs: Dict[str, Any]):
                                                concat=cmdargs["concat"],
                                                add_sample_index=cmdargs["add_sample_index"],
                                                drop_columns=cmdargs["label_drop_col"])[1]
+            
+        if cmdargs["downsample_index_files"] is not None:
+            index = FileIO.load_data(files=cmdargs["downsample_index_files"],
+                                     col_names=False,
+                                     concat=False,
+                                     add_sample_index=False,
+                                     drop_columns=None)
+            index.pop(0)
+           
 
-        results: List[List[Union[str, float]]]
+        results: Optional[List[List[Union[str, float]]]]
         
-        embedding_names: "np.ndarray"
+        embedding_names: Optional["np.ndarray"] = None
         
-        if len(cmdargs["embedding"]) == 1:
-            embedding_names = np.array(FileIO._check_dir(cmdargs["embedding"][0]))
-        else:
-            embedding_names = np.array(cmdargs["embedding"])
+        if embedding is not None:
+            if len(cmdargs["embedding"]) == 1:
+                embedding_names = np.array(FileIO._check_dir(cmdargs["embedding"][0]))
+            else:
+                embedding_names = np.array(cmdargs["embedding"])
                       
-        if cmdargs["downsample"] is None:
+        if cmdargs["downsample"] is None and cmdargs["downsample_index_files"] is None:
+            
+            if embedding is None:
+                raise ValueError("'embedding' and 'downsample' cannot be both None.")
         
             results= metric.Metric.run_metrics(data=data[1],
                                                embedding=embedding,
@@ -60,7 +77,6 @@ def main(cmdargs: Dict[str, Any]):
                                                embedding_names=embedding_names)
             
         else:
-            
             results = metric.Metric.run_metrics_downsample(data=data[1],
                                                            embedding=embedding,
                                                            methods=cmdargs["methods"],
@@ -68,9 +84,11 @@ def main(cmdargs: Dict[str, Any]):
                                                            labels_embedding=label_embedding,
                                                            embedding_names=embedding_names,
                                                            downsample=cmdargs["downsample"],
-                                                           n_fold=cmdargs["k_fold"])
-
-        FileIO.save_list_to_csv(results, cmdargs["out"], "eval_metric")
+                                                           n_fold=cmdargs["k_fold"],
+                                                           downsample_indices=index,
+                                                           save_indices_dir=cmdargs["save_downsample_index"])
+        if results is not None:
+            FileIO.save_list_to_csv(results, cmdargs["out"], "eval_metric")
         
     
     if cmdargs["cluster"]:
@@ -146,6 +164,10 @@ class _Arguments():
                                  help="Columns to drop while reading files.")
         self.parser.add_argument("--add_sample_index", action="store_true",
                                  help="Add sample index as first column of matrix.")
+        self.parser.add_argument("--save_downsample_index", action="store",
+                                 help="Directory path to save indicies used for downsampling.")
+        self.parser.add_argument("--downsample_index_files",nargs="+", action="store",
+                                 help="File paths to saved downsample indicies as tsv.")
         
         # DR Evaluation
         self.parser.add_argument("--downsample", type=int, action="store",
@@ -186,7 +208,9 @@ class _Arguments():
         arguments = self.parser.parse_args(args)
         arguments = vars(arguments)
         
-        arguments["out"] = self.new_dir(arguments["out"], no_new_dir=arguments["no_new_dir"])
+        if arguments["out"] is not None:
+            arguments["out"] = self.new_dir(arguments["out"], no_new_dir=arguments["no_new_dir"])
+            
         arguments["out_dims"] = 2 if arguments["out_dims"] is None else arguments["out_dims"]
         arguments["delim"] = "\t" if arguments["delim"] is None else arguments["delim"]
         arguments["perp"] = 30 if arguments["perp"] is None else arguments["perp"]
