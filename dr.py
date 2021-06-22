@@ -1,6 +1,7 @@
 import numpy as np
 import sklearn
-from sklearn.decomposition import FastICA, PCA
+from sklearn.decomposition import FastICA, PCA, FactorAnalysis
+from sklearn.manifold import Isomap
 
 import umap
 from openTSNE import TSNEEmbedding
@@ -68,7 +69,7 @@ class DR():
         methods = [each_method.lower() for each_method in methods]
         
         if "all" in methods:
-            methods = ["pca", "umap", "sklearn_tsne_original", "sklearn_tsne_bh", "open_tsne"]
+            methods = ["pca", "umap", "sklearn_tsne_original", "sklearn_tsne_bh", "open_tsne", "factor_analysis", "isomap"]
             if METHODS["fit_sne"]:
                 methods.append("fit_sne")
             if METHODS["bh_tsne"]:
@@ -254,6 +255,25 @@ class DR():
             except Exception as e:
                 print(e)
                 
+        if "factor_analysis" in methods:
+            try:
+                time_factor_analysis, embedding_factor_analysis = LinearMethods.factor_analysis(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_factor_analysis, dir_path, "factor_analysis")
+                time[0].append("factor_analysis")
+                time[1].append(time_factor_analysis)
+            except Exception as e:
+                print(e)
+                
+        if "isomap" in methods:
+            try:
+                time_isomap, embedding_isomap = NonLinearMethods.isomap(data,
+                                                                        out_dims=out_dims,
+                                                                        dist_metric=dist_metric)
+                FileIO.save_np_array(embedding_isomap, dir_path, "isomap")
+                time[0].append("factor_analysis")
+                time[1].append(time_isomap)
+            except Exception as e:
+                print(e)
                 
         FileIO.save_list_to_csv(time, out, "time")
             
@@ -335,6 +355,20 @@ class LinearMethods():
         return run_time, z
     
     
+    @staticmethod
+    def factor_analysis(data: "np.ndarray",
+                        out_dims: int):
+        
+        start_time: float = time.perf_counter()
+        
+        embedding: "np.ndarray" = FactorAnalysis(n_components=out_dims).fit_transform(data)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
+    
 class NonLinearMethods():
     
     @staticmethod
@@ -389,6 +423,25 @@ class NonLinearMethods():
         
         eval: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=False)
         embedding: "np.ndarray" = saucie.get_embedding(eval) #type: ignore
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
+    
+    @staticmethod
+    def isomap(data: "np.ndarray",
+               out_dims: int=2,
+               n_neighbors: int=5,
+               dist_metric: str="euclidean"):
+        
+        start_time: float = time.perf_counter()
+
+        embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
+                                         n_components=out_dims,
+                                         metric=dist_metric,
+                                         n_jobs=-1).fit_transform(data)[0]
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
