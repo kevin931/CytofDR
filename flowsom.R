@@ -17,6 +17,15 @@ if (length(args) > 4) {
   df <- df[, -drop_cols]
 }
 
+# Median Impute Missing Values
+if(any(is.na(df))) {
+  for (col in 1:ncol(df)){
+    if(any(is.na(df[,col]))) {
+      df[which(is.na(df[,col])), col] <- median(df[[col]], na.rm=T)
+    }
+  }
+}
+
 print(colnames(df))
 
 df_flow <- flowCore::flowFrame(as.matrix(df))
