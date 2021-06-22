@@ -9,6 +9,7 @@ import sklearn.metrics
 
 from fileio import FileIO
 
+import copy
 from typing import Optional, Any, Union, List
 
 class Metric():
@@ -46,7 +47,8 @@ class Metric():
             k (int): The number of neighbors for KNN.
 
         Returns:
-            List[List[Union[str, float]]]: A nested list of results with names of metrics, names of embedding, and metrics results.
+            List[List[Union[str, float]]]: A nested list of results with names of metrics, metrics results,
+                name of embedding, and downsample index.
         '''
         
         if downsample is None and downsample_indices is None:
@@ -63,9 +65,10 @@ class Metric():
         labels_downsample: Optional["np.ndarray"]=None
         labels_embedding_downsample: Optional["np.ndarray"]=None
         results: List[List[Union[str, float]]] = []
-        results_numeric: List[List[Any]] = []
+        results_downsample_index: List[int] = []
+        results_combined: List[List[Any]] = [[],[],[]]
         
-        n: int
+        n: int 
         for n in range(n_fold):
             
             index: "np.ndarray"
@@ -97,16 +100,16 @@ class Metric():
                                       embedding_names=embedding_names,
                                       k=k)
             
-            results_numeric.append(results[1])
+            for col in range(len(results)):
+                results_combined[col].extend(results[col])
+                
+            results_downsample_index.extend([n]*len(results[0]))
         
         if embedding is None:
             return None
-        
-        else:  
-            results_numeric = list(np.average(results_numeric, axis=0))
-            results[1] = results_numeric #type: ignore
-            
-            return results
+        else:
+            results_combined.append(results_downsample_index)
+            return results_combined
         
     
     @classmethod
