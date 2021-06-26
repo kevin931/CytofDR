@@ -1,7 +1,7 @@
 import numpy as np
 import sklearn
 from sklearn.decomposition import FastICA, PCA, FactorAnalysis
-from sklearn.manifold import Isomap
+from sklearn.manifold import Isomap, MDS
 
 import umap
 from openTSNE import TSNEEmbedding
@@ -58,7 +58,12 @@ class DR():
                     dist_metric: str="euclidean",
                     open_tsne_method="fft",
                     umap_min_dist: float=0.1,
-                    umap_neighbors: int=15
+                    umap_neighbors: int=15,
+                    SAUCIE_lambda_c: float=0.0,
+                    SAUCIE_lambda_d: float=0.0,
+                    SAUCIE_steps: int=1000,
+                    SAUCIE_batch_size: int=256,
+                    SAUCIE_learning_rate: float=0.001
                     ) -> List[List[Union[str, float]]]:
         
         dir_path: str = out+"/embedding"
@@ -69,7 +74,7 @@ class DR():
         methods = [each_method.lower() for each_method in methods]
         
         if "all" in methods:
-            methods = ["pca", "umap", "sklearn_tsne_original", "sklearn_tsne_bh", "open_tsne", "factor_analysis", "isomap"]
+            methods = ["pca", "umap", "sklearn_tsne_original", "sklearn_tsne_bh", "open_tsne", "factor_analysis", "isomap", "mds"]
             if METHODS["fit_sne"]:
                 methods.append("fit_sne")
             if METHODS["bh_tsne"]:
@@ -145,7 +150,12 @@ class DR():
                 
         if "saucie" in methods:
             try:
-                time_saucie, embedding_saucie = NonLinearMethods.saucie(data)
+                time_saucie, embedding_saucie = NonLinearMethods.saucie(data,
+                                                                        lambda_c=SAUCIE_lambda_c,
+                                                                        lambda_d=SAUCIE_lambda_d,
+                                                                        steps=SAUCIE_steps,
+                                                                        batch_size=SAUCIE_batch_size,
+                                                                        learning_rate=SAUCIE_learning_rate)
                 FileIO.save_np_array(embedding_saucie, dir_path, "SAUCIE")
                 time[0].append("SAUCIE")
                 time[1].append(time_saucie)
@@ -270,8 +280,17 @@ class DR():
                                                                         out_dims=out_dims,
                                                                         dist_metric=dist_metric)
                 FileIO.save_np_array(embedding_isomap, dir_path, "isomap")
-                time[0].append("factor_analysis")
+                time[0].append("isomap")
                 time[1].append(time_isomap)
+            except Exception as e:
+                print(e)
+                
+        if "mds" in methods:
+            try:
+                time_mds, embedding_mds = LinearMethods.MDS(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_mds, dir_path, "mds")
+                time[0].append("mds")
+                time[1].append(time_mds)
             except Exception as e:
                 print(e)
                 
@@ -369,6 +388,25 @@ class LinearMethods():
         return run_time, embedding
     
     
+    @staticmethod
+    def MDS(data: "np.ndarray",
+            out_dims: int,
+            metric: bool=True,
+            n_jobs: int=-1):
+        
+        start_time: float = time.perf_counter()
+        
+        embedding: "np.ndarray" = MDS(n_components=out_dims,
+                                      metric=metric,
+                                      n_jobs=n_jobs
+                                      ).fit_transform(data) #type:ignore
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
+    
 class NonLinearMethods():
     
     @staticmethod
@@ -413,13 +451,22 @@ class NonLinearMethods():
     
     
     @staticmethod
-    def saucie(data: "np.ndarray") -> Tuple[float, "np.ndarray"]:
+    def saucie(data: "np.ndarray",
+               lambda_c: float=0,
+               lambda_d: float=0,
+               steps: int=1000,
+               batch_size: int=256,
+               learning_rate: float=0.001
+               ) -> Tuple[float, "np.ndarray"]:
         
         start_time: float = time.perf_counter()
         
-        saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1])
+        saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1],
+                                                      lambda_c=lambda_c,
+                                                      lambda_d=lambda_d,
+                                                      learning_rate=learning_rate)
         train: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=True)
-        saucie.train(train, steps=1000)
+        saucie.train(train, steps=steps, batch_size=batch_size)
         
         eval: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=False)
         embedding: "np.ndarray" = saucie.get_embedding(eval) #type: ignore
