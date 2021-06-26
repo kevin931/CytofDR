@@ -26,7 +26,9 @@
   - [FIt-SNE](#fit-sne)
   - [SAUCIE](#saucie)
   - [BH t-SNE](#bh-t-sne)
+  - [MEDist](#medist)
 - [Updates](#updates)
+  - [June 26, 2021](#june-26-2021)
   - [June 14, 2021](#june-14-2021)
   - [June 10, 2021](#june-10-2021)
 - [Future Directions](#future-directions)
@@ -54,6 +56,7 @@ See below for notes on how to get these installed.
     - fit-SNE
     - BH t-SNE
     - SAUCIE
+    - MEDist
 
 ### Conda Installation
 
@@ -81,6 +84,7 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--cluster`` | None | Program Mode | Cluster the input file. |
 | ``--evaluate`` | None | Program Mode | Evaluate embedding results. |
 | ``--dr`` | None | Program Mode | Running dimension reduction algorithms. |
+| ``--build_annoy`` | None | Program Mode | Build ANNOY models for the input file(s). |
 | ``-m`` or ``methods`` | Strings | Methods | Methods to run: applies to all modules. |
 | ``-f`` or ``--files`` | Strings | File IO | Path to directory or original files. |
 | ``--concat`` | None | File IO | Concatenate files in case mutiple files are read. |
@@ -96,10 +100,12 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--label`` | Strings | File IO | Load label from directory or file path for evaluation. | 
 | ``--label_col_names`` | None | File IO | Whether the first line of label is column names. |
 | ``--label_drop_col`` | Integers | File IO | The indicies of columns of label to be dropped. |
+| ``--file_annoy`` | String | File IO | Path to the pre-trained ANNOY model of the input data. |
 | ``--downsample`` | Integer | Evaluation | The number of n to randomly down-sample in evaluation. | 
 | ``--k-fold`` | Integer | Evaluation | The number of times to repeat down-sampling and compute average during evaluation. |
 | ``--save_downsample_index`` | String | Evaluation | Save the index of downsampling to the supplied directory. |
 | ``--downsample_index_files`` | String | Evaluation | Path/Directory to previously saved downsample indicies. |
+| ``--eval_k_neighbors`` | Int | Evaluation | The number of neighbors to consider for evaluation |
 | ``--out_dims`` | Integer | DR Parameters | Output dimension. (Default: 2) |
 | ``--perp`` | Integers | DR Parameters | Perplexity or a list of perplexities for t-SNE. (Default: 30) | 
 | ``--early_exaggeration`` | Float | DR Parameters | Early exaggeration factor for t-SNE. (Default: 12.0) |
@@ -111,6 +117,11 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--dist_metric`` | String | DR Parameters | The distance metric of tsne and UMAP. (Default: Euclidean) |
 | ``--umap_min_dist`` | Float | DR Parameters | The minimum distance between points for UMAP. (Default: 0.1) |
 | ``--umap_neighbors`` | Integer | DR Parameters | The number of neighbors for UMAP. (Default: 15) |
+| ``--SAUCIE_lambda_c`` | Float | DR Parameters | Information dimension regularization for SAUCIE. (Default: 0) |
+| ``--SAUCIE_lambda_d`` | Float | DR Parameters | Intracluster distance regularization for SAUCIE. (Default: 0) |
+| ``--SAUCIE_learning_rate`` | Float | DR Parameters | Learning rate for SAUCIE. (Default: 0.001) |
+| ``--SAUCIE_steps`` | int | DR Parameters | Maximum iterations of SAUCIE. (Default: 256) |
+| ``--SAUCIE_batch_size`` | int | DR Parameters | Batch size for SAUCIE. (Default: 1000) |
 
 ### File IO
 Only expression matrices saved in the format of text files (inclusing csv and tsv) are supported. File IO and analyses/evaluation are integrated into one step. In other words, you don't have to load file or save files separately if you are using the command-line mode.
@@ -167,6 +178,18 @@ python main.py \
 ```
 
 Note: It is acceptable to pass in a directory for ``-f`` and ``--embedding``, in which case call files in the directory will be read. Also, flags such as ``--delim``, ``file_drop_col``, and ``--file_col_names`` are optional.
+
+### Build ANNOY Model for Input Files
+
+ANNOY can be built at the time of evaluation, but for efficiency, it can be built and saved independently. To do so,
+
+```shell
+
+python main.py \
+    -f <PATH TO FILE> \
+    --build_annoy \
+    -o <PATH TO OUTPUT DIRECTORY>
+```
 
 ### Dimension Reduction
 To perform dimension reduction, the following arguments are required: ``-f``, ``-o``, ``--dr``, and ``-m``. The acceptable strings for methods are: ``pca``, ``ica``, ``umap``, ``sklearn_tsne_original``, ``sklearn_tsne_bh``, ``open_tsne``, ``fit_sne``, ``bh_tsne``, ``saucie``, and ``zifa``.  (Note: ``fit_sne``, ``bh_tsne``, ``saucie`` and ``zifa`` need additional installations. See instructions below.)
@@ -332,7 +355,20 @@ The project already supports two implementations of BH t-SNE: sklearn and openTS
 
 However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
 
+### MEDist
+
+This is currently a private python module unpublished, but it is required for DR evaluation. Release is planned in the future. For access, contact author.
+
 ## Updates
+
+### June 26, 2021
+- Added support for Isomap and MDS
+- Added SAUCIE parameter options on the command line.
+- ANNOY is used in place of sklearn's KNN for speed.
+- Changed distance metric in ``metric`` from full pairwise distance to Point Cluster Distance.
+- Neighborhood trustworthiness is removed from ``metric.Metric.run_metrics()`` method
+- Added the ``util`` module for handling utility functions
+- More commandline options added to accomodate new changes.
 ### June 14, 2021
 - Added FlowSome.R and documentation in README. 
 - Optimized README layout
