@@ -1,8 +1,10 @@
 import numpy as np
+from annoy import AnnoyIndex
 import dr
 import metric
 import cluster
 from fileio import FileIO
+from util import DownSample, Annoy
 
 import argparse
 from typing import Optional, Union, List, Dict, Any
@@ -16,27 +18,37 @@ def main(cmdargs: Dict[str, Any]):
                                                 drop_columns=cmdargs["file_drop_col"],
                                                 delim=cmdargs["delim"])
     
+    if cmdargs["build_annoy"]:
+        model: "AnnoyIndex" = Annoy.build_annoy(data=data[1])
+        annoy_path: str = cmdargs["out"] + "/annoy.ann"
+        Annoy.save_annoy(model, annoy_path)
+    
+    if cmdargs["embedding"] is None and cmdargs["downsample"] is not None:
+        DownSample.downsample_from_data(data=data[1],
+                                        n=cmdargs["downsample"],
+                                        n_fold=cmdargs["k_fold"],
+                                        save_downsample_index=cmdargs["save_downsample_index"])
+    
     if cmdargs["evaluate"]:
-        
-        embedding: Optional[List["np.ndarray"]] = None
+        embedding: Optional[List["np.ndarray"]]
         label: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         label_embedding: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         index: Optional[List["np.ndarray"]] = None
         
-        if cmdargs["embedding"] is not None:
-            embedding = FileIO.load_data(files=cmdargs["embedding"],
-                                         col_names=cmdargs["embedding_col_names"],
-                                         concat=cmdargs["concat"],
-                                         add_sample_index=cmdargs["add_sample_index"],
-                                         drop_columns=cmdargs["embedding_drop_col"])
-            embedding.pop(0)
+        embedding = FileIO.load_data(files=cmdargs["embedding"],
+                                        col_names=cmdargs["embedding_col_names"],
+                                        concat=cmdargs["concat"],
+                                        add_sample_index=cmdargs["add_sample_index"],
+                                        drop_columns=cmdargs["embedding_drop_col"])
+        embedding.pop(0)
         
         if cmdargs["label"] is not None:
             label = FileIO.load_data(files=cmdargs["label"],
                                      col_names=cmdargs["label_col_names"],
                                      concat=cmdargs["concat"],
                                      add_sample_index=cmdargs["add_sample_index"],
-                                     drop_columns=cmdargs["label_drop_col"])[1]
+                                     drop_columns=cmdargs["label_drop_col"],
+                                     dtype=int)[1]
             
         if cmdargs["label_embedding"] is not None:
             label_embedding = FileIO.load_data(files=cmdargs["label_embedding"],
@@ -50,31 +62,27 @@ def main(cmdargs: Dict[str, Any]):
                                      col_names=False,
                                      concat=False,
                                      add_sample_index=False,
-                                     drop_columns=None)
+                                     drop_columns=None,
+                                     dtype=int)
             index.pop(0)
            
-
-        results: Optional[List[List[Union[str, float]]]]
-        
+        results: List[List[Union[str, float]]]
         embedding_names: Optional["np.ndarray"] = None
         
-        if embedding is not None:
-            if len(cmdargs["embedding"]) == 1:
-                embedding_names = np.array(FileIO._check_dir(cmdargs["embedding"][0]))
-            else:
-                embedding_names = np.array(cmdargs["embedding"])
+        if len(cmdargs["embedding"]) == 1:
+            embedding_names = np.array(FileIO._check_dir(cmdargs["embedding"][0]))
+        else:
+            embedding_names = np.array(cmdargs["embedding"])
                       
         if cmdargs["downsample"] is None and cmdargs["downsample_index_files"] is None:
-            
-            if embedding is None:
-                raise ValueError("'embedding' and 'downsample' cannot be both None.")
-        
             results= metric.Metric.run_metrics(data=data[1],
                                                embedding=embedding,
                                                methods=cmdargs["methods"],
                                                labels=label,
                                                labels_embedding=label_embedding,
-                                               embedding_names=embedding_names)
+                                               embedding_names=embedding_names, 
+                                               data_annoy_path=cmdargs["file_annoy"],
+                                               k=cmdargs["eval_k_neighbors"])
             
         else:
             results = metric.Metric.run_metrics_downsample(data=data[1],
@@ -86,16 +94,16 @@ def main(cmdargs: Dict[str, Any]):
                                                            downsample=cmdargs["downsample"],
                                                            n_fold=cmdargs["k_fold"],
                                                            downsample_indices=index,
-                                                           save_indices_dir=cmdargs["save_downsample_index"])
-        if results is not None:
-            FileIO.save_list_to_csv(results, cmdargs["out"], "eval_metric")
+                                                           save_indices_dir=cmdargs["save_downsample_index"], 
+                                                           data_annoy_path=cmdargs["file_annoy"],
+                                                           k=cmdargs["eval_k_neighbors"])
+            
+        FileIO.save_list_to_csv(results, cmdargs["out"], "eval_metric")
         
-    
     if cmdargs["cluster"]:
         cluster.Cluster.cluster(data[1],
                                 methods=cmdargs["methods"],
                                 out=cmdargs["out"])
-    
     
     if cmdargs["dr"]:
         dr.DR.run_methods(data=data[1],
@@ -111,7 +119,12 @@ def main(cmdargs: Dict[str, Any]):
                           open_tsne_method=cmdargs["open_tsne_method"],
                           dist_metric=cmdargs["dist_metric"],
                           umap_min_dist=cmdargs["umap_min_dist"],
-                          umap_neighbors=cmdargs["umap_neighbors"])
+                          umap_neighbors=cmdargs["umap_neighbors"],
+                          SAUCIE_lambda_c=cmdargs["SAUCIE_lambda_c"],
+                          SAUCIE_lambda_d=cmdargs["SAUCIE_lambda_d"],
+                          SAUCIE_steps=cmdargs["SAUCIE_steps"],
+                          SAUCIE_batch_size=cmdargs["SAUCIE_batch_size"],
+                          SAUCIE_learning_rate=cmdargs["SAUCIE_learning_rate"])
         
         
 class _Arguments():
@@ -127,7 +140,9 @@ class _Arguments():
         self.parser.add_argument("--evaluate", action="store_true",
                                  help="Evaluate embedding results.")
         self.parser.add_argument("--dr", action="store_true",
-                                 help="Running dimension reduction algorithms.")          
+                                 help="Running dimension reduction algorithms.")
+        self.parser.add_argument("--build_annoy", action="store_true",
+                                 help="Build Annoy model.")   
 
         # Methods: For all modes
         self.parser.add_argument("-m", "--methods", nargs="+", action="store",
@@ -160,20 +175,24 @@ class _Arguments():
                                  help="Whether file's first row is names.")
         self.parser.add_argument("--file_drop_col", type=int, nargs="+", action="store",
                                  help="Columns to drop while reading files.")
+        self.parser.add_argument("--file_annoy", type=str, action="store",
+                                 help="Path to the file's Annoy model.")
         self.parser.add_argument("--embedding_drop_col", type=int, nargs="+", action="store",
                                  help="Columns to drop while reading files.")
         self.parser.add_argument("--add_sample_index", action="store_true",
                                  help="Add sample index as first column of matrix.")
-        self.parser.add_argument("--save_downsample_index", action="store",
-                                 help="Directory path to save indicies used for downsampling.")
-        self.parser.add_argument("--downsample_index_files",nargs="+", action="store",
-                                 help="File paths to saved downsample indicies as tsv.")
         
         # DR Evaluation
         self.parser.add_argument("--downsample", type=int, action="store",
                                  help="Downsample input file and embedding with n.")
         self.parser.add_argument("--k_fold", type=int, action="store",
                                  help="Repeatedly downsample k times to evaluate results.")
+        self.parser.add_argument("--save_downsample_index", action="store",
+                                 help="Directory path to save indicies used for downsampling.")
+        self.parser.add_argument("--downsample_index_files",nargs="+", action="store",
+                                 help="File paths or directory path to saved downsample indicies as tsv.")
+        self.parser.add_argument("--eval_k_neighbors", type=int, action="store",
+                                 help="Number of neighbors for local structure preservation metrics.")
         
         # Dimension Reduction Parameters
         self.parser.add_argument("--out_dims", type=int, action="store",
@@ -200,7 +219,19 @@ class _Arguments():
                                  help="min_dist for UMAP.")
         self.parser.add_argument("--umap_neighbors", type=int, action="store",
                                  help="Number of neighbors for UMAP.")
-
+        
+        #SAUCIE
+        self.parser.add_argument("--SAUCIE_lambda_c", type=float, action="store",
+                                 help="Information dimension regularization for SAUCIE.")
+        self.parser.add_argument("--SAUCIE_lambda_d", type=float, action="store",
+                                 help="Intracluster distance regularization for SAUCIE.")
+        self.parser.add_argument("--SAUCIE_learning_rate", type=float, action="store",
+                                 help="Learning rate for SAUCIE.")
+        self.parser.add_argument("--SAUCIE_steps", type=int, action="store",
+                                 help="IMaximum iteration for SAUCIE.")
+        self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store",
+                                 help="Batch size for SAUCIE.")
+        
 
     def parse(self, args: Optional[List[str]]=None) -> Dict[str, Optional[str]]:
         # Parse arguments
@@ -223,6 +254,11 @@ class _Arguments():
         arguments["dist_metric"] = "euclidean" if arguments["dist_metric"] is None else arguments["dist_metric"]
         arguments["umap_min_dist"] = 0.1 if arguments["umap_min_dist"] is None else arguments["umap_min_dist"]
         arguments["umap_neighbors"] = 15 if arguments["umap_neighbors"] is None else arguments["umap_neighbors"]
+        arguments["SAUCIE_lambda_c"] = 0 if arguments["SAUCIE_lambda_c"] is None else arguments["SAUCIE_lambda_c"]
+        arguments["SAUCIE_lambda_d"] = 0 if arguments["SAUCIE_lambda_d"] is None else arguments["SAUCIE_lambda_d"]
+        arguments["SAUCIE_learning_rate"] = 0.001 if arguments["SAUCIE_learning_rate"] is None else arguments["SAUCIE_learning_rate"]
+        arguments["SAUCIE_batch_size"] = 256 if arguments["SAUCIE_batch_size"] is None else arguments["SAUCIE_batch_size"]
+        arguments["SAUCIE_steps"] = 1000 if arguments["SAUCIE_steps"] is None else arguments["SAUCIE_steps"]
 
         return arguments
     
