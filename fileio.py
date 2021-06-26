@@ -14,7 +14,8 @@ class FileIO():
                   col_names: bool=True,
                   add_sample_index: bool=True,
                   drop_columns: Optional[Union[int, List[int]]]=None,
-                  delim: str="\t"
+                  delim: str="\t",
+                  dtype = float
                   ) -> List["np.ndarray"]:
     
         exprs: Optional["np.ndarray"] = None
@@ -43,7 +44,7 @@ class FileIO():
                     return_files.append(np.array(None))
             
             # Load Data and add sample index
-            f: "np.ndarray" = np.loadtxt(fname=file, dtype="float", skiprows=skiprows, delimiter=delim)
+            f: "np.ndarray" = np.loadtxt(fname=file, dtype=dtype, skiprows=skiprows, delimiter=delim)
             
             if add_sample_index:
                 index: "np.ndarray" = np.repeat(i, f.shape[0]).reshape(f.shape[0],1)
