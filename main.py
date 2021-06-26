@@ -129,11 +129,9 @@ def main(cmdargs: Dict[str, Any]):
         
 class _Arguments():
     # This class parses command line arguments.
-
     def __init__(self) -> None:
         
         self.parser = argparse.ArgumentParser(description="Command Line Arguments")
-        
         # Program Mode
         self.parser.add_argument("--cluster", action="store_true",
                                  help="Cluster the input file.")
@@ -228,14 +226,13 @@ class _Arguments():
         self.parser.add_argument("--SAUCIE_learning_rate", type=float, action="store",
                                  help="Learning rate for SAUCIE.")
         self.parser.add_argument("--SAUCIE_steps", type=int, action="store",
-                                 help="IMaximum iteration for SAUCIE.")
+                                 help="Maximum iteration for SAUCIE.")
         self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store",
                                  help="Batch size for SAUCIE.")
         
 
     def parse(self, args: Optional[List[str]]=None) -> Dict[str, Optional[str]]:
         # Parse arguments
-
         arguments = self.parser.parse_args(args)
         arguments = vars(arguments)
         
@@ -264,6 +261,7 @@ class _Arguments():
     
     
     def new_dir(self, path:str, no_new_dir:bool):
+        # Create new directory or return the current path str.
         if no_new_dir:
             return path
         else:
