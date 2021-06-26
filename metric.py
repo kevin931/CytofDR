@@ -40,12 +40,15 @@ class Metric():
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             downsample (int): The sample size of downsampling.
+            downsample_indices (List["np.ndarray], optional): A list of indicies for repeated downsampling.
             n_fold (int): Downsample n times and average the results.
             methods (Union[str, List[str]]): The metrics to run.
             labels ("np.ndarray", optional): True labels or labels from the original space.
             labels_embedding ("np.ndarray", optional): Classification or clustering labels from the embedding space.
             embedding_names ("np.ndarray", optional): Names of the embedding methods to be saved.
             k (int): The number of neighbors for KNN.
+            save_indices_dir (str, optional): The directory to save indices generated, if previous indices are not provided.
+            data_annoy_path (str, optional): The file path to input data's saved ANNOY model.
 
         Returns:
             List[List[Union[str, float]]]: A nested list of results with names of metrics, metrics results,
@@ -130,6 +133,7 @@ class Metric():
             labels ("np.ndarray", optional): True labels or labels from the original space.
             labels_embedding ("np.ndarray", optional): Classification or clustering labels from the embedding space.
             embedding_names ("np.ndarray", optional): Names of the embedding methods to be saved.
+            data_annoy_path (str, optional): The path to the saved ANNOY model for input data.
             k (int, optional): The number of neighbors for KNN.
 
         Returns:
@@ -260,6 +264,20 @@ class Metric():
                      labels: "np.ndarray"
                      ) -> Tuple["np.ndarray", List["np.ndarray"]]:
         
+        '''Calculate Point Cluster Distanced (PCD).
+        
+        Utility wrapper method to compute the Point Cluster Distance. The point cluster distance computes the
+        distance between each point and each cluster's centroid.
+        
+        Parameters:
+            data (np.ndarray): The input high-dimensional array.
+            embedding (np.ndarray): The low-dimensional embedding.
+            labels ("np.ndarray"): True labels or labels from the original space.
+
+        Returns:
+            Tuple["np.ndarray", List["np.ndarray"]]: A tuple with PCD of original space data and lower dimension embedding.
+        '''
+        
         data_distance: "np.ndarray"
         embedding_distance: List["np.ndarray"]
         
@@ -278,6 +296,20 @@ class Metric():
                     embedding: List["np.ndarray"],
                     data_annoy_path: Optional[str]=None,
                     k: int=5) -> Tuple["np.ndarray", List["np.ndarray"]]:
+        
+        '''Build ANNOY and returns nearest neighbors.
+        
+        This is a utility function for building ANNOY models and returning the nearest-neighbor matrices for original
+        space data and low-dimensional embedding. 
+        
+        Parameters:
+            data (np.ndarray): The input high-dimensional array.
+            embedding (np.ndarray): The low-dimensional embedding.
+            data_annoy_path (str): The path to pre-built ANNOY model for original data.
+
+        Returns:
+            Tuple["np.ndarray", List["np.ndarray"]]: A tuple with nearest-neighbor matrices of original space data and lower dimension embedding.
+        '''
         
         if data_annoy_path is not None:
             annoy_model_data = Annoy.load_annoy(path=data_annoy_path, ncol=data.shape[1])
@@ -435,15 +467,9 @@ class Metric():
         lower the NPE, the more similar the embedding and the original data are.
         
         Parameters:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
+            data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
+            embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
             labels (np.ndarray): The class labels of each observation.
-            k (int, optional): The number of neighbors for KNN. This is required when either knn_model_data
-                or knn_model_embedding is not supplied.
-            knn_model_data (sklearn.neighbors.NearestNeighbors, optional):
-                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``data``.
-            knn_model_embedding (sklearn.neighbors.NearestNeighbors, optional): 
-                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``embedding``.
 
         Returns:
             float: Neighborhood proportion error.
@@ -490,17 +516,11 @@ class Metric():
         agreement without any scaling.
         
         Parameters:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
-            k (int, optional): The number of neighbors for KNN. This is required when either knn_model_data
-                or knn_model_embedding is not supplied.
-            knn_model_data (sklearn.neighbors.NearestNeighbors, optional):
-                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``data``.
-            knn_model_embedding (sklearn.neighbors.NearestNeighbors, optional): 
-                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``embedding``.
+            data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
+            embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
 
         Returns:
-            agreement (float): Neighborhood agreement.
+            float: Neighborhood agreement.
         
         '''
         
@@ -528,11 +548,12 @@ class Metric():
         is scaled between 0 and 1 with a higher score reflecting a more trustworthy embedding.
         
         Parameters:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
+            data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
+            embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
+            dist_data (np.ndarray): A pairwise distance matrix for the original data.
 
         Returns:
-            agreement (float): Neighborhood agreement.
+            float: Neighborhood trustworthiness.
         
         '''
         
