@@ -2,17 +2,16 @@ import numpy as np
 from annoy import AnnoyIndex
 
 from fileio import FileIO
-
-from typing import Literal, List
+from typing import List
 
 class Annoy():
     
     @staticmethod
     def build_annoy(data: "np.ndarray",
-                    metric: Literal["angular", "euclidean", "manhattan", "dot", "hamming"] = "angular",
+                    metric: str = "angular",
                     n_trees: int=10) -> "AnnoyIndex":
         
-        model: "AnnoyIndex" = AnnoyIndex(data.shape[1], metric = metric)
+        model: "AnnoyIndex" = AnnoyIndex(data.shape[1], metric = metric) #type: ignore
         for i in range(data.shape[0]):
             model.add_item(i, data[i])
         model.build(n_trees=n_trees, n_jobs=-1)
@@ -22,10 +21,10 @@ class Annoy():
     @staticmethod
     def load_annoy(path: str,
                    ncol: int,
-                   metric: Literal["angular", "euclidean", "manhattan", "dot", "hamming"] = "angular"
+                   metric: str = "angular"
                    ) -> "AnnoyIndex":
         
-        model: "AnnoyIndex" = AnnoyIndex(ncol, metric)
+        model: "AnnoyIndex" = AnnoyIndex(ncol, metric) #type: ignore
         model.load(path)
         return model
     
