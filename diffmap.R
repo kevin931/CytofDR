@@ -6,7 +6,7 @@ args <- commandArgs(trailingOnly = TRUE)
 read_path <- args[1]
 dist_metric <- args[2]
 save_path <- args[3]
-col_names <- args[4]
+col_names <- as.logical(args[4])
 
 embedding_path <- paste0(save_path, "/embedding/")
 dir.create(embedding_path, recursive = TRUE)
