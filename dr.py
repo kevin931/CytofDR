@@ -488,7 +488,7 @@ class NonLinearMethods():
         embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
                                          n_components=out_dims,
                                          metric=dist_metric,
-                                         n_jobs=-1).fit_transform(data)[0]
+                                         n_jobs=-1).fit_transform(data)
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
