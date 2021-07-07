@@ -98,13 +98,19 @@ class FileIO():
     def save_np_array(array: "np.ndarray",
                       dir_path: str,
                       file_name: str,
+                      col_names: Optional["np.ndarray"]=None,
                       auto_add_extension: bool=True) -> None:
     
         save_path: str = "{}/{}".format(dir_path, file_name)
         if auto_add_extension:
             save_path = save_path + ".txt"
         print("Saving file to: " + save_path)
-        np.savetxt(save_path, array, delimiter="\t")
+        
+        with open(save_path, "w") as f:
+            if col_names is not None:
+                f.write("\t".join(list(col_names)))
+                f.write("\n")
+            np.savetxt(f, array, delimiter="\t")
             
     
     @staticmethod

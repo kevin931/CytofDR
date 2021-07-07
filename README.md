@@ -85,6 +85,7 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--evaluate`` | None | Program Mode | Evaluate embedding results. |
 | ``--dr`` | None | Program Mode | Running dimension reduction algorithms. |
 | ``--build_annoy`` | None | Program Mode | Build ANNOY models for the input file(s). |
+| ``--split_train`` | float | Program Mode | Split the input file with the provided percentage of training data and the remaining as test data. Column names will be saved. |
 | ``-m`` or ``methods`` | Strings | Methods | Methods to run: applies to all modules. |
 | ``-f`` or ``--files`` | Strings | File IO | Path to directory or original files. |
 | ``--concat`` | None | File IO | Concatenate files in case mutiple files are read. |

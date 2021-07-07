@@ -100,6 +100,14 @@ def main(cmdargs: Dict[str, Any]):
             
         FileIO.save_list_to_csv(results, cmdargs["out"], "eval_metric")
         
+    if cmdargs["split_train"] is not None:
+        if cmdargs["split_train"] > 1 or cmdargs["split_train"]<0:
+            raise ValueError("Training data percentage has to be between 0 and 1.")
+        DownSample.train_test_split(data=data[1],
+                                    train_percent=cmdargs["split_train"],
+                                    col_names=data[0],
+                                    out=cmdargs["out"])
+        
     if cmdargs["cluster"]:
         cluster.Cluster.cluster(data[1],
                                 methods=cmdargs["methods"],
@@ -140,7 +148,9 @@ class _Arguments():
         self.parser.add_argument("--dr", action="store_true",
                                  help="Running dimension reduction algorithms.")
         self.parser.add_argument("--build_annoy", action="store_true",
-                                 help="Build Annoy model.")   
+                                 help="Build Annoy model.")
+        self.parser.add_argument("--split_train", type=float, action="store",
+                                 help="Train-test split of input data and save to output directory.")
 
         # Methods: For all modes
         self.parser.add_argument("-m", "--methods", nargs="+", action="store",
