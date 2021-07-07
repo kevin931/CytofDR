@@ -149,6 +149,12 @@ class Metric():
             
         if embedding_names is None:
             embedding_names = np.array(list(map(str, range(len(embedding)))))
+        
+        i: int
+        e: "np.ndarray"    
+        data = cls._median_impute(data)
+        for i, e in enumerate(embedding):
+            embedding[i] = cls._median_impute(e)
             
         if "all" in methods:
             methods = ["knn", "neighborhood_agreement"]
@@ -172,7 +178,8 @@ class Metric():
         
         for i in range(embedding_names.shape[0]):
             
-            e: "np.ndarray" = embedding[i]
+            e = embedding[i]
+            e = cls._median_impute(e)
              
             if "pearsonr" in methods:
                 print("running pearsonr")
@@ -256,6 +263,22 @@ class Metric():
                 results[2].append(embedding_names[i])
             
         return results
+    
+    
+    @staticmethod
+    def _median_impute(data: "np.ndarray"):
+        nan: "np.ndarray" = np.unique(np.where(np.isnan(data))[0])
+        
+        if nan.size == 0:
+            return data
+        else:
+            median: "np.ndarray" = np.nanmedian(data, axis=0)
+            print(median)
+            i: int
+            for i in nan:
+                data[i] = median
+            print(np.where(np.isnan(data)))
+            return data
     
     
     @staticmethod
