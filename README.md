@@ -44,6 +44,7 @@ This is a work in progress for CyTOF analyses and benchmarking.
 **Python (3.6, 3.7, 3.8) and pip (or conda)** are required. This is not yet a python package. So, ``git pull`` or manual downloading is required to get this working. But before you do that, make sure that you have all the dependencies installed.
 
 ### Required Dependencies
+
     - numpy
     - scikit-learn
     - openTSNE
@@ -53,6 +54,7 @@ This is a work in progress for CyTOF analyses and benchmarking.
 
 ### Optional Dependencies
 See below for notes on how to get these installed.
+
     - fit-SNE
     - BH t-SNE
     - SAUCIE
@@ -73,6 +75,28 @@ To install all the required dependencies, run the following commands:
     conda install -c conda-forge openTSNE umap-learn
 
     pip install phenograph
+```
+
+### R Packages
+
+Not all methods are implemented in Python. This project makes use of R for some of its functionalities. The following packages from **bioconductor** are required for ``flowsom.R`` and ``diffmap.R``:
+
+    - destiny
+    - FlowSOM
+
+From **CRAN**, install the following package:
+
+    - tidyverse
+
+You can install the packages using the following commands:
+
+```R
+# Bioconductor
+install.packages("BiocManager")
+BiocManager::install("destiny")
+BioManager::install("FlowSOM")
+# CRAN
+install.packages("tidyverse")
 ```
 
 ## Usage
@@ -282,10 +306,10 @@ python main.py \
 ```
 
 ## Special Cases with R
-There are a few special cases that are not supported by the main python programs since they are implemented with R. 
+There are a few special cases that are not supported by the main python programs since they are implemented with R. Installation of R itself and R packages are required for both R scripts. Please see the appropriate sections for installation.
 ### Diffusion Map
 
-Currently, we only included the implementation of diffusion map in R with the ``destiny`` package. To run diffusion map, you will need to install ``destiny`` from ``bioconductor``. ``diffmap.R`` requires three mandatory commandline arguments: the path to original file, the distance metric, and the directory to save the file.
+To run diffusion map, you will need to run ``diffmap.R``, which requires three mandatory commandline arguments: the path to original file, the distance metric, and the directory to save the file.
 
 ```shell
 Rscript diffmap.R \
@@ -297,7 +321,7 @@ Rscript diffmap.R \
 
 Note: This R implementation does not have as many options and checks as the python scripts.
 ### FlowSOM CLustering
-FlowSOM iscurrently supported with an R script. To run FlowSOM, 
+FlowSOM is currently supported with an R script. To run FlowSOM, 
 
 ```shell 
 Rscript ./flowsom.R \
@@ -358,7 +382,7 @@ However, if you would like to use the original implementation from [here](https:
 
 ### MEDist
 
-This is currently a private python module unpublished, but it is required for DR evaluation. Release is planned in the future. For access, contact author.
+This is currently a private python module unpublished, but it is required for DR evaluation. Release is planned in the future. For access, contact author. To install, just clone the repository into the current working directory.
 
 ## Updates
 
