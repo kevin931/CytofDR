@@ -1,3 +1,4 @@
+from MEDist import MEDist
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -7,10 +8,17 @@ import scipy.spatial
 import scipy.stats
 import sklearn.metrics
 
-from MEDist.MEDist import approximate
 from util import Annoy, DownSample
-
 from typing import Optional, Any, Union, List, Tuple
+
+MEDIST: bool = False
+
+try:
+    from MEDist.MEDist import approximate
+    MEDIST = True
+except ImportError:
+    print("No MEDist implementation.")
+
 
 class Metric():
     
@@ -158,14 +166,17 @@ class Metric():
             
         if "all" in methods:
             methods = ["knn", "neighborhood_agreement"]
-            if labels is not None:
+            if labels is not None and MEDIST:
                 methods.extend(["npe", "random_forest", "silhouette", "pearsonr", "spearmanr", "residual_variance", "emd"])
+            elif labels is not None:
+                methods.extend(["npe", "random_forest", "silhouette"])
             if labels is not None and labels_embedding is not None:
                 methods.extend(["ari", "mni"])
                 
         data_distance: Optional["np.ndarray"] = None
         embedding_distance: Optional[List["np.ndarray"]] = None
         if any(m in methods for m in ["pearsonr", "spearmanr", "residual_variance", "emd"]):
+            assert MEDIST
             assert labels is not None
             data_distance, embedding_distance = cls.pcd_distance(data, embedding, labels, )
         
