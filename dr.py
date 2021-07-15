@@ -200,9 +200,9 @@ class DR():
         if "bh_tsne" in methods:
             try:
                 time_bh_tsne, embedding_bh_tsne = TSNE.bh_tsne(data,
-                                                                out_dims=out_dims,
-                                                                perp=perp[0],
-                                                                max_iter=max_iter)
+                                                               out_dims=out_dims,
+                                                               perp=perp[0],
+                                                               max_iter=max_iter)
                 FileIO.save_np_array(embedding_bh_tsne, dir_path, "bh_tsne")
                 time[0].append("bh_tsne")
                 time[1].append(time_bh_tsne)
@@ -220,13 +220,14 @@ class DR():
                 
             try:
                 time_fit_sne, embedding_fit_sne = TSNE.fit_sne(data,
-                                                                out_dims=out_dims,
-                                                                perp=perp_fit_sne,
-                                                                early_exaggeration=early_exaggeration,
-                                                                stop_early_exag_iter=early_exaggeration_iter,
-                                                                max_iter=max_iter,
-                                                                perplexity_list=perp_list, #type:ignore
-                                                                init=init) 
+                                                               out_dims=out_dims,
+                                                               perp=perp_fit_sne,
+                                                               early_exaggeration=early_exaggeration,
+                                                               stop_early_exag_iter=early_exaggeration_iter,
+                                                               learning_rate=tsne_learning_rate,
+                                                               max_iter=max_iter,
+                                                               perplexity_list=perp_list, #type:ignore
+                                                               init=init) 
                 FileIO.save_np_array(embedding_fit_sne, dir_path, "fit_sne")
                 time[0].append("fit_sne")
                 time[1].append(time_fit_sne)
@@ -242,14 +243,15 @@ class DR():
         if "open_tsne" in methods:
             try:
                 time_open_tsne, embedding_open_tsne = TSNE.open_tsne(data,
-                                                                        out_dims=out_dims,
-                                                                        perp=perp,
-                                                                        early_exaggeration=early_exaggeration,
-                                                                        early_exaggeration_iter=early_exaggeration_iter,
-                                                                        max_iter=max_iter,
-                                                                        init=init,
-                                                                        negative_gradient_method=open_tsne_method,
-                                                                        metric=dist_metric)
+                                                                     out_dims=out_dims,
+                                                                     perp=perp,
+                                                                     early_exaggeration=early_exaggeration,
+                                                                     early_exaggeration_iter=early_exaggeration_iter,
+                                                                     learning_rate=tsne_learning_rate,
+                                                                     max_iter=max_iter,
+                                                                     init=init,
+                                                                     negative_gradient_method=open_tsne_method,
+                                                                     metric=dist_metric)
                 FileIO.save_np_array(embedding_open_tsne, dir_path, "open_tsne")
                 time[0].append("open_tsne")
                 time[1].append(time_open_tsne)
