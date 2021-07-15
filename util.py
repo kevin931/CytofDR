@@ -39,17 +39,25 @@ class DownSample():
     @staticmethod
     def downsample_from_data(data: "np.ndarray",
                              n: int,
+                             out: str,
+                             index_out: Optional[str]=None,
                              n_fold: int=1,
-                             save_downsample_index: str=None) -> List["np.ndarray"]:
+                             replace: bool=False,
+                             data_col_names: Optional["np.ndarray"]=None) -> List["np.ndarray"]:
         
         index_list = []
         i: int
         for i in range(n_fold):
-            index: "np.ndarray" = np.random.choice(data.shape[0], size=n)
+            index: "np.ndarray" = np.random.choice(data.shape[0], size=n, replace=replace)
             index_list.append(index)
-            if save_downsample_index is not None:
-                index_name: str = "index_{}".format(i)
-                FileIO.save_np_array(index, save_downsample_index, file_name=index_name)
+            
+            data_downsample: "np.ndarray" = data[index]
+            data_name: str = "sample_{}_{}".format(n, i)
+            FileIO.save_np_array(data_downsample, out, file_name=data_name, col_names=data_col_names)
+            
+            if index_out is not None:
+                index_name: str = "index_{}_{}".format(n, i)
+                FileIO.save_np_array(index, index_out, file_name=index_name, dtype="%i")
                 
         return index_list
     
@@ -78,5 +86,3 @@ class DownSample():
             FileIO.save_np_array(data_test_index, out, "test_index")
             
         return data_train, data_test
-            
-        

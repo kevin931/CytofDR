@@ -5,15 +5,17 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [About](#about)
 - [Installation](#installation)
   - [Required Dependencies](#required-dependencies)
   - [Optional Dependencies](#optional-dependencies)
   - [Conda Installation](#conda-installation)
+  - [R Packages](#r-packages)
 - [Usage](#usage)
   - [Command-line Arguments](#command-line-arguments)
   - [File IO](#file-io)
+  - [Downsampling Data](#downsampling-data)
+  - [Build ANNOY Model for Input Files](#build-annoy-model-for-input-files)
   - [Dimension Reduction](#dimension-reduction)
   - [Clustering](#clustering)
   - [DR Evaluation](#dr-evaluation)
@@ -110,6 +112,7 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--dr`` | None | Program Mode | Running dimension reduction algorithms. |
 | ``--build_annoy`` | None | Program Mode | Build ANNOY models for the input file(s). |
 | ``--split_train`` | float | Program Mode | Split the input file with the provided percentage of training data and the remaining as test data. Column names will be saved. |
+| ``--downsample`` | Integer | Program Mode | Downsample the provided dataset with n observations. | 
 | ``-m`` or ``methods`` | Strings | Methods | Methods to run: applies to all modules. |
 | ``-f`` or ``--files`` | Strings | File IO | Path to directory or original files. |
 | ``--concat`` | None | File IO | Concatenate files in case mutiple files are read. |
@@ -126,10 +129,11 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--label_col_names`` | None | File IO | Whether the first line of label is column names. |
 | ``--label_drop_col`` | Integers | File IO | The indicies of columns of label to be dropped. |
 | ``--file_annoy`` | String | File IO | Path to the pre-trained ANNOY model of the input data. |
-| ``--downsample`` | Integer | Evaluation | The number of n to randomly down-sample in evaluation. | 
-| ``--k-fold`` | Integer | Evaluation | The number of times to repeat down-sampling and compute average during evaluation. |
-| ``--save_downsample_index`` | String | Evaluation | Save the index of downsampling to the supplied directory. |
-| ``--downsample_index_files`` | String | Evaluation | Path/Directory to previously saved downsample indicies. |
+| ``--k_fold`` | Integer | Downsample | The number of times to repeat down-sampling and compute average during evaluation. |
+| ``--save_downsample_index`` | None | Downsample | Save the indicies of downsampling to a subdirectory 'index'. |
+| ``--downsample_index_files`` | String | Downsample | Path/Directory to previously saved downsample indicies. |
+| ``--downsample_save_data_colnames`` | None | Downsample | Whether to save column names. |
+| ``--downsample_replace`` | None | Downsample | Whether to sample with replacement. |
 | ``--eval_k_neighbors`` | Int | Evaluation | The number of neighbors to consider for evaluation |
 | ``--out_dims`` | Integer | DR Parameters | Output dimension. (Default: 2) |
 | ``--perp`` | Integers | DR Parameters | Perplexity or a list of perplexities for t-SNE. (Default: 30) | 
@@ -204,6 +208,20 @@ python main.py \
 
 Note: It is acceptable to pass in a directory for ``-f`` and ``--embedding``, in which case call files in the directory will be read. Also, flags such as ``--delim``, ``file_drop_col``, and ``--file_col_names`` are optional.
 
+### Downsampling Data
+
+To downsample and save data and indicies (``save_downsample_index`` and ``downsample_replace`` are optional): 
+
+```shell
+python main.py \
+    -f <PATH_TO_ORIGINAL_FILE> \
+    -o <PATH_TO_SAVE_DOWNSAMPLE> \
+    --downsample 1000 \
+    --save_downsample_index \
+    --downsample_replace \
+    --k_fold <N>
+```
+
 ### Build ANNOY Model for Input Files
 
 ANNOY can be built at the time of evaluation, but for efficiency, it can be built and saved independently. To do so,
@@ -263,7 +281,7 @@ python main.py \
     -o <SAVE_DIRECTORY>
 ```
 
-To run evaluation with downsampling: 
+To run evaluation with saved downsampling index (If a directory is supplied, it will attempt to read all the files):
 
 ```shell
 python main.py \
@@ -274,35 +292,7 @@ python main.py \
     --evaluate \
     -m all \
     -o <SAVE_DIRECTORY> \
-    --save_downsample_index <PATH_TO_SAVE_SAMPLING_INDEX, optional> \
-    --downsample 5000 \
-    --k_fold 5
-```
-
-To downsample and save indicies without actually running evaluation: 
-
-```shell
-python main.py \
-    -f <PATH_TO_ORIGINAL_FILE> \
-    --evaluate \
-    --save_downsample_index <PATH_TO_SAVE_SAMPLING_INDEX, optional> \
-    --downsample 5000 \
-    --k_fold 5
-```
-
-To downsample with save index (If a directory with multiple index files is supplied to ``--downsample_index_files``, it will treat all the files as ``--k_fold`` to repeat average the results.): 
-
-```shell
-python main.py \
-    -f <PATH_TO_ORIGINAL_FILE> \
-    --evaluate \
-    --embedding <PATH_TO_EMBEDDING, file or directory> \
-    --label <PATH_TO_ORIGINAL_LABEL, optional> \
-    --label_embedding <PATH_TO_EMBEDDING_LABEL, optional> \
-    --evaluate \
-    -m all \
     --downsample_index_files <PATH_TO_SAVE_SAMPLING_INDEX>
-
 ```
 
 ## Special Cases with R

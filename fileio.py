@@ -72,7 +72,7 @@ class FileIO():
     def _check_dir(path: str) -> List[str]:
         if os.path.isdir(path):
             files: List[str] = os.listdir(path)
-            files = [path+"/"+f for f in files]
+            files = [path+"/"+f for f in files if os.path.isfile(f)]
             return files
         else:
             return [path]
@@ -99,7 +99,8 @@ class FileIO():
                       dir_path: str,
                       file_name: str,
                       col_names: Optional["np.ndarray"]=None,
-                      auto_add_extension: bool=True) -> None:
+                      auto_add_extension: bool=True,
+                      dtype: str="%.18e") -> None:
     
         save_path: str = "{}/{}".format(dir_path, file_name)
         if auto_add_extension:
@@ -110,12 +111,13 @@ class FileIO():
             if col_names is not None:
                 f.write("\t".join(list(col_names)))
                 f.write("\n")
-            np.savetxt(f, array, delimiter="\t")
+            np.savetxt(f, array, delimiter="\t", fmt=dtype)
             
     
     @staticmethod
     def make_dir(dir_path: str, counter: int=0):
-    
+        
+        dir_path = dir_path.rstrip("/")
         if counter==0:
             new_dir_path = dir_path
         else:

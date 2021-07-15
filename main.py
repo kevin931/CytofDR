@@ -23,11 +23,16 @@ def main(cmdargs: Dict[str, Any]):
         annoy_path: str = cmdargs["out"] + "/annoy.ann"
         Annoy.save_annoy(model, annoy_path)
     
-    if cmdargs["embedding"] is None and cmdargs["downsample"] is not None:
+    if cmdargs["downsample"] is not None:
+        data_col_names: Optional["np.ndarray"] = data[0] if cmdargs["downsample_save_data_colnames"] is not None else None
+            
         DownSample.downsample_from_data(data=data[1],
                                         n=cmdargs["downsample"],
                                         n_fold=cmdargs["k_fold"],
-                                        save_downsample_index=cmdargs["save_downsample_index"])
+                                        out=cmdargs["out"],
+                                        index_out=cmdargs["save_downsample_index"],
+                                        replace=cmdargs["downsample_replace"],
+                                        data_col_names=data_col_names)
     
     if cmdargs["evaluate"]:
         embedding: Optional[List["np.ndarray"]]
@@ -56,15 +61,6 @@ def main(cmdargs: Dict[str, Any]):
                                                concat=cmdargs["concat"],
                                                add_sample_index=cmdargs["add_sample_index"],
                                                drop_columns=cmdargs["label_drop_col"])[1]
-            
-        if cmdargs["downsample_index_files"] is not None:
-            index = FileIO.load_data(files=cmdargs["downsample_index_files"],
-                                     col_names=False,
-                                     concat=False,
-                                     add_sample_index=False,
-                                     drop_columns=None,
-                                     dtype=int)
-            index.pop(0)
            
         results: List[List[Union[str, float]]]
         embedding_names: Optional["np.ndarray"] = None
@@ -74,7 +70,7 @@ def main(cmdargs: Dict[str, Any]):
         else:
             embedding_names = np.array(cmdargs["embedding"])
                       
-        if cmdargs["downsample"] is None and cmdargs["downsample_index_files"] is None:
+        if cmdargs["downsample_index_files"] is None:
             results= metric.Metric.run_metrics(data=data[1],
                                                embedding=embedding,
                                                methods=cmdargs["methods"],
@@ -85,16 +81,20 @@ def main(cmdargs: Dict[str, Any]):
                                                k=cmdargs["eval_k_neighbors"])
             
         else:
+            index = FileIO.load_data(files=cmdargs["downsample_index_files"],
+                                     col_names=False,
+                                     concat=False,
+                                     add_sample_index=False,
+                                     drop_columns=None,
+                                     dtype=int)
+            index.pop(0)
             results = metric.Metric.run_metrics_downsample(data=data[1],
                                                            embedding=embedding,
                                                            methods=cmdargs["methods"],
                                                            labels=label,
                                                            labels_embedding=label_embedding,
                                                            embedding_names=embedding_names,
-                                                           downsample=cmdargs["downsample"],
-                                                           n_fold=cmdargs["k_fold"],
                                                            downsample_indices=index,
-                                                           save_indices_dir=cmdargs["save_downsample_index"], 
                                                            data_annoy_path=cmdargs["file_annoy"],
                                                            k=cmdargs["eval_k_neighbors"])
             
@@ -151,6 +151,8 @@ class _Arguments():
                                  help="Build Annoy model.")
         self.parser.add_argument("--split_train", type=float, action="store",
                                  help="Train-test split of input data and save to output directory.")
+        self.parser.add_argument("--downsample", type=int, action="store",
+                                 help="Downsample input file and embedding with n.")
 
         # Methods: For all modes
         self.parser.add_argument("-m", "--methods", nargs="+", action="store",
@@ -161,7 +163,7 @@ class _Arguments():
                                  help="Path to directory or original files.")
         self.parser.add_argument("--concat", action="store_true",
                                  help="Concatenate files, embeddings, and labels read.")
-        self.parser.add_argument("--delim", type=str, action="store",
+        self.parser.add_argument("--delim", type=str, action="store", default="\t",
                                  help="File delimiter.")
         self.parser.add_argument("-o", "--out", type=str, action="store",
                                  help="Directory name for saving results")
@@ -190,54 +192,58 @@ class _Arguments():
         self.parser.add_argument("--add_sample_index", action="store_true",
                                  help="Add sample index as first column of matrix.")
         
-        # DR Evaluation
-        self.parser.add_argument("--downsample", type=int, action="store",
-                                 help="Downsample input file and embedding with n.")
-        self.parser.add_argument("--k_fold", type=int, action="store",
+        # Downsampling
+        self.parser.add_argument("--k_fold", type=int, action="store", default=1,
                                  help="Repeatedly downsample k times to evaluate results.")
-        self.parser.add_argument("--save_downsample_index", action="store",
-                                 help="Directory path to save indicies used for downsampling.")
+        self.parser.add_argument("--save_downsample_index", action="store_true",
+                                 help="Save indicies in a subdirectory 'index'.")
+        self.parser.add_argument("--downsample_replace", action="store_true",
+                                 help="Downsample with replacement.")
+        self.parser.add_argument("--downsample_save_data_colnames", action="store_true",
+                                 help="Whether to save column names for downsampled data.")
+        
+        # DR Evalation
+        self.parser.add_argument("--eval_k_neighbors", type=int, action="store", default=100,
+                                 help="Number of neighbors for local structure preservation metrics.")
         self.parser.add_argument("--downsample_index_files",nargs="+", action="store",
                                  help="File paths or directory path to saved downsample indicies as tsv.")
-        self.parser.add_argument("--eval_k_neighbors", type=int, action="store",
-                                 help="Number of neighbors for local structure preservation metrics.")
         
         # Dimension Reduction Parameters
-        self.parser.add_argument("--out_dims", type=int, action="store",
+        self.parser.add_argument("--out_dims", type=int, action="store", default=2,
                                  help="Output dimension")
-        self.parser.add_argument("--perp", type=int, nargs="+", action="store",
+        self.parser.add_argument("--perp", type=int, nargs="+", action="store", default=30,
                                  help="Perplexity or perplexity list for t-SNE.")
-        self.parser.add_argument("--early_exaggeration", type=float, action="store",
+        self.parser.add_argument("--early_exaggeration", type=float, action="store", default=12.0,
                                  help="Early exaggeration factors for t-SNE.")
-        self.parser.add_argument("--max_iter", type=int, action="store",
+        self.parser.add_argument("--max_iter", type=int, action="store", default=1000,
                                  help="Max iteration for t-SNE.")
-        self.parser.add_argument("--early_exaggeration_iter", type=int, action="store",
+        self.parser.add_argument("--early_exaggeration_iter", type=int, action="store", default=250,
                                  help="Iterations of early exaggeration.")
-        self.parser.add_argument("--init", action="store",
+        self.parser.add_argument("--init", action="store", default="random",
                                  help="Initialization method for t-SNE.")
-        self.parser.add_argument("--tsne_learning_rate", action="store",
+        self.parser.add_argument("--tsne_learning_rate", action="store", default="auto",
                                  help="Learning rate for t-SNE.")
-        self.parser.add_argument("--open_tsne_method", action="store",
+        self.parser.add_argument("--open_tsne_method", action="store", default="fft",
                                  help="Method for openTSNE.")
-        self.parser.add_argument("--dist_metric", type=str, action="store",
+        self.parser.add_argument("--dist_metric", type=str, action="store", default="euclidean",
                                  help="Distance metric for applicable methods.")
         
         #UMAP
-        self.parser.add_argument("--umap_min_dist", type=float, action="store",
+        self.parser.add_argument("--umap_min_dist", type=float, action="store", default=0.1,
                                  help="min_dist for UMAP.")
-        self.parser.add_argument("--umap_neighbors", type=int, action="store",
+        self.parser.add_argument("--umap_neighbors", type=int, action="store", default=15,
                                  help="Number of neighbors for UMAP.")
         
         #SAUCIE
-        self.parser.add_argument("--SAUCIE_lambda_c", type=float, action="store",
+        self.parser.add_argument("--SAUCIE_lambda_c", type=float, action="store", default=0,
                                  help="Information dimension regularization for SAUCIE.")
-        self.parser.add_argument("--SAUCIE_lambda_d", type=float, action="store",
+        self.parser.add_argument("--SAUCIE_lambda_d", type=float, action="store", default=0,
                                  help="Intracluster distance regularization for SAUCIE.")
-        self.parser.add_argument("--SAUCIE_learning_rate", type=float, action="store",
+        self.parser.add_argument("--SAUCIE_learning_rate", type=float, action="store", default=0.001,
                                  help="Learning rate for SAUCIE.")
-        self.parser.add_argument("--SAUCIE_steps", type=int, action="store",
+        self.parser.add_argument("--SAUCIE_steps", type=int, action="store", default=256,
                                  help="Maximum iteration for SAUCIE.")
-        self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store",
+        self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store", default=1000,
                                  help="Batch size for SAUCIE.")
         
 
@@ -249,23 +255,18 @@ class _Arguments():
         if arguments["out"] is not None:
             arguments["out"] = self.new_dir(arguments["out"], no_new_dir=arguments["no_new_dir"])
             
-        arguments["out_dims"] = 2 if arguments["out_dims"] is None else arguments["out_dims"]
-        arguments["delim"] = "\t" if arguments["delim"] is None else arguments["delim"]
-        arguments["perp"] = 30 if arguments["perp"] is None else arguments["perp"]
-        arguments["early_exaggeration"] = 12.0 if arguments["early_exaggeration"] is None else float(arguments["early_exaggeration"])
-        arguments["max_iter"] = 1000 if arguments["max_iter"] is None else arguments["max_iter"]
-        arguments["init"] = "random" if arguments["init"] is None else arguments["init"].lower()
-        arguments["tsne_learning_rate"] = 200 if arguments["tsne_learning_rate"] is None else arguments["tsne_learning_rate"]
-        arguments["open_tsne_method"] = "fft" if arguments["open_tsne_method"] is None else arguments["open_tsne_method"].lower()
-        arguments["early_exaggeration_iter"] = 250 if arguments["early_exaggeration_iter"] is None else arguments["early_exaggeration_iter"]
-        arguments["dist_metric"] = "euclidean" if arguments["dist_metric"] is None else arguments["dist_metric"]
-        arguments["umap_min_dist"] = 0.1 if arguments["umap_min_dist"] is None else arguments["umap_min_dist"]
-        arguments["umap_neighbors"] = 15 if arguments["umap_neighbors"] is None else arguments["umap_neighbors"]
-        arguments["SAUCIE_lambda_c"] = 0 if arguments["SAUCIE_lambda_c"] is None else arguments["SAUCIE_lambda_c"]
-        arguments["SAUCIE_lambda_d"] = 0 if arguments["SAUCIE_lambda_d"] is None else arguments["SAUCIE_lambda_d"]
-        arguments["SAUCIE_learning_rate"] = 0.001 if arguments["SAUCIE_learning_rate"] is None else arguments["SAUCIE_learning_rate"]
-        arguments["SAUCIE_batch_size"] = 256 if arguments["SAUCIE_batch_size"] is None else arguments["SAUCIE_batch_size"]
-        arguments["SAUCIE_steps"] = 1000 if arguments["SAUCIE_steps"] is None else arguments["SAUCIE_steps"]
+        if arguments["save_downsample_index"]:
+            assert arguments["out"] is not None
+            index_out: str = arguments["out"] + "/index"
+            arguments["save_downsample_index"] = self.new_dir(index_out, False)
+        
+        arguments["tsne_learning_rate"] = arguments["tsne_learning_rate"].lower() 
+        if arguments["tsne_learning_rate"] != "auto":
+            arguments["tsne_learning_rate"] = int(arguments["tsne_learning_rate"])
+            
+        arguments["init"] = arguments["init"].lower()
+        arguments["open_tsne_method"] = arguments["open_tsne_method"].lower()
+        arguments["dist_metric"] = arguments["dist_metric"].lower()
 
         return arguments
     

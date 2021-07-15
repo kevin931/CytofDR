@@ -1,4 +1,3 @@
-from MEDist import MEDist
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -26,15 +25,12 @@ class Metric():
     def run_metrics_downsample(cls,
                                data: "np.ndarray",
                                embedding: Union["np.ndarray", List["np.ndarray"]],
-                               downsample: Optional[int]=None,
-                               downsample_indices: Optional[List["np.ndarray"]]=None,
-                               n_fold: int=1,
+                               downsample_indices: List["np.ndarray"],
                                methods: Union[str, List[str]]="all",
                                labels: Optional["np.ndarray"]=None,
                                labels_embedding: Optional["np.ndarray"]=None,
                                embedding_names: Optional["np.ndarray"]=None,
                                k: int=5,
-                               save_indices_dir: Optional[str]=None,
                                data_annoy_path: Optional[str]=None
                                ) -> List[List[Union[str, float]]]:
         
@@ -63,18 +59,6 @@ class Metric():
                 name of embedding, and downsample index.
         '''
         
-        if downsample is None and downsample_indices is None:
-            raise ValueError("Either 'downsample' or 'downsample_indices' must be provided.")
-        
-        if downsample_indices is not None:
-            n_fold = len(downsample_indices)
-        else:
-            assert downsample is not None
-            downsample_indices = DownSample.downsample_from_data(data,
-                                                                 n=downsample,
-                                                                 n_fold=n_fold,
-                                                                 save_downsample_index=save_indices_dir)
-        
         if not isinstance(embedding, list):
             embedding = [embedding]
             
@@ -88,8 +72,7 @@ class Metric():
         results_combined: List[List[Any]] = [[],[],[]]
         
         n: int 
-        for n in range(n_fold):
-            
+        for n in range(len(downsample_indices)):
             index = downsample_indices[n].astype(int)
             data_downsample = data[index, :]
 
@@ -113,7 +96,6 @@ class Metric():
             results_downsample_index.extend([n]*len(results[0]))
 
         results_combined.append(results_downsample_index)
-        
         return results_combined
         
         
