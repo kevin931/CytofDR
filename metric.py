@@ -7,7 +7,7 @@ import scipy.spatial
 import scipy.stats
 import sklearn.metrics
 
-from util import Annoy, DownSample
+from util import Annoy
 from typing import Optional, Any, Union, List, Tuple
 
 MEDIST: bool = False
@@ -27,6 +27,7 @@ class Metric():
                                embedding: Union["np.ndarray", List["np.ndarray"]],
                                downsample_indices: List["np.ndarray"],
                                methods: Union[str, List[str]]="all",
+                               dist_metric: str="PCD",
                                labels: Optional["np.ndarray"]=None,
                                labels_embedding: Optional["np.ndarray"]=None,
                                embedding_names: Optional["np.ndarray"]=None,
@@ -85,6 +86,7 @@ class Metric():
             results = cls.run_metrics(data=data_downsample,
                                       embedding=embedding_downsample,
                                       methods=methods,
+                                      dist_metric=dist_metric,
                                       labels=labels_downsample,
                                       labels_embedding=labels_embedding_downsample,
                                       embedding_names=embedding_names,
@@ -104,6 +106,7 @@ class Metric():
                     data: "np.ndarray",
                     embedding: Union["np.ndarray", List["np.ndarray"]],
                     methods: Union[str, List[str]]="all",
+                    dist_metric: str="PCD",
                     labels: Optional["np.ndarray"]=None,
                     labels_embedding: Optional["np.ndarray"]=None,
                     embedding_names: Optional["np.ndarray"]=None,
@@ -139,6 +142,9 @@ class Metric():
             
         if embedding_names is None:
             embedding_names = np.array(list(map(str, range(len(embedding)))))
+            
+        if dist_metric.lower() != "pcd" or labels is None or not MEDIST:
+            dist_metric = "pairwise"
         
         i: int
         e: "np.ndarray"    
@@ -147,10 +153,8 @@ class Metric():
             embedding[i] = cls._median_impute(e)
             
         if "all" in methods:
-            methods = ["knn", "neighborhood_agreement"]
-            if labels is not None and MEDIST:
-                methods.extend(["npe", "random_forest", "silhouette", "pearsonr", "spearmanr", "residual_variance", "emd"])
-            elif labels is not None:
+            methods = ["knn", "neighborhood_agreement", "npe", "random_forest", "silhouette", "pearsonr", "spearmanr", "residual_variance", "emd"]
+            if labels is not None:
                 methods.extend(["npe", "random_forest", "silhouette"])
             if labels is not None and labels_embedding is not None:
                 methods.extend(["ari", "mni"])
@@ -158,9 +162,15 @@ class Metric():
         data_distance: Optional["np.ndarray"] = None
         embedding_distance: Optional[List["np.ndarray"]] = None
         if any(m in methods for m in ["pearsonr", "spearmanr", "residual_variance", "emd"]):
-            assert MEDIST
-            assert labels is not None
-            data_distance, embedding_distance = cls.pcd_distance(data, embedding, labels, )
+            if dist_metric.lower() == "pcd":
+                assert labels is not None
+                data_distance, embedding_distance = cls.pcd_distance(data, embedding, labels)
+                
+            else:
+                data_distance = scipy.spatial.distance.pdist(data)
+                embedding_distance = []
+                for e in embedding:
+                    embedding_distance.append(scipy.spatial.distance.pdist(e))
         
         annoy_data_neighbors: Optional["np.ndarray"] = None
         annoy_embedding_neighbors: Optional[List["np.ndarray"]] = None
