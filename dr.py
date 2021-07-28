@@ -48,7 +48,8 @@ class DR():
                     data: "np.ndarray",
                     out: str,
                     methods: Union[str, List[str]]="all",
-                    out_dims: int=2, 
+                    out_dims: int=2,
+                    save_embedding_colnames: bool=False,
                     perp: Union[int, List[int]]=30,
                     early_exaggeration: float=12.0,
                     early_exaggeration_iter: int=250,
@@ -86,6 +87,10 @@ class DR():
                 
         if not isinstance(perp, list):
             perp = [perp]
+            
+        colnames: Optional[np.ndarray] = None
+        if save_embedding_colnames:
+            colnames = np.arange(out_dims)
 
         time: List[List[Union[str, float]]] = [[], []]
         time_PCA: float
@@ -114,7 +119,7 @@ class DR():
         if "pca" in methods:
             try:
                 time_PCA, embedding_PCA = LinearMethods.PCA(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_PCA, dir_path, "PCA")
+                FileIO.save_np_array(embedding_PCA, dir_path, "PCA", col_names=colnames)
                 time[0].append("PCA")
                 time[1].append(time_PCA)
             except Exception as e:
@@ -123,7 +128,7 @@ class DR():
         if "ica" in methods:
             try:
                 time_ICA, embedding_ICA = LinearMethods.ICA(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_ICA, dir_path, "ICA")
+                FileIO.save_np_array(embedding_ICA, dir_path, "ICA", col_names=colnames)
                 time[0].append("ICA")
                 time[1].append(time_ICA)
             except Exception as e:
@@ -142,7 +147,7 @@ class DR():
                                                                   metric=dist_metric,
                                                                   min_dist=umap_min_dist,
                                                                   n_neighbors=umap_neighbors)
-                FileIO.save_np_array(embedding_UMAP, dir_path, "UMAP")
+                FileIO.save_np_array(embedding_UMAP, dir_path, "UMAP", col_names=colnames)
                 time[0].append("UMAP")
                 time[1].append(time_UMAP)
             except Exception as e:
@@ -156,7 +161,7 @@ class DR():
                                                                         steps=SAUCIE_steps,
                                                                         batch_size=SAUCIE_batch_size,
                                                                         learning_rate=SAUCIE_learning_rate)
-                FileIO.save_np_array(embedding_saucie, dir_path, "SAUCIE")
+                FileIO.save_np_array(embedding_saucie, dir_path, "SAUCIE", col_names=colnames)
                 time[0].append("SAUCIE")
                 time[1].append(time_saucie)
             except Exception as e:
@@ -174,7 +179,7 @@ class DR():
                                                                                 method="exact",
                                                                                 init=init,
                                                                                 metric=dist_metric)
-                FileIO.save_np_array(embedding_tsne_original, dir_path, "tsne_original")
+                FileIO.save_np_array(embedding_tsne_original, dir_path, "tsne_original", col_names=colnames)
                 time[0].append("sklearn_tsne_original")
                 time[1].append(time_tsne_original)
             except Exception as e:
@@ -191,7 +196,7 @@ class DR():
                                                                                     max_iter=max_iter,
                                                                                     init=init,
                                                                                     metric=dist_metric)
-                FileIO.save_np_array(embedding_sklearn_tsne_bh, dir_path, "sklearn_tsne_bh")
+                FileIO.save_np_array(embedding_sklearn_tsne_bh, dir_path, "sklearn_tsne_bh", col_names=colnames)
                 time[0].append("sklearn_tsne_bh")
                 time[1].append(time_sklearn_tsne_bh)
             except Exception as e:
@@ -203,7 +208,7 @@ class DR():
                                                                out_dims=out_dims,
                                                                perp=perp[0],
                                                                max_iter=max_iter)
-                FileIO.save_np_array(embedding_bh_tsne, dir_path, "bh_tsne")
+                FileIO.save_np_array(embedding_bh_tsne, dir_path, "bh_tsne", col_names=colnames)
                 time[0].append("bh_tsne")
                 time[1].append(time_bh_tsne)
             except Exception as e:
@@ -228,7 +233,7 @@ class DR():
                                                                max_iter=max_iter,
                                                                perplexity_list=perp_list, #type:ignore
                                                                init=init) 
-                FileIO.save_np_array(embedding_fit_sne, dir_path, "fit_sne")
+                FileIO.save_np_array(embedding_fit_sne, dir_path, "fit_sne", col_names=colnames)
                 time[0].append("fit_sne")
                 time[1].append(time_fit_sne)
             except Exception as e:
@@ -252,7 +257,7 @@ class DR():
                                                                      init=init,
                                                                      negative_gradient_method=open_tsne_method,
                                                                      metric=dist_metric)
-                FileIO.save_np_array(embedding_open_tsne, dir_path, "open_tsne")
+                FileIO.save_np_array(embedding_open_tsne, dir_path, "open_tsne", col_names=colnames)
                 time[0].append("open_tsne")
                 time[1].append(time_open_tsne)
             except Exception as e:
@@ -261,7 +266,7 @@ class DR():
         if "zifa" in methods:
             try:
                 time_zifa, embedding_zifa = LinearMethods.ZIFA(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_zifa, dir_path, "zifa")
+                FileIO.save_np_array(embedding_zifa, dir_path, "zifa", col_names=colnames)
                 time[0].append("ZIFA")
                 time[1].append(time_zifa)
             except Exception as e:
@@ -270,7 +275,7 @@ class DR():
         if "factor_analysis" in methods:
             try:
                 time_factor_analysis, embedding_factor_analysis = LinearMethods.factor_analysis(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_factor_analysis, dir_path, "factor_analysis")
+                FileIO.save_np_array(embedding_factor_analysis, dir_path, "factor_analysis", col_names=colnames)
                 time[0].append("factor_analysis")
                 time[1].append(time_factor_analysis)
             except Exception as e:
@@ -281,7 +286,7 @@ class DR():
                 time_isomap, embedding_isomap = NonLinearMethods.isomap(data,
                                                                         out_dims=out_dims,
                                                                         dist_metric=dist_metric)
-                FileIO.save_np_array(embedding_isomap, dir_path, "isomap")
+                FileIO.save_np_array(embedding_isomap, dir_path, "isomap", col_names=colnames)
                 time[0].append("isomap")
                 time[1].append(time_isomap)
             except Exception as e:
@@ -290,7 +295,7 @@ class DR():
         if "mds" in methods:
             try:
                 time_mds, embedding_mds = LinearMethods.MDS(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_mds, dir_path, "mds")
+                FileIO.save_np_array(embedding_mds, dir_path, "mds", col_names=colnames)
                 time[0].append("mds")
                 time[1].append(time_mds)
             except Exception as e:
@@ -365,6 +370,7 @@ class LinearMethods():
     def ZIFA(data: "np.ndarray",
              out_dims: int) -> Tuple[float, "np.ndarray"]:
         
+        data = LinearMethods._remove_col_zeros(data)
         start_time: float = time.perf_counter()
         
         z: "np.ndarray"
@@ -407,6 +413,15 @@ class LinearMethods():
         run_time: float = end_time - start_time
         
         return run_time, embedding
+    
+    @staticmethod
+    def _remove_col_zeros(data: "np.ndarray") -> "np.ndarray":
+        nonzero_col: List[int] = []
+        col: int
+        for col in range(data.shape[1]):
+            if not np.all(data[:,col]==0):
+                nonzero_col.append(col)
+        return data[:, nonzero_col]
     
     
 class NonLinearMethods():
