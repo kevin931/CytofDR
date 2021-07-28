@@ -39,7 +39,7 @@ class FileIO():
                         names = np.delete(names, drop_columns)
                     return_files.append(names)
                     skiprows = 1
-                    print(names)
+                    # print(names)
                 else:
                     return_files.append(np.array(None))
             
@@ -109,7 +109,7 @@ class FileIO():
         
         with open(save_path, "w") as f:
             if col_names is not None:
-                f.write("\t".join(list(col_names)))
+                f.write("\t".join(list(map(str, col_names))))
                 f.write("\n")
             np.savetxt(f, array, delimiter="\t", fmt=dtype)
             
