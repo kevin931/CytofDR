@@ -89,6 +89,7 @@ Not all methods are implemented in Python. This project makes use of R for some 
 From **CRAN**, install the following package:
 
     - tidyverse
+    - Seurat
 
 You can install the packages using the following commands:
 
@@ -99,6 +100,7 @@ BiocManager::install("destiny")
 BioManager::install("FlowSOM")
 # CRAN
 install.packages("tidyverse")
+install.packages("Seurat")
 ```
 
 ## Usage
@@ -128,13 +130,15 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--label`` | Strings | File IO | Load label from directory or file path for evaluation. | 
 | ``--label_col_names`` | None | File IO | Whether the first line of label is column names. |
 | ``--label_drop_col`` | Integers | File IO | The indicies of columns of label to be dropped. |
-| ``--file_annoy`` | String | File IO | Path to the pre-trained ANNOY model of the input data. |
+| ``--save_embedding_colnames`` | None | File IO | Whether to save column names of embedding. |
 | ``--k_fold`` | Integer | Downsample | The number of times to repeat down-sampling and compute average during evaluation. |
 | ``--save_downsample_index`` | None | Downsample | Save the indicies of downsampling to a subdirectory 'index'. |
 | ``--downsample_index_files`` | String | Downsample | Path/Directory to previously saved downsample indicies. |
 | ``--downsample_save_data_colnames`` | None | Downsample | Whether to save column names. |
 | ``--downsample_replace`` | None | Downsample | Whether to sample with replacement. |
 | ``--eval_k_neighbors`` | Int | Evaluation | The number of neighbors to consider for evaluation |
+| ``--eval_dist_metric`` | Str | Evaluation | The dist metric to use for evaluation: full pairwsie distance (pairwise) or point-cluster distance (PCD) (Default: PCD) |
+| ``--file_annoy`` | String | Evaluation | Path to the pre-trained ANNOY model of the input data. |
 | ``--out_dims`` | Integer | DR Parameters | Output dimension. (Default: 2) |
 | ``--perp`` | Integers | DR Parameters | Perplexity or a list of perplexities for t-SNE. (Default: 30) | 
 | ``--early_exaggeration`` | Float | DR Parameters | Early exaggeration factor for t-SNE. (Default: 12.0) |
@@ -252,7 +256,7 @@ python main.py \
 All other methods use similar commands. All file IO commands apply.
 
 ### Clustering
-Currently, only PhenoGraph clustering is supported. To cluster, use the following example as a guide:
+Currently, only PhenoGraph clustering is supported in the main python interface. To cluster, use the following example as a guide:
 
 ```shell
 
@@ -265,6 +269,8 @@ python main.py \
 
 ```
 The results will be save in the format of a tab-separated file in ``phenograph.txt`` of the output directory.
+
+In two R scripts, flowSOM and Seurat are also supported. Theya re documented in the [R](#special-cases-with-r) section.
 
 ### DR Evaluation
 The python program supports ten metrics for DR evaluation, and it is designed to be used in conjunction with DR methods in this program.
@@ -308,7 +314,6 @@ Rscript diffmap.R \
     <PATH_TO_SAVE_DIRECTORY>
 
 ```
-
 Note: This R implementation does not have as many options and checks as the python scripts.
 ### FlowSOM CLustering
 FlowSOM is currently supported with an R script. To run FlowSOM, 
@@ -321,6 +326,21 @@ Rscript ./flowsom.R \
     <Whether input file has column names, R Boolean>
 
 ```
+
+### Seurat Clustering
+For single-cell RNA sequencing (scRNA-seq) data, seurat clustering can make more sense as documented [here](https://f1000research.com/articles/7-1141/v3). To run Seurat clustering,
+
+```shell
+Rscript ./seurat_clustering.R \
+    <PATH_TO_INPUT_FILE> \
+    <EXACT_PATH_TO_OUTPUT_FILE> \
+    <Whether input file has column names, R Boolean> \
+    <Number of genes to select, optional>
+```
+
+Seurat's algorithm, which is similar to Phenograph, automatically detects the number of clusters. There are a few quirks with our wrapper:
+- When the input dimension is less than 20, we use the full dataset for clustering instead of running PCA.
+- Centering and scaling are not performed for PCA to preserve the data structure of scRNA-seq data.
 
 ## t-SNE Optimization
 
@@ -376,6 +396,16 @@ This is currently a private python module unpublished, but it is required for DR
 
 ## Updates
 
+### August 1, 2021
+- Added Seurat clustering.
+- Added Point Cluster Distance to evaluation framework.
+- Added option to save embedding column names . 
+- Added separate commandline options for train test split, building ANNOY, and downsampling.
+- Added median imputation for evaluation. 
+- Fixed a bug for Isomap.
+- Fixed tsne_learning_rate.
+- Some internal updates, inclusing docstrings.
+
 ### June 26, 2021
 - Added support for Isomap and MDS
 - Added SAUCIE parameter options on the command line.
@@ -400,5 +430,6 @@ This is currently a private python module unpublished, but it is required for DR
 This is quite complex! More documentation will be added, inclusing docstrings, examples, etc. More methods will also be considered. Contributions are welcomed!
 
 ## References
-- Belkina, A. C., Ciccolella, C. O., Anno, R., Halpert, R., Spidlen, J., & Snyder-Cappione, J. E. (2019). “Automated optimized parameters for T-distributed stochastic neighbor embedding improve visualization and analysis of large datasets.” Nature Communications, 10(5415). https://doi.org/10.1038/s41467-019-13055-y.
-- Kobak, D., & Linderman, G. C. (2021). “Initialization is critical for preserving global data structure in both t-SNE and UMAP.” Nature Biotechnology, 39, 156-157. https://doi.org/10.1038/s41587-020-00809-z.
+- Belkina, A. C., Ciccolella, C. O., Anno, R., Halpert, R., Spidlen, J., & Snyder-Cappione, J. E. (2019). “Automated optimized parameters for T-distributed stochastic neighbor embedding improve visualization and analysis of large datasets.” *Nature Communications, 10*(5415). https://doi.org/10.1038/s41467-019-13055-y.
+- Duo, A., & Robinson M. D. (2020). "A systematic performance evaluation of clusetring methods for single-cell RNA-seq data." *F1000Research, 7*(1141). https://doi.org/10.12688/f1000research.15666.3.
+- Kobak, D., & Linderman, G. C. (2021). “Initialization is critical for preserving global data structure in both t-SNE and UMAP.” *Nature Biotechnology, 39*, 156-157. https://doi.org/10.1038/s41587-020-00809-z.

@@ -74,6 +74,7 @@ def main(cmdargs: Dict[str, Any]):
             results= metric.Metric.run_metrics(data=data[1],
                                                embedding=embedding,
                                                methods=cmdargs["methods"],
+                                               dist_metric=cmdargs["eval_dist_metric"],
                                                labels=label,
                                                labels_embedding=label_embedding,
                                                embedding_names=embedding_names, 
@@ -91,6 +92,7 @@ def main(cmdargs: Dict[str, Any]):
             results = metric.Metric.run_metrics_downsample(data=data[1],
                                                            embedding=embedding,
                                                            methods=cmdargs["methods"],
+                                                           dist_metric=cmdargs["eval_dist_metric"],
                                                            labels=label,
                                                            labels_embedding=label_embedding,
                                                            embedding_names=embedding_names,
@@ -118,6 +120,7 @@ def main(cmdargs: Dict[str, Any]):
                           out=cmdargs["out"],
                           methods=cmdargs["methods"],
                           out_dims=cmdargs["out_dims"],
+                          save_embedding_colnames=cmdargs["save_embedding_colnames"],
                           perp=cmdargs["perp"],
                           early_exaggeration=cmdargs["early_exaggeration"],
                           early_exaggeration_iter=cmdargs["early_exaggeration_iter"],
@@ -185,12 +188,12 @@ class _Arguments():
                                  help="Whether file's first row is names.")
         self.parser.add_argument("--file_drop_col", type=int, nargs="+", action="store",
                                  help="Columns to drop while reading files.")
-        self.parser.add_argument("--file_annoy", type=str, action="store",
-                                 help="Path to the file's Annoy model.")
         self.parser.add_argument("--embedding_drop_col", type=int, nargs="+", action="store",
                                  help="Columns to drop while reading files.")
         self.parser.add_argument("--add_sample_index", action="store_true",
                                  help="Add sample index as first column of matrix.")
+        self.parser.add_argument("--save_embedding_colnames", action="store_true",
+                                 help="Save column names for embedding after DR.")
         
         # Downsampling
         self.parser.add_argument("--k_fold", type=int, action="store", default=1,
@@ -207,6 +210,10 @@ class _Arguments():
                                  help="Number of neighbors for local structure preservation metrics.")
         self.parser.add_argument("--downsample_index_files",nargs="+", action="store",
                                  help="File paths or directory path to saved downsample indicies as tsv.")
+        self.parser.add_argument("--file_annoy", type=str, action="store",
+                                 help="Path to the file's Annoy model.")
+        self.parser.add_argument("--eval_dist_metric", type=str, action="store", default="PCD",
+                                 help="Path to the file's Annoy model.")
         
         # Dimension Reduction Parameters
         self.parser.add_argument("--out_dims", type=int, action="store", default=2,
