@@ -8,6 +8,7 @@ import scipy.stats
 import sklearn.metrics
 
 from util import Annoy
+import itertools
 from typing import Optional, Any, Union, List, Tuple
 
 MEDIST: bool = False
@@ -30,6 +31,9 @@ class Metric():
                                dist_metric: str="PCD",
                                labels: Optional["np.ndarray"]=None,
                                labels_embedding: Optional["np.ndarray"]=None,
+                               comparison_embedding: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                               comparison_labels: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                               comparison_classes: Optional[Union[str, List[str]]]=None,
                                embedding_names: Optional["np.ndarray"]=None,
                                k: int=5,
                                data_annoy_path: Optional[str]=None
@@ -45,7 +49,7 @@ class Metric():
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             downsample (int): The sample size of downsampling.
-            downsample_indices (List["np.ndarray], optional): A list of indicies for repeated downsampling.
+            downsample_indices (List["np.ndarray], optional): A list of indicies_embedding for repeated downsampling.
             n_fold (int): Downsample n times and average the results.
             methods (Union[str, List[str]]): The metrics to run.
             labels ("np.ndarray", optional): True labels or labels from the original space.
@@ -89,6 +93,9 @@ class Metric():
                                       dist_metric=dist_metric,
                                       labels=labels_downsample,
                                       labels_embedding=labels_embedding_downsample,
+                                      comparison_embedding=comparison_embedding,
+                                      comparison_labels=comparison_labels,
+                                      comparison_classes=comparison_classes,
                                       embedding_names=embedding_names,
                                       k=k,
                                       data_annoy_path=data_annoy_path)
@@ -109,6 +116,9 @@ class Metric():
                     dist_metric: str="PCD",
                     labels: Optional["np.ndarray"]=None,
                     labels_embedding: Optional["np.ndarray"]=None,
+                    comparison_embedding: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                    comparison_labels: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                    comparison_classes: Optional[Union[str, List[str]]]=None,
                     embedding_names: Optional["np.ndarray"]=None,
                     data_annoy_path: Optional[str]=None,
                     k: int=5
@@ -158,6 +168,8 @@ class Metric():
                 methods.extend(["npe", "random_forest", "silhouette"])
             if labels is not None and labels_embedding is not None:
                 methods.extend(["ari", "mni"])
+            if comparison_labels is not None and comparison_embedding is not None:
+                methods.extend(["embedding_concordance"])
                 
         data_distance: Optional["np.ndarray"] = None
         embedding_distance: Optional[List["np.ndarray"]] = None
@@ -263,6 +275,22 @@ class Metric():
                 assert labels is not None and labels_embedding is not None
                 results[0].append("ari")
                 results[1].append(cls.ARI(labels=labels, labels_embedding=labels_embedding))
+                results[2].append(embedding_names[i])
+                
+            if "concordance_emd" in methods:
+                print("running concordance_emd")
+                assert labels_embedding is not None
+                assert comparison_embedding is not None and comparison_labels is not None
+                results[0].append("concordance_emd")
+                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_embedding, comparison_labels, comparison_classes, "emd"))
+                results[2].append(embedding_names[i])
+                
+            if "concordance_cluster_distance" in methods:
+                print("running concordance_cluster_distance")
+                assert labels_embedding is not None
+                assert comparison_embedding is not None and comparison_labels is not None
+                results[0].append("concordance_cluster_distance")
+                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_embedding, comparison_labels, comparison_classes, "cluster_distance"))
                 results[2].append(embedding_names[i])
             
         return results
@@ -757,3 +785,116 @@ class Metric():
         tp: int = int(confusion[1][1])
         
         return 2. * (tp * tn - fn * fp) / ((tp + fn) * (fn + tn) + (tp + fp) * (fp + tn))
+    
+    
+    @staticmethod
+    def embedding_concordance(embedding: "np.ndarray",
+                              labels_embedding: "np.ndarray",
+                              comparison_embedding: Union["np.ndarray", List["np.ndarray"]],
+                              comparison_labels: Union["np.ndarray", List["np.ndarray"]],
+                              comparison_classes: Optional[Union[str, List[str]]]=None,
+                              method: str = "emd"
+                              ) -> None:
+        
+        if not isinstance(comparison_embedding, list):
+            comparison_embedding = [comparison_embedding]
+        if not isinstance(comparison_labels, list):
+            comparison_labels = [comparison_labels]
+        if not isinstance(comparison_classes, list) and comparison_classes is not None:
+            comparison_classes = [comparison_classes]
+            
+        scores: "np.ndarray" = np.zeros(len(comparison_embedding))
+        i: int
+        comparison_labels_index: int
+        
+        for i in range(len(comparison_embedding)):
+            comparison_labels_index = i if len(comparison_labels) == len(comparison_embedding) else 0
+            common_types: "np.ndarray" = np.intersect1d(np.unique(labels_embedding), np.unique(comparison_labels[comparison_labels_index]))
+            
+            if comparison_classes is not None:
+                common_types = np.intersect1d(common_types, comparison_classes)     
+            if common_types.shape[0] < 2:
+                continue
+            
+            if method == "emd":
+                scores[i] = Metric._concordance_emd(embedding,
+                                                    labels_embedding,
+                                                    comparison_embedding[i],
+                                                    comparison_labels[comparison_labels_index],
+                                                    common_types)
+                
+            elif method == "cluster_distance":
+                scores[i] = Metric._concordance_cluster_distance(embedding,
+                                                                 labels_embedding,
+                                                                 comparison_embedding[i],
+                                                                 comparison_labels[comparison_labels_index],
+                                                                 common_types)
+            
+        return np.mean(scores)
+            
+            
+    @staticmethod
+    def _concordance_emd(embedding: "np.ndarray",
+                         labels_embedding: "np.ndarray",
+                         comparison_embedding: "np.ndarray",
+                         comparison_labels: "np.ndarray",
+                         common_types: "np.ndarray") -> float:
+        
+        combinations: List[Tuple[int, ...]] = list(itertools.permutations(common_types, 2))
+        embedding_scores: List[float] = []
+        comparison_scores: List[float] = []
+        
+        comb: Tuple[int, ...]
+        for comb in combinations:
+            indicies_embedding: "np.ndarray" = np.where(labels_embedding == comb[0])[0]
+            centroid: "np.ndarray" = np.mean(embedding[indicies_embedding, ], axis=0)
+            pwd: "np.ndarray" = scipy.stats.rankdata(np.sqrt(np.sum((centroid - embedding)**2, axis=1)))
+            pwd = pwd[np.where(labels_embedding == comb[1])]/(embedding.shape[0])
+            embedding_scores.extend(d for d in pwd)
+            
+            indicies_comparison: "np.ndarray" = np.where(comparison_labels == comb[0])[0]
+            centroid_c: "np.ndarray" = np.mean(comparison_embedding[indicies_comparison,], axis=0)
+            pwd_c: "np.ndarray" = scipy.stats.rankdata(np.sqrt(np.sum((centroid_c - comparison_embedding)**2, axis=1)))
+            pwd_c = pwd_c[np.where(comparison_labels == comb[1])]/(comparison_embedding.shape[0])
+            comparison_scores.extend([d for d in pwd_c])
+            
+        return scipy.stats.wasserstein_distance(embedding_scores, comparison_scores)
+    
+    
+    @staticmethod
+    def _concordance_cluster_distance(embedding: "np.ndarray",
+                                      labels_embedding: "np.ndarray",
+                                      comparison_embedding: "np.ndarray",
+                                      comparison_labels: "np.ndarray",
+                                      common_types: "np.ndarray") -> float:
+        
+        combinations: List[Tuple[int, ...]] = list(itertools.permutations(common_types, 2))
+        embedding_scores: "np.ndarray" = np.zeros(len(combinations))
+        comparison_scores: "np.ndarray" = np.zeros(len(combinations))
+        
+        embedding_clusters: "np.ndarray" = np.unique(labels_embedding)
+        embedding_centroid: "np.ndarray" = np.zeros((embedding_clusters.shape[0], embedding.shape[1]))
+        for i, c in enumerate(embedding_clusters):
+            embedding_centroid[i] = np.mean(embedding[np.where(labels_embedding==c)[0],], axis=0)
+                
+        comparison_clusters: "np.ndarray" = np.unique(comparison_labels)
+        comparison_centroid: "np.ndarray" = np.zeros((comparison_clusters.shape[0], comparison_embedding.shape[1]))
+        for i, c in enumerate(comparison_clusters):
+            comparison_centroid[i] = np.mean(comparison_embedding[np.where(comparison_labels==c)[0],], axis=0)
+
+        comb: Tuple[int, ...]
+        i: int
+        for i, comb in enumerate(combinations):
+            embedding_index_0: int = np.where(embedding_clusters == comb[0])[0][0]
+            embedding_index_1: int = np.where(embedding_clusters == comb[1])[0][0]
+            embedding_cluster_0: "np.ndarray" = embedding_centroid[embedding_index_0]
+            embedding_pwd: "np.ndarray" = scipy.stats.rankdata(np.sqrt(np.sum((embedding_cluster_0 - embedding_centroid)**2, axis=1)))
+            embedding_scores[i] = embedding_pwd[embedding_index_1,]/embedding_clusters.shape[0]
+            
+            comparison_index_0: int = np.where(comparison_clusters == comb[0])[0][0]
+            comparison_index_1: int = np.where(comparison_clusters == comb[1])[0][0]
+            comparison_cluster_0: "np.ndarray" = comparison_centroid[comparison_index_0]
+            comparison_pwd: "np.ndarray" = scipy.stats.rankdata(np.sqrt(np.sum((comparison_cluster_0 - comparison_centroid)**2, axis=1)))
+            comparison_scores[i] = comparison_pwd[comparison_index_1,]/comparison_clusters.shape[0]
+            
+        return np.mean(np.abs(embedding_scores-comparison_scores))  
