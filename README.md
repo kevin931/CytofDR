@@ -22,7 +22,6 @@
 - [Special Cases with R](#special-cases-with-r)
   - [Diffusion Map](#diffusion-map)
   - [FlowSOM CLustering](#flowsom-clustering)
-  - [Seurat Clustering](#seurat-clustering)
 - [t-SNE Optimization](#t-sne-optimization)
 - [Optional Installations](#optional-installations)
   - [ZIFA](#zifa)
@@ -31,6 +30,7 @@
   - [BH t-SNE](#bh-t-sne)
   - [MEDist](#medist)
 - [Updates](#updates)
+  - [August 28, 2021](#august-28-2021)
   - [August 1, 2021](#august-1-2021)
   - [June 26, 2021](#june-26-2021)
   - [June 14, 2021](#june-14-2021)
@@ -91,7 +91,6 @@ Not all methods are implemented in Python. This project makes use of R for some 
 From **CRAN**, install the following package:
 
     - tidyverse
-    - Seurat
 
 You can install the packages using the following commands:
 
@@ -102,7 +101,6 @@ BiocManager::install("destiny")
 BioManager::install("FlowSOM")
 # CRAN
 install.packages("tidyverse")
-install.packages("Seurat")
 ```
 
 ## Usage
@@ -129,9 +127,10 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--embedding`` | Strings | File IO | Load embedding from directory or file path. | 
 | ``--embedding_col_names`` | None | File IO | Whether the first line of embedding is column names. |
 | ``--embedding_drop_col`` | Integers | File IO | The indicies of columns of embedding to be dropped. |
-| ``--label`` | Strings | File IO | Load label from directory or file path for evaluation. | 
-| ``--label_col_names`` | None | File IO | Whether the first line of label is column names. |
-| ``--label_drop_col`` | Integers | File IO | The indicies of columns of label to be dropped. |
+| ``--embedding_labels`` | Strings | File IO | Load embedding's labels from directory or file path for evaluation. | 
+| ``--labels`` | Strings | File IO | Load labels from directory or file path for evaluation. | 
+| ``--labels_col_names`` | None | File IO | Whether the first line of labels is column names. |
+| ``--labels_drop_col`` | Integers | File IO | The indicies of columns of labels to be dropped. |
 | ``--save_embedding_colnames`` | None | File IO | Whether to save column names of embedding. |
 | ``--k_fold`` | Integer | Downsample | The number of times to repeat down-sampling and compute average during evaluation. |
 | ``--save_downsample_index`` | None | Downsample | Save the indicies of downsampling to a subdirectory 'index'. |
@@ -157,6 +156,12 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--SAUCIE_learning_rate`` | Float | DR Parameters | Learning rate for SAUCIE. (Default: 0.001) |
 | ``--SAUCIE_steps`` | int | DR Parameters | Maximum iterations of SAUCIE. (Default: 256) |
 | ``--SAUCIE_batch_size`` | int | DR Parameters | Batch size for SAUCIE. (Default: 1000) |
+| ``--comparison_embedding`` | Strings | Concordance | Load comparison embedding from directory or file path. | 
+| ``--comparison_embedding_col_names`` | None | Concordance | Whether the first line of comparison embedding is column names. |
+| ``--comparison_embedding_drop_col`` | Integers | Concordance | The indicies of columns of comparison embedding to be dropped. |
+| ``--comparison_labels`` | Strings | Concordance | Load comparison comparison label from directory or file path for evaluation. | 
+| ``--comparison_labels_col_names`` | None | Concordance | Whether the first line of comparison label is column names. |
+| ``--comparison_labels_drop_col`` | Integers | Concordance | The indicies of columns of comparison label to be dropped. |
 
 ### File IO
 Only expression matrices saved in the format of text files (inclusing csv and tsv) are supported. File IO and analyses/evaluation are integrated into one step. In other words, you don't have to load file or save files separately if you are using the command-line mode.
@@ -272,7 +277,7 @@ python main.py \
 ```
 The results will be save in the format of a tab-separated file in ``phenograph.txt`` of the output directory.
 
-In two R scripts, flowSOM and Seurat are also supported. Theya re documented in the [R](#special-cases-with-r) section.
+With an R script, FlowSOM is also supported. Theya re documented in the [R](#special-cases-with-r) section.
 
 ### DR Evaluation
 The python program supports ten metrics for DR evaluation, and it is designed to be used in conjunction with DR methods in this program.
@@ -329,21 +334,6 @@ Rscript ./flowsom.R \
 
 ```
 
-### Seurat Clustering
-For single-cell RNA sequencing (scRNA-seq) data, seurat clustering can make more sense as documented [here](https://f1000research.com/articles/7-1141/v3). To run Seurat clustering,
-
-```shell
-Rscript ./seurat_clustering.R \
-    <PATH_TO_INPUT_FILE> \
-    <EXACT_PATH_TO_OUTPUT_FILE> \
-    <Whether input file has column names, R Boolean> \
-    <Number of genes to select, optional>
-```
-
-Seurat's algorithm, which is similar to Phenograph, automatically detects the number of clusters. There are a few quirks with our wrapper:
-- When the input dimension is less than 20, we use the full dataset for clustering instead of running PCA.
-- Centering and scaling are not performed for PCA to preserve the data structure of scRNA-seq data.
-
 ## t-SNE Optimization
 
 As demonstrated by [Kobak & Berens (2019)](https://www.nature.com/articles/s41467-019-13056-x) and [Belkinas et al. (2019)](https://www.nature.com/articles/s41467-019-13055-y), t-SNE parameters are important for single-cell data. To perform some optimizations, an example will be like this (Note: I have not benchmarked all these optimizations. See the original paper and [the documentation](https://opentsne.readthedocs.io/en/latest/parameters.html) for recommendations.)
@@ -397,6 +387,11 @@ However, if you would like to use the original implementation from [here](https:
 This is currently a private python module unpublished, but it is required for DR evaluation. Release is planned in the future. For access, contact author. To install, just clone the repository into the current working directory.
 
 ## Updates
+
+### August 28, 2021
+- Added concordance metrics: Embedding and labels can be compared to a reference.
+- Seurat clustering is removed. It is no longer needed.
+- Improved CLI arguments consistency.
 
 ### August 1, 2021
 - Added Seurat clustering.
