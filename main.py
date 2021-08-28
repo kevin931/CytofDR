@@ -25,7 +25,6 @@ def main(cmdargs: Dict[str, Any]):
     
     if cmdargs["downsample"] is not None:
         data_col_names: Optional["np.ndarray"] = data[0] if cmdargs["downsample_save_data_colnames"] is not None else None
-            
         DownSample.downsample_from_data(data=data[1],
                                         n=cmdargs["downsample"],
                                         n_fold=cmdargs["k_fold"],
@@ -36,31 +35,50 @@ def main(cmdargs: Dict[str, Any]):
     
     if cmdargs["evaluate"]:
         embedding: Optional[List["np.ndarray"]]
-        label: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
-        label_embedding: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
+        labels: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
+        embedding_labels: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
+        comparison_embedding: Optional[List["np.ndarray"]] = None
+        comparison_labels: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         index: Optional[List["np.ndarray"]] = None
         
         embedding = FileIO.load_data(files=cmdargs["embedding"],
-                                        col_names=cmdargs["embedding_col_names"],
-                                        concat=cmdargs["concat"],
-                                        add_sample_index=cmdargs["add_sample_index"],
-                                        drop_columns=cmdargs["embedding_drop_col"])
-        embedding.pop(0)
-        
-        if cmdargs["label"] is not None:
-            label = FileIO.load_data(files=cmdargs["label"],
-                                     col_names=cmdargs["label_col_names"],
+                                     col_names=cmdargs["embedding_col_names"],
                                      concat=cmdargs["concat"],
                                      add_sample_index=cmdargs["add_sample_index"],
-                                     drop_columns=cmdargs["label_drop_col"],
+                                     drop_columns=cmdargs["embedding_drop_col"])
+        embedding.pop(0)
+        
+        if cmdargs["labels"] is not None:
+            labels = FileIO.load_data(files=cmdargs["labels"],
+                                     col_names=cmdargs["labels_col_names"],
+                                     concat=cmdargs["concat"],
+                                     add_sample_index=cmdargs["add_sample_index"],
+                                     drop_columns=cmdargs["labels_drop_col"],
                                      dtype=int)[1]
             
-        if cmdargs["label_embedding"] is not None:
-            label_embedding = FileIO.load_data(files=cmdargs["label_embedding"],
-                                               col_names=cmdargs["label_col_names"],
-                                               concat=cmdargs["concat"],
-                                               add_sample_index=cmdargs["add_sample_index"],
-                                               drop_columns=cmdargs["label_drop_col"])[1]
+        if cmdargs["embedding_labels"] is not None:
+            embedding_labels = FileIO.load_data(files=cmdargs["embedding_labels"],
+                                                col_names=cmdargs["labels_col_names"],
+                                                concat=cmdargs["concat"],
+                                                add_sample_index=cmdargs["add_sample_index"],
+                                                drop_columns=cmdargs["labels_drop_col"],
+                                                dtype=str)[1]
+            
+        if cmdargs["comparison_embedding"] is not None:
+            comparison_embedding = FileIO.load_data(files=cmdargs["comparison_embedding"],
+                                                    col_names=cmdargs["comparison_embedding_col_names"],
+                                                    concat=False,
+                                                    add_sample_index=False,
+                                                    drop_columns=cmdargs["comparison_embedding_drop_col"])
+            comparison_labels = FileIO.load_data(files=cmdargs["comparison_labels"],
+                                                col_names=cmdargs["comparison_labels_col_names"],
+                                                concat=False,
+                                                add_sample_index=False,
+                                                drop_columns=cmdargs["comparison_labels_drop_col"],
+                                                dtype=str)
+            
+            comparison_embedding.pop(0)
+            comparison_labels.pop(0)
            
         results: List[List[Union[str, float]]]
         embedding_names: Optional["np.ndarray"] = None
@@ -75,9 +93,12 @@ def main(cmdargs: Dict[str, Any]):
                                                embedding=embedding,
                                                methods=cmdargs["methods"],
                                                dist_metric=cmdargs["eval_dist_metric"],
-                                               labels=label,
-                                               labels_embedding=label_embedding,
-                                               embedding_names=embedding_names, 
+                                               labels=labels,
+                                               labels_embedding=embedding_labels,
+                                               comparison_embedding=comparison_embedding,
+                                               comparison_labels=comparison_labels,
+                                               comparison_classes=cmdargs["comparison_classes"],
+                                               embedding_names=embedding_names,
                                                data_annoy_path=cmdargs["file_annoy"],
                                                k=cmdargs["eval_k_neighbors"])
             
@@ -93,8 +114,11 @@ def main(cmdargs: Dict[str, Any]):
                                                            embedding=embedding,
                                                            methods=cmdargs["methods"],
                                                            dist_metric=cmdargs["eval_dist_metric"],
-                                                           labels=label,
-                                                           labels_embedding=label_embedding,
+                                                           labels=labels,
+                                                           labels_embedding=embedding_labels,
+                                                           comparison_embedding=comparison_embedding,
+                                                           comparison_labels=comparison_labels,
+                                                           comparison_classes=cmdargs["comparison_classes"],
                                                            embedding_names=embedding_names,
                                                            downsample_indices=index,
                                                            data_annoy_path=cmdargs["file_annoy"],
@@ -161,39 +185,56 @@ class _Arguments():
         self.parser.add_argument("-m", "--methods", nargs="+", action="store",
                                  help="Methods to run: applies to all modules.")
         
-        # File IO
+        # File IO: Input Files
         self.parser.add_argument("-f", "--file", nargs="+", action="store",
                                  help="Path to directory or original files.")
         self.parser.add_argument("--concat", action="store_true",
                                  help="Concatenate files, embeddings, and labels read.")
         self.parser.add_argument("--delim", type=str, action="store", default="\t",
                                  help="File delimiter.")
-        self.parser.add_argument("-o", "--out", type=str, action="store",
-                                 help="Directory name for saving results")
-        self.parser.add_argument("--no_new_dir", action="store_true",
-                                 help="Save results directly in -o without creating new directory.")
-        self.parser.add_argument("--embedding", nargs="+", action="store",
-                                 help="Load embedding from directory or file path.")
-        self.parser.add_argument("--embedding_col_names", action="store_true",
-                                 help="Whether embedding's first row is names.")
-        self.parser.add_argument("--label", action="store",
-                                 help="Path to pre-classified labels.")
-        self.parser.add_argument("--label_embedding", action="store",
-                                 help="Path to pre-classified labels of embedding.")
-        self.parser.add_argument("--label_col_names", action="store_true",
-                                 help="Whether embedding's first row is names.")
-        self.parser.add_argument("--label_drop_col", type=int, nargs="+", action="store",
-                                 help="Columns of label to be dropped.")
         self.parser.add_argument("--file_col_names", action="store_true",
                                  help="Whether file's first row is names.")
         self.parser.add_argument("--file_drop_col", type=int, nargs="+", action="store",
                                  help="Columns to drop while reading files.")
-        self.parser.add_argument("--embedding_drop_col", type=int, nargs="+", action="store",
-                                 help="Columns to drop while reading files.")
         self.parser.add_argument("--add_sample_index", action="store_true",
                                  help="Add sample index as first column of matrix.")
+        # File IO: Output
+        self.parser.add_argument("-o", "--out", type=str, action="store",
+                                 help="Directory name for saving results")
+        self.parser.add_argument("--no_new_dir", action="store_true",
+                                 help="Save results directly in -o without creating new directory.")
         self.parser.add_argument("--save_embedding_colnames", action="store_true",
                                  help="Save column names for embedding after DR.")
+        # File IO: Embedding and labels
+        self.parser.add_argument("--embedding", nargs="+", action="store",
+                                 help="Load embedding from directory or file path.")
+        self.parser.add_argument("--embedding_col_names", action="store_true",
+                                 help="Whether embedding's first row is names.")
+        self.parser.add_argument("--embedding_drop_col", type=int, nargs="+", action="store",
+                                 help="Columns to drop while reading files.")
+        self.parser.add_argument("--labels", action="store",
+                                 help="Path to pre-classified labels.")
+        self.parser.add_argument("--embedding_labels", action="store",
+                                 help="Path to pre-classified labels of embedding.")
+        self.parser.add_argument("--labels_col_names", action="store_true",
+                                 help="Whether embedding's first row is names.")
+        self.parser.add_argument("--labels_drop_col", type=int, nargs="+", action="store",
+                                 help="Columns of label to be dropped.")
+        # File IO: Comparison EMbedding and Labels
+        self.parser.add_argument("--comparison_embedding", nargs="+", action="store",
+                                 help="Load comparison embedding from directory or file path.")
+        self.parser.add_argument("--comparison_embedding_col_names", action="store_true",
+                                 help="Whether comparison embedding's first row is names.")
+        self.parser.add_argument("--comparison_embedding_drop_col", type=int, nargs="+", action="store",
+                                 help="Columns to drop while reading comparison embedding's files.")
+        self.parser.add_argument("--comparison_labels", nargs="+", action="store",
+                                 help="Path to pre-classified comparison labels of embedding.")
+        self.parser.add_argument("--comparison_labels_col_names", action="store_true",
+                                 help="Whether comparison embedding labels' first row is names.")
+        self.parser.add_argument("--comparison_labels_drop_col", type=int, nargs="+", action="store",
+                                 help="Columns of comparison label to be dropped.")
+        self.parser.add_argument("--comparison_classes", type=str, nargs="+", action="store",
+                                 help="Classes to use for comparison.")
         
         # Downsampling
         self.parser.add_argument("--k_fold", type=int, action="store", default=1,
@@ -248,9 +289,9 @@ class _Arguments():
                                  help="Intracluster distance regularization for SAUCIE.")
         self.parser.add_argument("--SAUCIE_learning_rate", type=float, action="store", default=0.001,
                                  help="Learning rate for SAUCIE.")
-        self.parser.add_argument("--SAUCIE_steps", type=int, action="store", default=256,
+        self.parser.add_argument("--SAUCIE_steps", type=int, action="store", default=1000,
                                  help="Maximum iteration for SAUCIE.")
-        self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store", default=1000,
+        self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store", default=256,
                                  help="Batch size for SAUCIE.")
         
 
