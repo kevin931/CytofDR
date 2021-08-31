@@ -1,7 +1,7 @@
 import numpy as np
 import sklearn
-from sklearn.decomposition import FastICA, PCA, FactorAnalysis
-from sklearn.manifold import Isomap, MDS
+from sklearn.decomposition import FastICA, PCA, FactorAnalysis, KernelPCA
+from sklearn.manifold import Isomap, MDS, LocallyLinearEmbedding, SpectralEmbedding
 
 import umap
 from openTSNE import TSNEEmbedding
@@ -64,7 +64,8 @@ class DR():
                     SAUCIE_lambda_d: float=0.0,
                     SAUCIE_steps: int=1000,
                     SAUCIE_batch_size: int=256,
-                    SAUCIE_learning_rate: float=0.001
+                    SAUCIE_learning_rate: float=0.001,
+                    kernel: str="poly"
                     ) -> List[List[Union[str, float]]]:
         
         dir_path: str = out+"/embedding"
@@ -301,6 +302,33 @@ class DR():
             except Exception as e:
                 print(e)
                 
+        if "lle" in methods:
+            try:
+                time_lle, embedding_lle = NonLinearMethods.LLE(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_lle, dir_path, "lle", col_names=colnames)
+                time[0].append("lle")
+                time[1].append(time_lle)
+            except Exception as e:
+                print(e)
+                
+        if "spectral" in methods:
+            try:
+                time_spectral, embedding_spectral = NonLinearMethods.spectral(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_spectral, dir_path, "spectral", col_names=colnames)
+                time[0].append("spectral")
+                time[1].append(time_spectral)
+            except Exception as e:
+                print(e)
+                        
+        if "kernelpca" in methods:
+            try:
+                time_kernelPCA, embedding_kernelPCA = NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel=kernel)
+                FileIO.save_np_array(embedding_kernelPCA, dir_path, "kernelPCA", col_names=colnames)
+                time[0].append("kernelPCA")
+                time[1].append(time_kernelPCA)
+            except Exception as e:
+                print(e)
+                
         FileIO.save_list_to_csv(time, out, "time")
             
         return time
@@ -475,7 +503,23 @@ class NonLinearMethods():
                batch_size: int=256,
                learning_rate: float=0.001
                ) -> Tuple[float, "np.ndarray"]:
+        ''' SAUCIE
         
+        This method is a wrapper for SAUCIE package's SAUCIE model. Specifically,
+        dimension reduction is of interest.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            lambda_c (float): ID regularization.
+            lambda_d (float): Within-cluster distance regularization.
+            steps (int): The number of training steps to use.
+            batch_size (int): The batch size for training.
+            learning_rate (float): The learning rate of traning.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+        '''
         start_time: float = time.perf_counter()
         
         saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1],
@@ -498,7 +542,23 @@ class NonLinearMethods():
     def isomap(data: "np.ndarray",
                out_dims: int=2,
                n_neighbors: int=5,
-               dist_metric: str="euclidean"):
+               dist_metric: str="euclidean"
+               ) -> Tuple[float, "np.ndarray"]:
+        
+        ''' Isomap
+        
+        This method is a wrapper for sklearn's implementation of Isomap.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+            n_neighbors (int): The number of neighbors to consider.
+            dist_metric (str): The distance metric used in calculation.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+        '''
         
         start_time: float = time.perf_counter()
 
@@ -506,6 +566,98 @@ class NonLinearMethods():
                                          n_components=out_dims,
                                          metric=dist_metric,
                                          n_jobs=-1).fit_transform(data)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
+    
+    @staticmethod
+    def LLE(data: "np.ndarray",
+            out_dims: int=2,
+            n_neighbors: int=5
+            ) -> Tuple[float, "np.ndarray"]: 
+        
+        ''' Locally Linear Embedding (LLE)
+        
+        This method is a wrapper for sklearn's implementation of LLE.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+            n_neighbors (int): The number of neighbors to consider.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+        '''
+        
+        start_time: float = time.perf_counter()
+
+        embedding: "np.ndarray" = LocallyLinearEmbedding(n_neighbors=n_neighbors,
+                                                         n_components=out_dims,
+                                                         n_jobs=-1).fit_transform(data)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
+    
+    @staticmethod
+    def kernelPCA(data: "np.ndarray",
+                  out_dims: int=2,
+                  kernel: str="poly"
+                  ) -> Tuple[float, "np.ndarray"]: 
+        
+        ''' Locally Linear Embedding (LLE)
+        
+        This method is a wrapper for sklearn's implementation of LLE.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+            kernel (str): The kernel to use: "poly," "linear," "rbf," "sigmoid," or "cosine."
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+        '''
+        
+        start_time: float = time.perf_counter()
+
+        embedding: "np.ndarray" = KernelPCA(n_components=out_dims,
+                                            kernel=kernel,
+                                            n_jobs=-1).fit_transform(data)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+
+
+    @staticmethod
+    def spectral(data: "np.ndarray",
+                 out_dims: int=2):
+        
+        ''' Locally Linear Embedding (LLE)
+        
+        This method is a wrapper for sklearn's implementation of LLE.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+        ''' 
+        
+        start_time: float = time.perf_counter()
+
+        embedding: "np.ndarray" = SpectralEmbedding(n_components=out_dims,
+                                                    n_jobs=-1).fit_transform(data)
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
