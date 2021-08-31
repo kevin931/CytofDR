@@ -11,15 +11,6 @@ from util import Annoy
 import itertools
 from typing import Optional, Any, Union, List, Tuple
 
-MEDIST: bool = False
-
-try:
-    from MEDist.MEDist import approximate
-    MEDIST = True
-except ImportError:
-    print("No MEDist implementation.")
-
-
 class Metric():
     
     @classmethod
@@ -31,7 +22,7 @@ class Metric():
                                dist_metric: str="PCD",
                                labels: Optional["np.ndarray"]=None,
                                labels_embedding: Optional["np.ndarray"]=None,
-                               comparison_embedding: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                               comparison_file: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
                                comparison_labels: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
                                comparison_classes: Optional[Union[str, List[str]]]=None,
                                embedding_names: Optional["np.ndarray"]=None,
@@ -93,7 +84,7 @@ class Metric():
                                       dist_metric=dist_metric,
                                       labels=labels_downsample,
                                       labels_embedding=labels_embedding_downsample,
-                                      comparison_embedding=comparison_embedding,
+                                      comparison_file=comparison_file,
                                       comparison_labels=comparison_labels,
                                       comparison_classes=comparison_classes,
                                       embedding_names=embedding_names,
@@ -116,7 +107,7 @@ class Metric():
                     dist_metric: str="PCD",
                     labels: Optional["np.ndarray"]=None,
                     labels_embedding: Optional["np.ndarray"]=None,
-                    comparison_embedding: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
+                    comparison_file: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
                     comparison_labels: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
                     comparison_classes: Optional[Union[str, List[str]]]=None,
                     embedding_names: Optional["np.ndarray"]=None,
@@ -153,7 +144,7 @@ class Metric():
         if embedding_names is None:
             embedding_names = np.array(list(map(str, range(len(embedding)))))
             
-        if dist_metric.lower() != "pcd" or labels is None or not MEDIST:
+        if dist_metric.lower() != "pcd" or labels is None:
             dist_metric = "pairwise"
         
         i: int
@@ -168,7 +159,7 @@ class Metric():
                 methods.extend(["npe", "random_forest", "silhouette"])
             if labels is not None and labels_embedding is not None:
                 methods.extend(["ari", "mni"])
-            if comparison_labels is not None and comparison_embedding is not None:
+            if comparison_labels is not None and comparison_file is not None:
                 methods.extend(["embedding_concordance"])
                 
         data_distance: Optional["np.ndarray"] = None
@@ -280,17 +271,17 @@ class Metric():
             if "concordance_emd" in methods:
                 print("running concordance_emd")
                 assert labels_embedding is not None
-                assert comparison_embedding is not None and comparison_labels is not None
+                assert comparison_file is not None and comparison_labels is not None
                 results[0].append("concordance_emd")
-                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_embedding, comparison_labels, comparison_classes, "emd"))
+                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_file, comparison_labels, comparison_classes, "emd"))
                 results[2].append(embedding_names[i])
                 
             if "concordance_cluster_distance" in methods:
                 print("running concordance_cluster_distance")
                 assert labels_embedding is not None
-                assert comparison_embedding is not None and comparison_labels is not None
+                assert comparison_file is not None and comparison_labels is not None
                 results[0].append("concordance_cluster_distance")
-                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_embedding, comparison_labels, comparison_classes, "cluster_distance"))
+                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_file, comparison_labels, comparison_classes, "cluster_distance"))
                 results[2].append(embedding_names[i])
             
         return results
@@ -335,11 +326,11 @@ class Metric():
         data_distance: "np.ndarray"
         embedding_distance: List["np.ndarray"]
         
-        pcd_data: "approximate.PointClusterDistance" = approximate.PointClusterDistance(X=data, labels=labels)
+        pcd_data: "PointClusterDistance" = PointClusterDistance(X=data, labels=labels)
         data_distance = pcd_data.fit(flatten=True)[0]
         embedding_distance = []
         for e in embedding:
-            pcd_embedding: "approximate.PointClusterDistance" = approximate.PointClusterDistance(X=e, labels=labels)
+            pcd_embedding: "PointClusterDistance" = PointClusterDistance(X=e, labels=labels)
             embedding_distance.append(pcd_embedding.fit(flatten=True)[0])
             
         return data_distance, embedding_distance
@@ -790,25 +781,25 @@ class Metric():
     @staticmethod
     def embedding_concordance(embedding: "np.ndarray",
                               labels_embedding: "np.ndarray",
-                              comparison_embedding: Union["np.ndarray", List["np.ndarray"]],
+                              comparison_file: Union["np.ndarray", List["np.ndarray"]],
                               comparison_labels: Union["np.ndarray", List["np.ndarray"]],
                               comparison_classes: Optional[Union[str, List[str]]]=None,
                               method: str = "emd"
                               ) -> None:
         
-        if not isinstance(comparison_embedding, list):
-            comparison_embedding = [comparison_embedding]
+        if not isinstance(comparison_file, list):
+            comparison_file = [comparison_file]
         if not isinstance(comparison_labels, list):
             comparison_labels = [comparison_labels]
         if not isinstance(comparison_classes, list) and comparison_classes is not None:
             comparison_classes = [comparison_classes]
             
-        scores: "np.ndarray" = np.zeros(len(comparison_embedding))
+        scores: "np.ndarray" = np.zeros(len(comparison_file))
         i: int
         comparison_labels_index: int
         
-        for i in range(len(comparison_embedding)):
-            comparison_labels_index = i if len(comparison_labels) == len(comparison_embedding) else 0
+        for i in range(len(comparison_file)):
+            comparison_labels_index = i if len(comparison_labels) == len(comparison_file) else 0
             common_types: "np.ndarray" = np.intersect1d(np.unique(labels_embedding), np.unique(comparison_labels[comparison_labels_index]))
             
             if comparison_classes is not None:
@@ -819,14 +810,14 @@ class Metric():
             if method == "emd":
                 scores[i] = Metric._concordance_emd(embedding,
                                                     labels_embedding,
-                                                    comparison_embedding[i],
+                                                    comparison_file[i],
                                                     comparison_labels[comparison_labels_index],
                                                     common_types)
                 
             elif method == "cluster_distance":
                 scores[i] = Metric._concordance_cluster_distance(embedding,
                                                                  labels_embedding,
-                                                                 comparison_embedding[i],
+                                                                 comparison_file[i],
                                                                  comparison_labels[comparison_labels_index],
                                                                  common_types)
             
@@ -836,7 +827,7 @@ class Metric():
     @staticmethod
     def _concordance_emd(embedding: "np.ndarray",
                          labels_embedding: "np.ndarray",
-                         comparison_embedding: "np.ndarray",
+                         comparison_file: "np.ndarray",
                          comparison_labels: "np.ndarray",
                          common_types: "np.ndarray") -> float:
         
@@ -853,9 +844,9 @@ class Metric():
             embedding_scores.extend(d for d in pwd)
             
             indicies_comparison: "np.ndarray" = np.where(comparison_labels == comb[0])[0]
-            centroid_c: "np.ndarray" = np.mean(comparison_embedding[indicies_comparison,], axis=0)
-            pwd_c: "np.ndarray" = scipy.stats.rankdata(np.sqrt(np.sum((centroid_c - comparison_embedding)**2, axis=1)))
-            pwd_c = pwd_c[np.where(comparison_labels == comb[1])]/(comparison_embedding.shape[0])
+            centroid_c: "np.ndarray" = np.mean(comparison_file[indicies_comparison,], axis=0)
+            pwd_c: "np.ndarray" = scipy.stats.rankdata(np.sqrt(np.sum((centroid_c - comparison_file)**2, axis=1)))
+            pwd_c = pwd_c[np.where(comparison_labels == comb[1])]/(comparison_file.shape[0])
             comparison_scores.extend([d for d in pwd_c])
             
         return scipy.stats.wasserstein_distance(embedding_scores, comparison_scores)
@@ -864,7 +855,7 @@ class Metric():
     @staticmethod
     def _concordance_cluster_distance(embedding: "np.ndarray",
                                       labels_embedding: "np.ndarray",
-                                      comparison_embedding: "np.ndarray",
+                                      comparison_file: "np.ndarray",
                                       comparison_labels: "np.ndarray",
                                       common_types: "np.ndarray") -> float:
         
@@ -878,9 +869,9 @@ class Metric():
             embedding_centroid[i] = np.mean(embedding[np.where(labels_embedding==c)[0],], axis=0)
                 
         comparison_clusters: "np.ndarray" = np.unique(comparison_labels)
-        comparison_centroid: "np.ndarray" = np.zeros((comparison_clusters.shape[0], comparison_embedding.shape[1]))
+        comparison_centroid: "np.ndarray" = np.zeros((comparison_clusters.shape[0], comparison_file.shape[1]))
         for i, c in enumerate(comparison_clusters):
-            comparison_centroid[i] = np.mean(comparison_embedding[np.where(comparison_labels==c)[0],], axis=0)
+            comparison_centroid[i] = np.mean(comparison_file[np.where(comparison_labels==c)[0],], axis=0)
 
         comb: Tuple[int, ...]
         i: int
@@ -898,3 +889,49 @@ class Metric():
             comparison_scores[i] = comparison_pwd[comparison_index_1,]/comparison_clusters.shape[0]
             
         return np.mean(np.abs(embedding_scores-comparison_scores))  
+    
+    
+class PointClusterDistance():
+    
+    def __init__(self, X: "np.ndarray", labels: "np.ndarray"):
+        self.X: "np.ndarray" = X
+        self.labels: "np.ndarray" = labels
+        self.dist: Optional["np.ndarray"] = None
+        
+        
+    def fit(self, flatten: bool=False) -> Tuple["np.ndarray", "np.ndarray"]:
+        index: "np.ndarray"
+        inverse: "np.ndarray"
+        index, inverse = np.unique(self.labels, return_inverse=True)
+        
+        self.dist = np.empty((self.X.shape[0], index.size))
+        centroid: "np.ndarray" = self._cluster_centroid(self.X, index, inverse)
+        
+        i: int
+        obs: "np.ndarray"
+        for i, obs in enumerate(self.X):
+            self.dist[i] = self._euclidean(obs, centroid)
+            
+        if flatten:
+            return self.flatten(self.dist), index
+        else:
+            return self.dist, index
+        
+    
+    @staticmethod
+    def flatten(dist: "np.ndarray"):
+        return dist.flatten()
+    
+    
+    @staticmethod
+    def _euclidean(X1, X2):
+        return np.sqrt(np.sum(np.square(X1-X2), axis=1))
+    
+    
+    @staticmethod
+    def _cluster_centroid(X, index, inverse):
+        centroid: "np.ndarray" = np.empty((index.size, X.shape[1]))
+        for i in range(len(index)):
+            centroid[i] = np.mean(X[inverse==i])
+            
+        return centroid
