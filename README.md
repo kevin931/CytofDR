@@ -28,8 +28,8 @@
   - [FIt-SNE](#fit-sne)
   - [SAUCIE](#saucie)
   - [BH t-SNE](#bh-t-sne)
-  - [MEDist](#medist)
 - [Updates](#updates)
+  - [August 31, 2021](#august-31-2021)
   - [August 28, 2021](#august-28-2021)
   - [August 1, 2021](#august-1-2021)
   - [June 26, 2021](#june-26-2021)
@@ -62,7 +62,6 @@ See below for notes on how to get these installed.
     - fit-SNE
     - BH t-SNE
     - SAUCIE
-    - MEDist
 
 ### Conda Installation
 
@@ -156,9 +155,10 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--SAUCIE_learning_rate`` | Float | DR Parameters | Learning rate for SAUCIE. (Default: 0.001) |
 | ``--SAUCIE_steps`` | int | DR Parameters | Maximum iterations of SAUCIE. (Default: 256) |
 | ``--SAUCIE_batch_size`` | int | DR Parameters | Batch size for SAUCIE. (Default: 1000) |
-| ``--comparison_embedding`` | Strings | Concordance | Load comparison embedding from directory or file path. | 
-| ``--comparison_embedding_col_names`` | None | Concordance | Whether the first line of comparison embedding is column names. |
-| ``--comparison_embedding_drop_col`` | Integers | Concordance | The indicies of columns of comparison embedding to be dropped. |
+| ``--kernelPCA`` | str | DR Parameters | The kernel for kernel PCA. (Default: poly) |
+| ``--comparison_file`` | Strings | Concordance | Load comparison file from directory or file path. | 
+| ``--comparison_file_col_names`` | None | Concordance | Whether the first line of comparison file is column names. |
+| ``--comparison_file_drop_col`` | Integers | Concordance | The indicies of columns of comparison file to be dropped. |
 | ``--comparison_labels`` | Strings | Concordance | Load comparison comparison label from directory or file path for evaluation. | 
 | ``--comparison_labels_col_names`` | None | Concordance | Whether the first line of comparison label is column names. |
 | ``--comparison_labels_drop_col`` | Integers | Concordance | The indicies of columns of comparison label to be dropped. |
@@ -246,7 +246,7 @@ python main.py \
 ```
 
 ### Dimension Reduction
-To perform dimension reduction, the following arguments are required: ``-f``, ``-o``, ``--dr``, and ``-m``. The acceptable strings for methods are: ``pca``, ``ica``, ``umap``, ``sklearn_tsne_original``, ``sklearn_tsne_bh``, ``open_tsne``, ``fit_sne``, ``bh_tsne``, ``saucie``, and ``zifa``.  (Note: ``fit_sne``, ``bh_tsne``, ``saucie`` and ``zifa`` need additional installations. See instructions below.)
+To perform dimension reduction, the following arguments are required: ``-f``, ``-o``, ``--dr``, and ``-m``. The acceptable strings for methods are: ``pca``, ``ica``, ``umap``, ``sklearn_tsne_original``, ``sklearn_tsne_bh``, ``open_tsne``, ``fit_sne``, ``bh_tsne``, ``saucie``, ``zifa``, ``lle``, ``kernelPCA``, and ``spectral``.  (Note: ``fit_sne``, ``bh_tsne``, ``saucie`` and ``zifa`` need additional installations. See instructions below.)
 
 To run t-SNE (I recommend ``open_tsne`` through the openTSNE package):
 
@@ -277,7 +277,7 @@ python main.py \
 ```
 The results will be save in the format of a tab-separated file in ``phenograph.txt`` of the output directory.
 
-With an R script, FlowSOM is also supported. Theya re documented in the [R](#special-cases-with-r) section.
+With an R script, FlowSOM is also supported. They are documented in the [R](#special-cases-with-r) section.
 
 ### DR Evaluation
 The python program supports ten metrics for DR evaluation, and it is designed to be used in conjunction with DR methods in this program.
@@ -382,11 +382,12 @@ The project already supports two implementations of BH t-SNE: sklearn and openTS
 
 However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
 
-### MEDist
-
-This is currently a private python module unpublished, but it is required for DR evaluation. Release is planned in the future. For access, contact author. To install, just clone the repository into the current working directory.
-
 ## Updates
+
+### August 31, 2021
+- Added the following methods to DR: LLE, Spectral, and KernelPCA.
+- Removed ``MEDist`` as optional dependency. It is now integrated into the package.
+- Changed CLI arguements for consistency.
 
 ### August 28, 2021
 - Added concordance metrics: Embedding and labels can be compared to a reference.

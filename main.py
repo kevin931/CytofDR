@@ -37,7 +37,7 @@ def main(cmdargs: Dict[str, Any]):
         embedding: Optional[List["np.ndarray"]]
         labels: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         embedding_labels: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
-        comparison_embedding: Optional[List["np.ndarray"]] = None
+        comparison_file: Optional[List["np.ndarray"]] = None
         comparison_labels: Optional[Union[List["np.ndarray"], "np.ndarray"]] = None
         index: Optional[List["np.ndarray"]] = None
         
@@ -64,20 +64,20 @@ def main(cmdargs: Dict[str, Any]):
                                                 drop_columns=cmdargs["labels_drop_col"],
                                                 dtype=str)[1]
             
-        if cmdargs["comparison_embedding"] is not None:
-            comparison_embedding = FileIO.load_data(files=cmdargs["comparison_embedding"],
-                                                    col_names=cmdargs["comparison_embedding_col_names"],
-                                                    concat=False,
-                                                    add_sample_index=False,
-                                                    drop_columns=cmdargs["comparison_embedding_drop_col"])
+        if cmdargs["comparison_file"] is not None:
+            comparison_file = FileIO.load_data(files=cmdargs["comparison_file"],
+                                               col_names=cmdargs["comparison_file_col_names"],
+                                               concat=False,
+                                               add_sample_index=False,
+                                               drop_columns=cmdargs["comparison_file_drop_col"])
             comparison_labels = FileIO.load_data(files=cmdargs["comparison_labels"],
-                                                col_names=cmdargs["comparison_labels_col_names"],
-                                                concat=False,
-                                                add_sample_index=False,
-                                                drop_columns=cmdargs["comparison_labels_drop_col"],
-                                                dtype=str)
+                                                 col_names=cmdargs["comparison_labels_col_names"],
+                                                 concat=False,
+                                                 add_sample_index=False,
+                                                 drop_columns=cmdargs["comparison_labels_drop_col"],
+                                                 dtype=str)
             
-            comparison_embedding.pop(0)
+            comparison_file.pop(0)
             comparison_labels.pop(0)
            
         results: List[List[Union[str, float]]]
@@ -95,7 +95,7 @@ def main(cmdargs: Dict[str, Any]):
                                                dist_metric=cmdargs["eval_dist_metric"],
                                                labels=labels,
                                                labels_embedding=embedding_labels,
-                                               comparison_embedding=comparison_embedding,
+                                               comparison_file=comparison_file,
                                                comparison_labels=comparison_labels,
                                                comparison_classes=cmdargs["comparison_classes"],
                                                embedding_names=embedding_names,
@@ -116,7 +116,7 @@ def main(cmdargs: Dict[str, Any]):
                                                            dist_metric=cmdargs["eval_dist_metric"],
                                                            labels=labels,
                                                            labels_embedding=embedding_labels,
-                                                           comparison_embedding=comparison_embedding,
+                                                           comparison_file=comparison_file,
                                                            comparison_labels=comparison_labels,
                                                            comparison_classes=cmdargs["comparison_classes"],
                                                            embedding_names=embedding_names,
@@ -159,7 +159,8 @@ def main(cmdargs: Dict[str, Any]):
                           SAUCIE_lambda_d=cmdargs["SAUCIE_lambda_d"],
                           SAUCIE_steps=cmdargs["SAUCIE_steps"],
                           SAUCIE_batch_size=cmdargs["SAUCIE_batch_size"],
-                          SAUCIE_learning_rate=cmdargs["SAUCIE_learning_rate"])
+                          SAUCIE_learning_rate=cmdargs["SAUCIE_learning_rate"],
+                          kernel=cmdargs["kernelPCA"])
         
         
 class _Arguments():
@@ -221,12 +222,12 @@ class _Arguments():
         self.parser.add_argument("--labels_drop_col", type=int, nargs="+", action="store",
                                  help="Columns of label to be dropped.")
         # File IO: Comparison EMbedding and Labels
-        self.parser.add_argument("--comparison_embedding", nargs="+", action="store",
-                                 help="Load comparison embedding from directory or file path.")
-        self.parser.add_argument("--comparison_embedding_col_names", action="store_true",
-                                 help="Whether comparison embedding's first row is names.")
-        self.parser.add_argument("--comparison_embedding_drop_col", type=int, nargs="+", action="store",
-                                 help="Columns to drop while reading comparison embedding's files.")
+        self.parser.add_argument("--comparison_file", nargs="+", action="store",
+                                 help="Load comparison file from directory or file path.")
+        self.parser.add_argument("--comparison_file_col_names", action="store_true",
+                                 help="Whether comparison file's first row is names.")
+        self.parser.add_argument("--comparison_file_drop_col", type=int, nargs="+", action="store",
+                                 help="Columns to drop while reading comparison file.")
         self.parser.add_argument("--comparison_labels", nargs="+", action="store",
                                  help="Path to pre-classified comparison labels of embedding.")
         self.parser.add_argument("--comparison_labels_col_names", action="store_true",
@@ -293,6 +294,10 @@ class _Arguments():
                                  help="Maximum iteration for SAUCIE.")
         self.parser.add_argument("--SAUCIE_batch_size", type=int, action="store", default=256,
                                  help="Batch size for SAUCIE.")
+        
+        # KernelPCA
+        self.parser.add_argument("--kernelPCA", type=str, action="store", default="poly",
+                                 help="Kernel for kernel PCA.")
         
 
     def parse(self, args: Optional[List[str]]=None) -> Dict[str, Optional[str]]:
