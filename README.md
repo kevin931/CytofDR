@@ -1,6 +1,6 @@
-# CyTOF Workflow
+# CyTOF Dimension Reduction Framework
 
-> A collection of common CyTOF analyses methods, especially dimension reduction, in Python.
+> A framework of dimension reduction and its evaluation for both CyTOF and general-purpose usages.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
