@@ -785,7 +785,7 @@ class Metric():
                               comparison_labels: Union["np.ndarray", List["np.ndarray"]],
                               comparison_classes: Optional[Union[str, List[str]]]=None,
                               method: str = "emd"
-                              ) -> None:
+                              ) -> Union[float, str]:
         
         if not isinstance(comparison_file, list):
             comparison_file = [comparison_file]
@@ -797,6 +797,7 @@ class Metric():
         scores: "np.ndarray" = np.zeros(len(comparison_file))
         i: int
         comparison_labels_index: int
+        comparison_status: bool = False
         
         for i in range(len(comparison_file)):
             comparison_labels_index = i if len(comparison_labels) == len(comparison_file) else 0
@@ -820,8 +821,12 @@ class Metric():
                                                                  comparison_file[i],
                                                                  comparison_labels[comparison_labels_index],
                                                                  common_types)
+            comparison_status = True
             
-        return np.mean(scores)
+        if comparison_status:
+            return np.mean(scores)
+        else:
+            return "NA"
             
             
     @staticmethod
