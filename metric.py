@@ -268,6 +268,20 @@ class Metric():
                 results[1].append(cls.ARI(labels=labels, labels_embedding=labels_embedding))
                 results[2].append(embedding_names[i])
                 
+            if "calinski_harabasz" in methods:
+                print("running calinski_harabasz")
+                assert labels is not None and e is not None
+                results[0].append("calinski_harabasz")
+                results[1].append(cls.calinski_harabasz(embedding=e, labels=labels))
+                results[2].append(embedding_names[i])
+                
+            if "davies_bouldin" in methods:
+                print("running davies_bouldin")
+                assert labels is not None and e is not None
+                results[0].append("davies_bouldin")
+                results[1].append(cls.davies_bouldin(embedding=e, labels=labels))
+                results[2].append(embedding_names[i])
+                
             if "concordance_emd" in methods:
                 print("running concordance_emd")
                 assert labels_embedding is not None
@@ -776,6 +790,50 @@ class Metric():
         tp: int = int(confusion[1][1])
         
         return 2. * (tp * tn - fn * fp) / ((tp + fn) * (fn + tn) + (tp + fp) * (fp + tn))
+    
+    
+    @staticmethod
+    def calinski_harabasz(embedding: "np.ndarray",
+                          labels: "np.ndarray") -> float:
+        
+        '''Calinski-Harabasz Index
+        
+        This metric computes the Calinski-Harabasz index of clusters in the embedding space. Ideally,
+        clusters should be coherent, and using labels obtained from the original space can
+        evaluate the effectiveness of the embedding technique.
+        
+        Parameters:
+            embedding (np.ndarray): The low-dimensional embedding.
+            labels (np.ndarray): The class labels of each observation.
+
+        Returns:
+            float: Calinski-Harabasz Index.
+        
+        '''
+        
+        return sklearn.metrics.calinski_harabasz_score(embedding, labels)
+    
+    
+    @staticmethod
+    def davies_bouldin(embedding: "np.ndarray",
+                       labels: "np.ndarray") -> float:
+        
+        '''Davies-Bouldin Index
+        
+        This metric computes the Davies-Bouldin index of clusters in the embedding space. Ideally,
+        clusters should be coherent, and using labels obtained from the original space can
+        evaluate the effectiveness of the embedding technique.
+        
+        Parameters:
+            embedding (np.ndarray): The low-dimensional embedding.
+            labels (np.ndarray): The class labels of each observation.
+
+        Returns:
+            float: Davies-Bouldin Index.
+        
+        '''
+        
+        return sklearn.metrics.davies_bouldin_score(embedding, labels)
     
     
     @staticmethod
