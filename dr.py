@@ -47,6 +47,7 @@ class DR():
     def run_methods(cls,
                     data: "np.ndarray",
                     out: str,
+                    transform: Optional["np.ndarray"]=None,
                     methods: Union[str, List[str]]="all",
                     out_dims: int=2,
                     save_embedding_colnames: bool=False,
@@ -286,6 +287,7 @@ class DR():
             try:
                 time_isomap, embedding_isomap = NonLinearMethods.isomap(data,
                                                                         out_dims=out_dims,
+                                                                        transform=transform,
                                                                         dist_metric=dist_metric)
                 FileIO.save_np_array(embedding_isomap, dir_path, "isomap", col_names=colnames)
                 time[0].append("isomap")
@@ -304,7 +306,9 @@ class DR():
                 
         if "lle" in methods:
             try:
-                time_lle, embedding_lle = NonLinearMethods.LLE(data, out_dims=out_dims)
+                time_lle, embedding_lle = NonLinearMethods.LLE(data,
+                                                               out_dims=out_dims,
+                                                               transform=transform)
                 FileIO.save_np_array(embedding_lle, dir_path, "lle", col_names=colnames)
                 time[0].append("lle")
                 time[1].append(time_lle)
@@ -541,6 +545,7 @@ class NonLinearMethods():
     @staticmethod
     def isomap(data: "np.ndarray",
                out_dims: int=2,
+               transform: Optional["np.ndarray"]=None,
                n_neighbors: int=5,
                dist_metric: str="euclidean"
                ) -> Tuple[float, "np.ndarray"]:
@@ -561,11 +566,17 @@ class NonLinearMethods():
         '''
         
         start_time: float = time.perf_counter()
-
-        embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
-                                         n_components=out_dims,
-                                         metric=dist_metric,
-                                         n_jobs=-1).fit_transform(data)
+        
+        if transform is None:
+            embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
+                                            n_components=out_dims,
+                                            metric=dist_metric,
+                                            n_jobs=-1).fit_transform(data)
+        else:
+            embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
+                                             n_components=out_dims,
+                                             metric=dist_metric,
+                                             n_jobs=-1).fit(data).transform(transform)
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
@@ -576,6 +587,7 @@ class NonLinearMethods():
     @staticmethod
     def LLE(data: "np.ndarray",
             out_dims: int=2,
+            transform: Optional["np.ndarray"]=None,
             n_neighbors: int=5
             ) -> Tuple[float, "np.ndarray"]: 
         
@@ -595,9 +607,14 @@ class NonLinearMethods():
         
         start_time: float = time.perf_counter()
 
-        embedding: "np.ndarray" = LocallyLinearEmbedding(n_neighbors=n_neighbors,
-                                                         n_components=out_dims,
-                                                         n_jobs=-1).fit_transform(data)
+        if transform is None:
+            embedding: "np.ndarray" = LocallyLinearEmbedding(n_neighbors=n_neighbors,
+                                                             n_components=out_dims,
+                                                             n_jobs=-1).fit_transform(data)
+        else:
+            embedding: "np.ndarray" = LocallyLinearEmbedding(n_neighbors=n_neighbors,
+                                                             n_components=out_dims,
+                                                             n_jobs=-1).fit(data).transform(transform)
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time

@@ -18,6 +18,14 @@ def main(cmdargs: Dict[str, Any]):
                                                 drop_columns=cmdargs["file_drop_col"],
                                                 delim=cmdargs["delim"])
     
+    transform: Optional["np.ndarray"] = None    
+    if cmdargs["transform"] is not None:
+        transform = FileIO.load_data(files=cmdargs["transform"],
+                                     col_names=cmdargs["file_col_names"],
+                                     add_sample_index=cmdargs["add_sample_index"],
+                                     drop_columns=cmdargs["file_drop_col"],
+                                     delim=cmdargs["delim"])[1]
+    
     if cmdargs["build_annoy"]:
         model: "AnnoyIndex" = Annoy.build_annoy(data=data[1])
         annoy_path: str = cmdargs["out"] + "/annoy.ann"
@@ -143,6 +151,7 @@ def main(cmdargs: Dict[str, Any]):
         dr.DR.run_methods(data=data[1],
                           out=cmdargs["out"],
                           methods=cmdargs["methods"],
+                          transform=transform,
                           out_dims=cmdargs["out_dims"],
                           save_embedding_colnames=cmdargs["save_embedding_colnames"],
                           perp=cmdargs["perp"],
@@ -189,6 +198,8 @@ class _Arguments():
         # File IO: Input Files
         self.parser.add_argument("-f", "--file", nargs="+", action="store",
                                  help="Path to directory or original files.")
+        self.parser.add_argument("--transform", nargs="+", action="store",
+                                 help="Path to directory or files to transform. The format must be the same as the input files from ``-f``.")
         self.parser.add_argument("--concat", action="store_true",
                                  help="Concatenate files, embeddings, and labels read.")
         self.parser.add_argument("--delim", type=str, action="store", default="\t",
