@@ -554,9 +554,8 @@ class Metric():
         distance: float=0.0
         c: Any
         for c in classes:
-            P: "np.ndarray" = same_class_data[classes_index==c]
-            Q: "np.ndarray" = same_class_embedding[classes_index==c]
-            
+            P: "np.ndarray" = same_class_data[labels==c]
+            Q: "np.ndarray" = same_class_embedding[labels==c]
             distance += np.sum(np.absolute(P-Q))/2
             
         return distance/classes.size
