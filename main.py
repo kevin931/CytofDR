@@ -62,7 +62,7 @@ def main(cmdargs: Dict[str, Any]):
                                      concat=cmdargs["concat"],
                                      add_sample_index=cmdargs["add_sample_index"],
                                      drop_columns=cmdargs["labels_drop_col"],
-                                     dtype=int)[1]
+                                     dtype=str)[1]
             
         if cmdargs["embedding_labels"] is not None:
             embedding_labels = FileIO.load_data(files=cmdargs["embedding_labels"],
