@@ -7,6 +7,7 @@ import umap
 from openTSNE import TSNEEmbedding
 from openTSNE import affinity
 from openTSNE import initialization
+import phate
 
 from fileio import FileIO
 
@@ -330,6 +331,15 @@ class DR():
                 FileIO.save_np_array(embedding_kernelPCA, dir_path, "kernelPCA", col_names=colnames)
                 time[0].append("kernelPCA")
                 time[1].append(time_kernelPCA)
+            except Exception as e:
+                print(e)
+                
+        if "phate" in methods:
+            try:
+                time_phate, embedding_phate = NonLinearMethods.phate(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_phate, dir_path, "phate", col_names=colnames)
+                time[0].append("phate")
+                time[1].append(time_phate)
             except Exception as e:
                 print(e)
                 
@@ -668,13 +678,46 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional LLE embedding.
         ''' 
         
         start_time: float = time.perf_counter()
 
         embedding: "np.ndarray" = SpectralEmbedding(n_components=out_dims,
                                                     n_jobs=-1).fit_transform(data)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+
+    
+    @staticmethod
+    def phate(data: "np.ndarray",
+              out_dims: int=2,
+              t: Union[str, int]="auto",
+              decay: Optional[int]=40,
+              knn: Optional[int]=5):
+        ''' PHATE
+        
+        This method is a wrapper for PHATE.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional PHATE embedding.
+        ''' 
+        
+        start_time: float = time.perf_counter()
+
+        embedding: "np.ndarray" = phate.PHATE(n_components=out_dims,
+                                              t=t,
+                                              decay=decay,
+                                              knn=knn,
+                                              n_jobs=-1).fit_transform(data)
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
