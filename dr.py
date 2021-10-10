@@ -395,7 +395,7 @@ class LinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional ICA embedding.
         '''
         
         start_time: float = time.perf_counter()
@@ -491,7 +491,7 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional UMAP embedding.
         '''
         
         start_time: float = time.perf_counter()
@@ -532,7 +532,7 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional SUACIE embedding.
         '''
         start_time: float = time.perf_counter()
         
@@ -572,7 +572,7 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional Isomap embedding.
         '''
         
         start_time: float = time.perf_counter()
@@ -612,7 +612,7 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional LLE embedding.
         '''
         
         start_time: float = time.perf_counter()
@@ -640,7 +640,7 @@ class NonLinearMethods():
         
         ''' Locally Linear Embedding (LLE)
         
-        This method is a wrapper for sklearn's implementation of LLE.
+        This method is a wrapper for sklearn's implementation of kernel PCA.
         
         Parameters:
             data (numpy.ndarray): The input high-dimensional array.
@@ -649,7 +649,7 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+            embedding (numpy.ndarray): The low-dimensional kernel PCA embedding.
         '''
         
         start_time: float = time.perf_counter()
@@ -670,7 +670,7 @@ class NonLinearMethods():
         
         ''' Locally Linear Embedding (LLE)
         
-        This method is a wrapper for sklearn's implementation of LLE.
+        This method is a wrapper for sklearn's implementation of spectral embedding.
         
         Parameters:
             data (numpy.ndarray): The input high-dimensional array.
@@ -678,7 +678,7 @@ class NonLinearMethods():
 
         Returns:
             run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional LLE embedding.
+            embedding (numpy.ndarray): The low-dimensional spectral embedding.
         ''' 
         
         start_time: float = time.perf_counter()
