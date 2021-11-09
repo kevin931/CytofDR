@@ -67,7 +67,9 @@ class DR():
                     SAUCIE_steps: int=1000,
                     SAUCIE_batch_size: int=256,
                     SAUCIE_learning_rate: float=0.001,
-                    kernel: str="poly"
+                    kernel: str="poly",
+                    phate_decay: int=40,
+                    phate_knn: int=5
                     ) -> List[List[Union[str, float]]]:
         
         dir_path: str = out+"/embedding"
@@ -336,7 +338,7 @@ class DR():
                 
         if "phate" in methods:
             try:
-                time_phate, embedding_phate = NonLinearMethods.phate(data, out_dims=out_dims)
+                time_phate, embedding_phate = NonLinearMethods.phate(data, out_dims=out_dims, decay=phate_decay, knn=phate_knn)
                 FileIO.save_np_array(embedding_phate, dir_path, "phate", col_names=colnames)
                 time[0].append("phate")
                 time[1].append(time_phate)
