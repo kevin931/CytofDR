@@ -9,7 +9,7 @@ import sklearn.metrics
 
 from util import Annoy
 import itertools
-from typing import Optional, Any, Union, List, Tuple
+from typing import Optional, Any, Union, List, Tuple, Callable
 
 class Metric():
     
@@ -19,7 +19,7 @@ class Metric():
                                embedding: Union["np.ndarray", List["np.ndarray"]],
                                downsample_indices: List["np.ndarray"],
                                methods: Union[str, List[str]]="all",
-                               dist_metric: str="PCD",
+                               pwd_metric: str="PCD",
                                labels: Optional["np.ndarray"]=None,
                                labels_embedding: Optional["np.ndarray"]=None,
                                comparison_file: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
@@ -81,7 +81,7 @@ class Metric():
             results = cls.run_metrics(data=data_downsample,
                                       embedding=embedding_downsample,
                                       methods=methods,
-                                      dist_metric=dist_metric,
+                                      pwd_metric=pwd_metric,
                                       labels=labels_downsample,
                                       labels_embedding=labels_embedding_downsample,
                                       comparison_file=comparison_file,
@@ -104,7 +104,7 @@ class Metric():
                     data: "np.ndarray",
                     embedding: Union["np.ndarray", List["np.ndarray"]],
                     methods: Union[str, List[str]]="all",
-                    dist_metric: str="PCD",
+                    pwd_metric: str="PCD",
                     labels: Optional["np.ndarray"]=None,
                     labels_embedding: Optional["np.ndarray"]=None,
                     comparison_file: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
@@ -144,8 +144,8 @@ class Metric():
         if embedding_names is None:
             embedding_names = np.array(list(map(str, range(len(embedding)))))
             
-        if dist_metric.lower() != "pcd" or labels is None:
-            dist_metric = "pairwise"
+        if pwd_metric.lower() != "pcd" or labels is None:
+            pwd_metric = "pairwise"
         
         i: int
         e: "np.ndarray"    
@@ -165,15 +165,15 @@ class Metric():
         data_distance: Optional["np.ndarray"] = None
         embedding_distance: Optional[List["np.ndarray"]] = None
         if any(m in methods for m in ["pearsonr", "spearmanr", "residual_variance", "emd"]):
-            if dist_metric.lower() == "pcd":
+            if pwd_metric.lower() == "pcd":
                 assert labels is not None
-                data_distance, embedding_distance = cls.pcd_distance(data, embedding, labels)
+                data_distance, embedding_distance = cls.pcd_distance(data, embedding, labels,  dist_metric="euclidean")
                 
             else:
                 data_distance = scipy.spatial.distance.pdist(data)
                 embedding_distance = []
                 for e in embedding:
-                    embedding_distance.append(scipy.spatial.distance.pdist(e))
+                    embedding_distance.append(scipy.spatial.distance.pdist(e, metric="euclidean"))
         
         annoy_data_neighbors: Optional["np.ndarray"] = None
         annoy_embedding_neighbors: Optional[List["np.ndarray"]] = None
@@ -320,7 +320,8 @@ class Metric():
     @staticmethod
     def pcd_distance(data: "np.ndarray",
                      embedding: List["np.ndarray"],
-                     labels: "np.ndarray"
+                     labels: "np.ndarray",
+                     dist_metric: "str" = "euclidean"
                      ) -> Tuple["np.ndarray", List["np.ndarray"]]:
         
         '''Calculate Point Cluster Distanced (PCD).
@@ -340,11 +341,11 @@ class Metric():
         data_distance: "np.ndarray"
         embedding_distance: List["np.ndarray"]
         
-        pcd_data: "PointClusterDistance" = PointClusterDistance(X=data, labels=labels)
+        pcd_data: "PointClusterDistance" = PointClusterDistance(X=data, labels=labels, dist_metric=dist_metric)
         data_distance = pcd_data.fit(flatten=True)[0]
         embedding_distance = []
         for e in embedding:
-            pcd_embedding: "PointClusterDistance" = PointClusterDistance(X=e, labels=labels)
+            pcd_embedding: "PointClusterDistance" = PointClusterDistance(X=e, labels=labels, dist_metric="euclidean")
             embedding_distance.append(pcd_embedding.fit(flatten=True)[0])
             
         return data_distance, embedding_distance
@@ -955,9 +956,10 @@ class Metric():
     
 class PointClusterDistance():
     
-    def __init__(self, X: "np.ndarray", labels: "np.ndarray"):
+    def __init__(self, X: "np.ndarray", labels: "np.ndarray", dist_metric: str="euclidean"):
         self.X: "np.ndarray" = X
         self.labels: "np.ndarray" = labels
+        self.dist_metric = dist_metric
         self.dist: Optional["np.ndarray"] = None
         
         
@@ -968,11 +970,12 @@ class PointClusterDistance():
         
         self.dist = np.empty((self.X.shape[0], index.size))
         centroid: "np.ndarray" = self._cluster_centroid(self.X, index, inverse)
+        dist = self._distance_func(dist_metric=self.dist_metric)
         
         i: int
         obs: "np.ndarray"
         for i, obs in enumerate(self.X):
-            self.dist[i] = self._euclidean(obs, centroid)
+            self.dist[i] = dist(obs, centroid)
             
         if flatten:
             return self.flatten(self.dist), index
@@ -986,8 +989,28 @@ class PointClusterDistance():
     
     
     @staticmethod
+    def _distance_func(dist_metric: str="euclidean"):
+        if dist_metric == "manhattan":
+            return PointClusterDistance._manhattan
+        elif dist_metric == "cosine":
+            return PointClusterDistance._cosine
+        else:    
+            return PointClusterDistance._euclidean
+    
+    
+    @staticmethod
     def _euclidean(X1, X2):
         return np.sqrt(np.sum(np.square(X1-X2), axis=1))
+    
+    
+    @staticmethod
+    def _manhattan(X1, X2):
+        return np.sum(np.abs(X1-X2), axis=1)
+    
+    
+    @staticmethod
+    def _cosine(X1, X2):
+        return np.sum(X1*X2, axis=1)/(np.sqrt(np.sum(X1**2))*np.sqrt(np.sum(X2**2, axis=1)))
     
     
     @staticmethod
