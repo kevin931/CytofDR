@@ -100,7 +100,7 @@ def main(cmdargs: Dict[str, Any]):
             results= metric.Metric.run_metrics(data=data[1],
                                                embedding=embedding,
                                                methods=cmdargs["methods"],
-                                               dist_metric=cmdargs["eval_dist_metric"],
+                                               pwd_metric=cmdargs["pwd_metric"],
                                                labels=labels,
                                                labels_embedding=embedding_labels,
                                                comparison_file=comparison_file,
@@ -121,7 +121,7 @@ def main(cmdargs: Dict[str, Any]):
             results = metric.Metric.run_metrics_downsample(data=data[1],
                                                            embedding=embedding,
                                                            methods=cmdargs["methods"],
-                                                           dist_metric=cmdargs["eval_dist_metric"],
+                                                           pwd_metric=cmdargs["pwd_metric"],
                                                            labels=labels,
                                                            labels_embedding=embedding_labels,
                                                            comparison_file=comparison_file,
@@ -169,7 +169,9 @@ def main(cmdargs: Dict[str, Any]):
                           SAUCIE_steps=cmdargs["SAUCIE_steps"],
                           SAUCIE_batch_size=cmdargs["SAUCIE_batch_size"],
                           SAUCIE_learning_rate=cmdargs["SAUCIE_learning_rate"],
-                          kernel=cmdargs["kernelPCA"])
+                          kernel=cmdargs["kernelPCA"],
+                          phate_decay=cmdargs["phate_decay"],
+                          phate_knn=cmdargs["phate_knn"])
         
         
 class _Arguments():
@@ -265,8 +267,8 @@ class _Arguments():
                                  help="File paths or directory path to saved downsample indicies as tsv.")
         self.parser.add_argument("--file_annoy", type=str, action="store",
                                  help="Path to the file's Annoy model.")
-        self.parser.add_argument("--eval_dist_metric", type=str, action="store", default="PCD",
-                                 help="Path to the file's Annoy model.")
+        self.parser.add_argument("--pwd_metric", type=str, action="store", default="PCD",
+                                 help="Pairwise distace implementation: Full pairwise distance or approximation using point-cluster distance.")
         
         # Dimension Reduction Parameters
         self.parser.add_argument("--out_dims", type=int, action="store", default=2,
@@ -309,6 +311,12 @@ class _Arguments():
         # KernelPCA
         self.parser.add_argument("--kernelPCA", type=str, action="store", default="poly",
                                  help="Kernel for kernel PCA.")
+        
+        # PHATE
+        self.parser.add_argument("--phate_decay", type=int, action="store", default=40,
+                                 help="Alpha decay rate for PHATE.")
+        self.parser.add_argument("--phate_knn", type=int, action="store", default=5,
+                                 help="KNN for PHATE.")
         
 
     def parse(self, args: Optional[List[str]]=None) -> Dict[str, Optional[str]]:

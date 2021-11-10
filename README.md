@@ -29,6 +29,7 @@
   - [SAUCIE](#saucie)
   - [BH t-SNE](#bh-t-sne)
 - [Updates](#updates)
+  - [November 9, 2021](#november-9-2021)
   - [August 31, 2021](#august-31-2021)
   - [August 28, 2021](#august-28-2021)
   - [August 1, 2021](#august-1-2021)
@@ -137,7 +138,7 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--downsample_save_data_colnames`` | None | Downsample | Whether to save column names. |
 | ``--downsample_replace`` | None | Downsample | Whether to sample with replacement. |
 | ``--eval_k_neighbors`` | Int | Evaluation | The number of neighbors to consider for evaluation |
-| ``--eval_dist_metric`` | Str | Evaluation | The dist metric to use for evaluation: full pairwsie distance (pairwise) or point-cluster distance (PCD) (Default: PCD) |
+| ``--pwd_metric`` | Str | Evaluation | The dist metric to use for evaluation: full pairwsie distance (pairwise) or point-cluster distance (PCD) (Default: PCD) |
 | ``--file_annoy`` | String | Evaluation | Path to the pre-trained ANNOY model of the input data. |
 | ``--out_dims`` | Integer | DR Parameters | Output dimension. (Default: 2) |
 | ``--perp`` | Integers | DR Parameters | Perplexity or a list of perplexities for t-SNE. (Default: 30) | 
@@ -156,6 +157,8 @@ This project supports dimension reduction (DR), DR evaluation, and clustering. A
 | ``--SAUCIE_steps`` | int | DR Parameters | Maximum iterations of SAUCIE. (Default: 256) |
 | ``--SAUCIE_batch_size`` | int | DR Parameters | Batch size for SAUCIE. (Default: 1000) |
 | ``--kernelPCA`` | str | DR Parameters | The kernel for kernel PCA. (Default: poly) |
+| ``--phate_decay`` | int | DR Parameters | Alpha decay rate for PHATE. (Default: 40) |
+| ``--phate_knn`` | int | DR Parameters | Number of neighbors (KNN) for PHATE. (Default: 5) |
 | ``--comparison_file`` | Strings | Concordance | Load comparison file from directory or file path. | 
 | ``--comparison_file_col_names`` | None | Concordance | Whether the first line of comparison file is column names. |
 | ``--comparison_file_drop_col`` | Integers | Concordance | The indicies of columns of comparison file to be dropped. |
@@ -383,6 +386,12 @@ The project already supports two implementations of BH t-SNE: sklearn and openTS
 However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
 
 ## Updates
+### November 9, 2021 
+- Added PHATE interface and CLI parameters
+- Fixed NPE metric
+- Added mapping option to LLE and Isomap to allow training on a subset of data
+- Fixed output for cases where there are no common cell types during concordance evaluations
+- Updated commandline arguments to reflect newest changes
 
 ### August 31, 2021
 - Added the following methods to DR: LLE, Spectral, and KernelPCA.
