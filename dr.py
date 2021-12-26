@@ -1,6 +1,6 @@
 import numpy as np
 import sklearn
-from sklearn.decomposition import FastICA, PCA, FactorAnalysis, KernelPCA
+from sklearn.decomposition import FastICA, PCA, FactorAnalysis, KernelPCA, NMF
 from sklearn.manifold import Isomap, MDS, LocallyLinearEmbedding, SpectralEmbedding
 
 import umap
@@ -40,6 +40,12 @@ try:
 except:
     METHODS["ZIFA"] = False
     print("No 'ZIFA' implementation.")
+     
+try:
+    from GrandPrix import GrandPrix
+except:
+    METHODS["GrandPrix"] = False
+    print("No 'Grandprix' implementation.")
     
 
 class DR():
@@ -73,7 +79,10 @@ class DR():
                     ) -> List[List[Union[str, float]]]:
         
         dir_path: str = out+"/embedding"
-        os.mkdir(dir_path)
+        try:
+            os.mkdir(dir_path)
+        except FileExistsError:
+            pass
         
         if not isinstance(methods, list):
             methods = [methods]
@@ -345,6 +354,25 @@ class DR():
             except Exception as e:
                 print(e)
                 
+        if "nmf" in methods:
+            try:
+                time_phate, embedding_phate = LinearMethods.NMF(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_phate, dir_path, "nmf", col_names=colnames)
+                time[0].append("nmf")
+                time[1].append(time_phate)
+            except Exception as e:
+                print(e)
+                
+                
+        if "grandprix" in methods:
+            try:
+                time_phate, embedding_phate = NonLinearMethods.grandprix(data, out_dims=out_dims)
+                FileIO.save_np_array(embedding_phate, dir_path, "grandprix", col_names=colnames)
+                time[0].append("grandprix")
+                time[1].append(time_phate)
+            except Exception as e:
+                print(e)
+                
         FileIO.save_list_to_csv(time, out, "time")
             
         return time
@@ -457,6 +485,21 @@ class LinearMethods():
         run_time: float = end_time - start_time
         
         return run_time, embedding
+    
+    
+    @staticmethod
+    def NMF(data: "np.ndarray",
+            out_dims: int):
+        
+        start_time: float = time.perf_counter()
+        
+        embedding: "np.ndarray" = NMF(n_components=out_dims, init = "nndsvd").fit_transform(data) #type:ignore
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
     
     @staticmethod
     def _remove_col_zeros(data: "np.ndarray") -> "np.ndarray":
@@ -720,6 +763,32 @@ class NonLinearMethods():
                                               decay=decay,
                                               knn=knn,
                                               n_jobs=-1).fit_transform(data)
+        
+        end_time: float = time.perf_counter()
+        run_time: float = end_time - start_time
+        
+        return run_time, embedding
+    
+    
+    @staticmethod
+    def grandprix(data: "np.ndarray",
+                  out_dims: int=2):
+        ''' GrandPrix
+        
+        This method is a wrapper for GrandPrix.
+        
+        Parameters:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional PHATE embedding.
+        ''' 
+        
+        start_time: float = time.perf_counter()
+
+        embedding: "np.ndarray" = GrandPrix.fit_model(data = data, n_latent_dims = out_dims)[0]
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
