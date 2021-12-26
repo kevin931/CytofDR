@@ -158,7 +158,7 @@ class Metric():
             if labels is not None:
                 methods.extend(["npe", "random_forest", "silhouette"])
             if labels is not None and labels_embedding is not None:
-                methods.extend(["ari", "mni"])
+                methods.extend(["ari", "nmi"])
             if comparison_labels is not None and comparison_file is not None:
                 methods.extend(["embedding_concordance"])
                 
@@ -255,7 +255,7 @@ class Metric():
                 results[2].append(embedding_names[i])
                 
             if "nmi" in methods:
-                print("running mni")
+                print("running nmi")
                 assert labels is not None and labels_embedding is not None
                 results[0].append("nmi")
                 results[1].append(cls.NMI(labels=labels, labels_embedding=labels_embedding))
