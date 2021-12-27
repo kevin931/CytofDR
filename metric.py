@@ -30,13 +30,13 @@ class Metric():
                                data_annoy_path: Optional[str]=None
                                ) -> List[List[Union[str, float]]]:
         
-        '''Run methods with downsampling.
+        '''Run evaluation metrics with downsampling.
         
         This method first downsamples and runs the methods with the ``run_metrics`` method. This
         is done for efficiency reasons as the current pairwise distance metric is can be memory
         intensive with large datasets.
         
-        Parameters:
+        Args:
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             downsample (int): The sample size of downsampling.
@@ -115,12 +115,12 @@ class Metric():
                     k: int=5
                     ) -> List[List[Union[str, float]]]:
         
-        '''Dispatcher to run methods.
+        '''Run evaluation metrics.
         
-        This method runs the methods and metrics in this class with the function of
-        running multiple or all the metrics. 
+        This is an all-in-one method as a dispatcher that supports running multiple metrics
+        with one function call.
         
-        Parameters:
+        Args:
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             methods (Union[str, List[str]]): The metrics to run.
@@ -302,18 +302,27 @@ class Metric():
     
     
     @staticmethod
-    def _median_impute(data: "np.ndarray"):
+    def _median_impute(data: "np.ndarray") -> "np.ndarray":
+        '''Median imputation for NaN.
+                
+        Utility method to fix any NaN in datsets with median imputation. When there is no
+        NaN, the original array is returned.
+        
+        Args:
+            data (np.ndarray): The input high-dimensional array.
+
+        Returns:
+           np.ndarray: An array without NaN.
+        '''
         nan: "np.ndarray" = np.unique(np.where(np.isnan(data))[0])
         
         if nan.size == 0:
             return data
         else:
             median: "np.ndarray" = np.nanmedian(data, axis=0)
-            print(median)
             i: int
             for i in nan:
                 data[i] = median
-            print(np.where(np.isnan(data)))
             return data
     
     
@@ -329,7 +338,7 @@ class Metric():
         Utility wrapper method to compute the Point Cluster Distance. The point cluster distance computes the
         distance between each point and each cluster's centroid.
         
-        Parameters:
+        Args:
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             labels ("np.ndarray"): True labels or labels from the original space.
@@ -356,13 +365,12 @@ class Metric():
                     embedding: List["np.ndarray"],
                     data_annoy_path: Optional[str]=None,
                     k: int=5) -> Tuple["np.ndarray", List["np.ndarray"]]:
-        
         '''Build ANNOY and returns nearest neighbors.
         
         This is a utility function for building ANNOY models and returning the nearest-neighbor matrices for original
         space data and low-dimensional embedding. 
         
-        Parameters:
+        Args:
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             data_annoy_path (str): The path to pre-built ANNOY model for original data.
@@ -409,12 +417,11 @@ class Metric():
     def correlation(x: "np.ndarray",
                     y: "np.ndarray",
                     metric: str="Pearson") -> float:
-        
-        '''Correlation
+        '''Calculate Correlation Coefficient
         
         This method computes the pearson or spearman correlation between the inputs.
         
-        Parameters:
+        Args:
             x (np.ndarray): The first 1D array. 
             y (np.ndarray): The second 1D array.
             metric (str): The metric to use. 'Pearson' or 'Spearman'.
@@ -437,13 +444,12 @@ class Metric():
     def residual_variance(x: Optional["np.ndarray"]=None,
                           y: Optional["np.ndarray"]=None,
                           r: Optional[float]=None) -> float:
-        
         '''Residual Variance
         
         The residual variance is computed with the following formuation with r as the
         pearson correlation: 1-r**2. If r is provided, x and y are optional for efficiency.
         
-        Parameters:
+        Args:
             x (np.ndarray, optional): The first 1D array. 
             y (np.ndarray, optional): The second 1D array.
             r (float, optional): Pearson correlation between x and y.
@@ -466,14 +472,13 @@ class Metric():
     @staticmethod
     def EMD(x: "np.ndarray",
             y: "np.ndarray") -> float:
-        
         '''Earth Mover's Distance (EMD)
         
         This metric computes the EMD between the pairwise distance of between points in the
         high and low dimensional space. This implementation uses the ``scipy.stats.wasserstein_distance``.
         The usage of EMD is proposed in Heiser & Lou (2020).
         
-        Parameters:
+        Args:
             x (np.ndarray): The first distribution x as a 1D array.
             y (np.ndarray): The second distribution y as a 1D array.
 
@@ -487,13 +492,15 @@ class Metric():
     @staticmethod
     def KNN(data_neighbors: "np.ndarray",
             embedding_neighbors: "np.ndarray") -> float:
-        
         '''K-Nearest Neighbors Preservation (KNN)
         
         The KNN metric computes the percentage of k-neighbors of each point is preserved in the
         embedding space, and it is average across the entire dataset.
         
-        Parameters:
+        Note:
+            This method is not used to calculate KNN itself.
+        
+        Args:
             data (np.ndarray): The input high-dimensional array.
             embedding (np.ndarray): The low-dimensional embedding.
             k (int, optional): The number of neighbors for KNN. This is required when either knn_model_data
@@ -519,14 +526,13 @@ class Metric():
     def NPE(data_neighbors: "np.ndarray",
             embedding_neighbors: "np.ndarray",
             labels: "np.ndarray") -> float:
-        
         '''Neighborhood Proportion Error (NPE)
         
         The NPE metric is proposed by Konstorum et al. (2019). It measures the total variation distance between
         the proportion of nearest points belonging to the same class of each point in the HD and LD space. The
         lower the NPE, the more similar the embedding and the original data are.
         
-        Parameters:
+        Args:
             data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
             embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
             labels (np.ndarray): The class labels of each observation.
@@ -574,13 +580,12 @@ class Metric():
         the agreement of KNN, but ``Metric.KNN`` simply takes the average of the KNN graph
         agreement without any scaling.
         
-        Parameters:
+        Args:
             data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
             embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
 
         Returns:
             float: Neighborhood agreement.
-        
         '''
         
         k: int = data_neighbors.shape[1]
@@ -606,7 +611,7 @@ class Metric():
         original HD space distance matrix, the less trustworthy the new embedding is. The measure
         is scaled between 0 and 1 with a higher score reflecting a more trustworthy embedding.
         
-        Parameters:
+        Args:
             data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
             embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
             dist_data (np.ndarray): A pairwise distance matrix for the original data.
@@ -634,21 +639,19 @@ class Metric():
     @staticmethod
     def random_forest(embedding: "np.ndarray",
                       labels: "np.ndarray") -> float:
-        
         '''Random Forest Classification Accuracy
         
-        This function trains a random forest classifer using the embedding data and the labels
+        This method trains a random forest classifer using the embedding data and the labels
         generated or manually classified from the original space. It then tests the accuracy
         of the classifier using the 33% of the embedding data. This metric was first proposed in
         Becht et al. (2019).
         
-        Parameters:
+        Args:
             embedding (np.ndarray): The low-dimensional embedding.
             labels (np.ndarray): The class labels of each observation.
 
         Returns:
             float: Random forest accuracy.
-        
         '''
         
         embedding_train, embedding_test, labels_train, labels_test = train_test_split(embedding, labels, test_size=0.33)
@@ -662,7 +665,6 @@ class Metric():
     @staticmethod
     def silhouette(embedding: "np.ndarray",
                    labels: "np.ndarray") -> float:
-        
         '''Silhouette Score
         
         This metric computes the silhouette score of clusters in the embedding space. Ideally,
@@ -670,13 +672,12 @@ class Metric():
         evaluate the effectiveness of the embedding technique. This metric is used in 
         Xiang et al. (2021).
         
-        Parameters:
+        Args:
             embedding (np.ndarray): The low-dimensional embedding.
             labels (np.ndarray): The class labels of each observation.
 
         Returns:
             float: Silhouette score.
-        
         '''
         
         return sklearn.metrics.silhouette_score(embedding, labels)
@@ -685,7 +686,6 @@ class Metric():
     @staticmethod
     def NMI(labels: "np.ndarray",
             labels_embedding: "np.ndarray") -> float:
-        
         '''Normalized Mutual Information (NMI)
         
         The NMI metric computes the mutual information between labels of the original space
@@ -693,7 +693,7 @@ class Metric():
         This metric is a measure of clustering performance before and after dimension reduction,
         and it is used in Xiang et al. (2021).
         
-        Parameters:
+        Args:
             labels (np.ndarray): The class labels of of the original space.
             labels_embedding (np.ndarray): The class labels generated from the embedding space.
 
@@ -720,13 +720,12 @@ class Metric():
     @staticmethod
     def ARI(labels: "np.ndarray",
             labels_embedding: "np.ndarray") -> float:
-        
         '''Adjusted Rand Index (ARI)
         
         The ARI uses the labels from the original space and the embedding space to measure
         the similarity between them using pairs. It is used in Xiang et al. (2021).
         
-        Parameters:
+        Args:
             labels (np.ndarray): The class labels of of the original space.
             labels_embedding (np.ndarray): The class labels generated from the embedding space.
 
@@ -795,20 +794,18 @@ class Metric():
     @staticmethod
     def calinski_harabasz(embedding: "np.ndarray",
                           labels: "np.ndarray") -> float:
-        
         '''Calinski-Harabasz Index
         
         This metric computes the Calinski-Harabasz index of clusters in the embedding space. Ideally,
         clusters should be coherent, and using labels obtained from the original space can
         evaluate the effectiveness of the embedding technique.
         
-        Parameters:
+        Args:
             embedding (np.ndarray): The low-dimensional embedding.
             labels (np.ndarray): The class labels of each observation.
 
         Returns:
             float: Calinski-Harabasz Index.
-        
         '''
         
         return sklearn.metrics.calinski_harabasz_score(embedding, labels)
@@ -817,14 +814,12 @@ class Metric():
     @staticmethod
     def davies_bouldin(embedding: "np.ndarray",
                        labels: "np.ndarray") -> float:
-        
         '''Davies-Bouldin Index
-        
         This metric computes the Davies-Bouldin index of clusters in the embedding space. Ideally,
         clusters should be coherent, and using labels obtained from the original space can
         evaluate the effectiveness of the embedding technique.
         
-        Parameters:
+        Args:
             embedding (np.ndarray): The low-dimensional embedding.
             labels (np.ndarray): The class labels of each observation.
 
@@ -844,6 +839,35 @@ class Metric():
                               comparison_classes: Optional[Union[str, List[str]]]=None,
                               method: str = "emd"
                               ) -> Union[float, str]:
+        """Concordance between two embeddings.
+        
+        This is a wrapper function to implement two embedding concordance metrics based on
+        named clusters: EMD and Cluster Distance. When two embeddings can be reasonably
+        aligned based on clusters or manual labels, these two metrics calculate the relationships
+        between clusters and their distances between two embeddings.
+        
+        For EMD, the metric considers matched pairs of clusters in both embeddings: for each pair
+        in each embedding, the distances between each centroid and all points in the other cluster
+        are calculated. The EMD between these two vectors from two embeddings are calculated and
+        then averaged across all pairs. 
+        
+        For Cluster Distance, pairwise rank distance between all cluster centroids are calculated
+        in each embedding. Then, the Euclidean distance between these two vectors are taken.
+        
+        Args:
+            embedding (np.ndarray): The first (main) embedding.
+            labels_embedding (np.ndarray): Labels for all obervations in the embedding.
+            comparison_file (np.ndarray): The second embedding.
+            comparison_labels (np.ndarray): The labels for all observations in the comparison embedding.
+            comparison_classes (np.ndarray): Which classes in labels to compare. If ``None``, all overlapping labels used.
+            method (str): "EMD" or "cluster_distance"
+            
+        Returns: 
+            Union[float, str]: The score or "NA"
+            
+        Note:
+            When there is no overlapping labels, "NA" is automatically returned as ``str``.
+        """
         
         if not isinstance(comparison_file, list):
             comparison_file = [comparison_file]
@@ -872,7 +896,6 @@ class Metric():
                                                     comparison_file[i],
                                                     comparison_labels[comparison_labels_index],
                                                     common_types)
-                
             elif method == "cluster_distance":
                 scores[i] = Metric._concordance_cluster_distance(embedding,
                                                                  labels_embedding,
@@ -893,6 +916,21 @@ class Metric():
                          comparison_file: "np.ndarray",
                          comparison_labels: "np.ndarray",
                          common_types: "np.ndarray") -> float:
+        
+        """Embedding concordance EMD.
+        
+        This is a private that computes the concordance EMD as described in the ``embedding_concordance`` method.
+        
+        Args:
+            embedding (np.ndarray): The first (main) embedding.
+            labels_embedding (np.ndarray): Labels for all obervations in the embedding.
+            comparison_file (np.ndarray): The second embedding.
+            comparison_labels (np.ndarray): The labels for all observations in the comparison embedding.
+            common_types (np.ndarray): The common cluster labels for EMD computation.
+            
+        Returns: 
+            float: The EMD score
+        """
         
         combinations: List[Tuple[int, ...]] = list(itertools.permutations(common_types, 2))
         embedding_scores: List[float] = []
@@ -921,6 +959,21 @@ class Metric():
                                       comparison_file: "np.ndarray",
                                       comparison_labels: "np.ndarray",
                                       common_types: "np.ndarray") -> float:
+        """Embedding concordance Cluster Distance.
+        
+        This is a private that computes the concordance Ckuster Distance metric as described in the
+        ``embedding_concordance`` method.
+        
+        Args:
+            embedding (np.ndarray): The first (main) embedding.
+            labels_embedding (np.ndarray): Labels for all obervations in the embedding.
+            comparison_file (np.ndarray): The second embedding.
+            comparison_labels (np.ndarray): The labels for all observations in the comparison embedding.
+            common_types (np.ndarray): The common cluster labels for EMD computation.
+            
+        Returns: 
+            float: The EMD score
+        """
         
         combinations: List[Tuple[int, ...]] = list(itertools.permutations(common_types, 2))
         embedding_scores: "np.ndarray" = np.zeros(len(combinations))
@@ -955,6 +1008,27 @@ class Metric():
     
     
 class PointClusterDistance():
+    """Point Cluster Distance
+    
+    This class is used to compute the Point Cluster Distance. Instead of full pairwise
+    distance, this distance metric computes the distance between each cluster centroid
+    and all other point. The memory complexity is N_cluster*N instead of (N^2)/2.
+    
+    Args:
+        X (np.ndarray): The input data array.
+        labels (np.ndarray): Labels for the data array.
+        dist_metric (str): The distance metric to use. This supports "euclidean", "manhattan",
+            or "cosine".
+        
+    Attributes:
+        X (np.ndarray): The input data array.
+        labels (np.ndarray): Labels for the data array.
+        dist_metric (str): The distance metric to use. This supports "euclidean", "manhattan",
+            or "cosine".
+        dist (np.ndarray, optional): The calculated distance array. The first axis corresponds
+            to each observation in the original array and the second axis is all the cluster
+            centroids.
+    """
     
     def __init__(self, X: "np.ndarray", labels: "np.ndarray", dist_metric: str="euclidean"):
         self.X: "np.ndarray" = X
@@ -964,6 +1038,17 @@ class PointClusterDistance():
         
         
     def fit(self, flatten: bool=False) -> Tuple["np.ndarray", "np.ndarray"]:
+        """Fit the distance metric.
+
+        This method calculates the distance metric based on the class attributes.
+        
+        Args:
+            flatten: Whether to flatten the return into a 1-d vector
+
+        Returns:
+            np.ndarray: The calculate distance array.
+            np.ndarray: The unique labels of the input data.
+        """
         index: "np.ndarray"
         inverse: "np.ndarray"
         index, inverse = np.unique(self.labels, return_inverse=True)
@@ -984,12 +1069,22 @@ class PointClusterDistance():
         
     
     @staticmethod
-    def flatten(dist: "np.ndarray"):
+    def flatten(dist: "np.ndarray") -> np.ndarray:
+        """Flatten an array
+
+        This method is a wrapper for the ``flatten`` method in ``numpy``.
+
+        Args:
+            dist (np.ndarray): The distance array.
+
+        Returns:
+            np.ndarray: The flattened array.
+        """
         return dist.flatten()
     
     
     @staticmethod
-    def _distance_func(dist_metric: str="euclidean"):
+    def _distance_func(dist_metric: str="euclidean") -> Callable[[np.ndarray, np.ndarray], float]:
         if dist_metric == "manhattan":
             return PointClusterDistance._manhattan
         elif dist_metric == "cosine":
@@ -999,22 +1094,68 @@ class PointClusterDistance():
     
     
     @staticmethod
-    def _euclidean(X1, X2):
+    def _euclidean(X1: np.ndarray, X2: np.ndarray) -> float:
+        """Euclidean distance
+
+        This is an implementation of the Euclidean distance.
+
+        Args:
+            X1 (np.ndarray): The array to calculate Euclidean distance.
+            X2 (np.ndarray): The array to calculate Euclidean distance.
+
+        Returns:
+            float: The euclidean distance
+        """
         return np.sqrt(np.sum(np.square(X1-X2), axis=1))
     
     
     @staticmethod
-    def _manhattan(X1, X2):
+    def _manhattan(X1: np.ndarray, X2: np.ndarray) -> float:
+        """Euclidean distance
+
+        This is an implementation of the Manhattan distance.
+
+        Args:
+            X1 (np.ndarray): The array to calculate Manhattan distance.
+            X2 (np.ndarray): The array to calculate Manhattan distance.
+
+        Returns:
+            float: The Manhattan distance
+        """
         return np.sum(np.abs(X1-X2), axis=1)
     
     
     @staticmethod
-    def _cosine(X1, X2):
+    def _cosine(X1: np.ndarray, X2: np.ndarray) -> float:
+        """Cosine distance
+
+        This is an implementation of the Cosine distance.
+
+        Args:
+            X1 (np.ndarray): The array to calculate Cosine distance.
+            X2 (np.ndarray): The array to calculate Cosine distance.
+
+        Returns:
+            float: The Cosine distance
+        """
         return np.sum(X1*X2, axis=1)/(np.sqrt(np.sum(X1**2))*np.sqrt(np.sum(X2**2, axis=1)))
     
     
     @staticmethod
-    def _cluster_centroid(X, index, inverse):
+    def _cluster_centroid(X: np.ndarray, index: np.ndarray, inverse: np.ndarray) -> np.ndarray:
+        """Find the centroids of clustered data.
+
+        With the input array and labels, this method computes all centroids using
+        the labels as clusters.
+
+        Args:
+            X (np.ndarray): [description]
+            index (np.ndarray): [description]
+            inverse (np.ndarray): [description]
+
+        Returns:
+            np.ndarray: [description]
+        """
         centroid: "np.ndarray" = np.empty((index.size, X.shape[1]))
         for i in range(len(index)):
             centroid[i] = np.mean(X[inverse==i])

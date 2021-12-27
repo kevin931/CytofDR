@@ -49,6 +49,11 @@ except:
     
 
 class DR():
+    """Dimension Reduction Class.
+
+    This class is simply a wrapper for a utility function that dispatches
+    various DR methods.
+    """
 
     @classmethod
     def run_methods(cls,
@@ -65,7 +70,7 @@ class DR():
                     max_iter: int=1000,
                     init: str="random",
                     dist_metric: str="euclidean",
-                    open_tsne_method="fft",
+                    open_tsne_method: str="fft",
                     umap_min_dist: float=0.1,
                     umap_neighbors: int=15,
                     SAUCIE_lambda_c: float=0.0,
@@ -77,6 +82,43 @@ class DR():
                     phate_decay: int=40,
                     phate_knn: int=5
                     ) -> List[List[Union[str, float]]]:
+        
+        ''' Run dimension reduction methods.
+        
+        This is a one-size-fits-all dispatcher that runs all supported methods in the module. It
+        supports running multiple methods at the same time at the sacrifice of some more
+        granular control of parameters. This method is also what the CLI uses.
+        
+        Args:
+            data (numpy.ndarray): The input high-dimensional array.
+            out (str): The output directory to save embeddings.
+            transform (numpy.ndarray): An array to transform after training on the traning set.
+            methods (str, List[str]): DR methods to run (not case sensitive).
+            out_dims (int): Output dimension of DR.
+            save_embedding_colnames (bool): Whether to save the columnnames as the first row.
+            perp (int, List[int]): Perplexity or multiple perplexity for tSNE.
+            early_exaggeration (float): Early exaggeration for tSNE.
+            early_exaggeration_iter (int): Early exaggeration iteration for tSNE.
+            tsne_learning_rate (str, float, optional): Learning rate for tSNE.
+            max_iter (int): Maximum number of iterations for tSNE.
+            init (str): tSNE and UMAP initialization method.
+            dist_metric (str): Distance metric for methods that support it.
+            open_tsne_method (str): Method for openTSNE.
+            umap_min_dist (float): Minimum distane for UMAP
+            umap_neighbors (int): Number of neighborsi for UMAP.
+            SAUCIE_lambda_c (float): ID regularization.
+            SAUCIE_lambda_d (float): Within-cluster distance regularization.
+            SAUCIE_steps (int): Number of iterations for SAUCIE
+            SAUCIE_batch_size (int): Batch size for SAUCIE
+            SAUCIE_learning_rate (float): Learning rate for SAUCIE
+            kernel (str): Kernel for KernelPCA.
+            phate_decay (int): Decay rate for PHATE.
+            phate_knn (int): Number of neighbors in PHATE.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
+        '''
         
         dir_path: str = out+"/embedding"
         try:
@@ -374,22 +416,25 @@ class DR():
                 print(e)
                 
         FileIO.save_list_to_csv(time, out, "time")
-            
         return time
         
 
 class LinearMethods():
+    """Linear DR Methods.
+
+    This class contains static methods of a group of Linear DR Methods.
+    """
     
     @staticmethod
     def PCA(data: "np.ndarray",
             out_dims: int=2
             ) -> Tuple[float, "np.ndarray"]:
         
-        ''' Scikit-Learn Principal Component Analysis
+        ''' Scikit-Learn Principal Component Analysis (PCA)
         
         This method uses the SKlearn's standard PCA.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
 
@@ -415,11 +460,11 @@ class LinearMethods():
             out_dims: int,
             max_iter: int=200) -> Tuple[float, "np.ndarray"]:
         
-        ''' Scikit-Learn Independent Component Analysis
+        ''' Scikit-Learn Independent Component Analysis (ICA)
         
         This method uses the SKlearn's FastICA implementation of ICA.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
 
@@ -441,6 +486,19 @@ class LinearMethods():
     @staticmethod
     def ZIFA(data: "np.ndarray",
              out_dims: int) -> Tuple[float, "np.ndarray"]:
+        ''' Zero-Inflated Factor Analysis (ZIFA)
+        
+        This method implements ZIFA as developed by Pierson & Yau (2015).
+        
+        Args:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional ICA embedding.
+        '''
+        
         
         data = LinearMethods._remove_col_zeros(data)
         start_time: float = time.perf_counter()
@@ -457,6 +515,18 @@ class LinearMethods():
     @staticmethod
     def factor_analysis(data: "np.ndarray",
                         out_dims: int):
+        ''' Scikit-Learn Factor Analysis (FA)
+        
+        This method uses the SKlearn's FA implementation.
+        
+        Args:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional ICA embedding.
+        '''
         
         start_time: float = time.perf_counter()
         
@@ -473,6 +543,20 @@ class LinearMethods():
             out_dims: int,
             metric: bool=True,
             n_jobs: int=-1):
+        ''' Scikit-Learn Multi-Dimensional Scaling (MDS)
+        
+        This method uses the SKlearn's MDS implementation.
+        
+        Args:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+            metric (bool): Whether to run metric MDS.
+            n_jobs (int): The number of jobs to run concurrantly.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional ICA embedding.
+        '''
         
         start_time: float = time.perf_counter()
         
@@ -490,6 +574,18 @@ class LinearMethods():
     @staticmethod
     def NMF(data: "np.ndarray",
             out_dims: int):
+        ''' Scikit-Learn Nonnegative Matrix Factorization (NMF)
+        
+        This method uses the SKlearn's NMF implementation.
+        
+        Args:
+            data (numpy.ndarray): The input high-dimensional array.
+            out_dims (int): The number of dimensions of the output.
+
+        Returns:
+            run_time (float): Time used to produce the embedding.
+            embedding (numpy.ndarray): The low-dimensional ICA embedding.
+        '''
         
         start_time: float = time.perf_counter()
         
@@ -503,6 +599,16 @@ class LinearMethods():
     
     @staticmethod
     def _remove_col_zeros(data: "np.ndarray") -> "np.ndarray":
+        ''' Remove a column consisting of entireing zeroes
+        
+        This private method is used by ZIFA to fix errors.
+        
+        Args:
+            data (numpy.ndarray): The input high-dimensional array.
+
+        Returns:
+            data (numpy.ndarray): The output array without zero columns.
+        '''
         nonzero_col: List[int] = []
         col: int
         for col in range(data.shape[1]):
@@ -512,6 +618,10 @@ class LinearMethods():
     
     
 class NonLinearMethods():
+    """NonLinear DR Methods.
+
+    This class contains static methods of a group of NonLinear DR Methods, except for tSNE.
+    """
     
     @staticmethod
     def UMAP(data: "np.ndarray",
@@ -526,7 +636,7 @@ class NonLinearMethods():
         
         This method uses the UMAP package's UMAP implementation.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             n_neighbors (int): The number of neighbors to consider.
@@ -567,7 +677,7 @@ class NonLinearMethods():
         This method is a wrapper for SAUCIE package's SAUCIE model. Specifically,
         dimension reduction is of interest.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             lambda_c (float): ID regularization.
             lambda_d (float): Within-cluster distance regularization.
@@ -609,7 +719,7 @@ class NonLinearMethods():
         
         This method is a wrapper for sklearn's implementation of Isomap.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             n_neighbors (int): The number of neighbors to consider.
@@ -650,7 +760,7 @@ class NonLinearMethods():
         
         This method is a wrapper for sklearn's implementation of LLE.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             n_neighbors (int): The number of neighbors to consider.
@@ -683,11 +793,11 @@ class NonLinearMethods():
                   kernel: str="poly"
                   ) -> Tuple[float, "np.ndarray"]: 
         
-        ''' Locally Linear Embedding (LLE)
+        ''' Kernel PCA
         
         This method is a wrapper for sklearn's implementation of kernel PCA.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             kernel (str): The kernel to use: "poly," "linear," "rbf," "sigmoid," or "cosine."
@@ -713,11 +823,11 @@ class NonLinearMethods():
     def spectral(data: "np.ndarray",
                  out_dims: int=2):
         
-        ''' Locally Linear Embedding (LLE)
+        ''' Spectral Embedding
         
         This method is a wrapper for sklearn's implementation of spectral embedding.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
 
@@ -747,7 +857,7 @@ class NonLinearMethods():
         
         This method is a wrapper for PHATE.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
 
@@ -777,7 +887,10 @@ class NonLinearMethods():
         
         This method is a wrapper for GrandPrix.
         
-        Parameters:
+        Note:
+            The ``GrandPrix`` is not mandatory for this package to run.
+        
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
 
@@ -797,6 +910,12 @@ class NonLinearMethods():
 
 
 class TSNE():
+    """Various tSNE implementations.
+
+    This class contains static methods of four different tSNE implementations. In general, we
+    recommend the openTSNE implementation for its combination of speed, ease of use, and
+    features.
+    """
     
     @staticmethod
     def sklearn_tsne(data: "np.ndarray",
@@ -816,7 +935,7 @@ class TSNE():
         This method uses the Scikit-learn implementation of t-SNE. It supports both
         traditional and BH t-SNE with more control of variables.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             perp (int): Perplexity. The default is set to 30. Tradition is between 30 and 50.
@@ -865,9 +984,13 @@ class TSNE():
         
         ''' Barnes-Hut t-SNE
         
-        This method uses the BH t-SNE as proposed and implemented by van der Maaten (2014).
+        This method uses the BH t-SNE as proposed and implemented by van der Maaten (2014). As
+        opposed to the sklearn implementation, this uses the original implementation.
         
-        Parameters:
+        Note:
+            This implementation's installation is not mandatory for this package to run.
+        
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
@@ -932,7 +1055,10 @@ class TSNE():
         This is the FIt-SNE as implemented and introduced by Linderman et al. (2018). It uses interpolation
         and fast fourier transform to accelerate t-SNE.
         
-        Parameters:
+        Note:
+            This FIt-SNE implementation is not mandatory for this package to run.
+        
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             perp (int): Perplexity. The default is set to 30. Tradition is between 30 and 50.
@@ -965,7 +1091,6 @@ class TSNE():
         '''
         
         print("Running FIt-SNE.")
-        
         start_time: float = time.perf_counter()
         
         embedding: "np.ndarray" = fast_tsne(X=data,
@@ -1016,10 +1141,10 @@ class TSNE():
         
         '''Open t-SNE.
         
-        This is the Python implementation of FIt-SNE through the openTSNE package. Its implementation
-        is based on research from Linderman et al. (), 
+        This is the Python implementation of FIt-SNE through the ``openTSNE`` package. Its implementation
+        is based on research from Linderman et al. (2019). This is the default recommended implementation.
         
-        Parameters:
+        Args:
             data (numpy.ndarray): The input high-dimensional array.
             out_dims (int): The number of dimensions of the output.
             perp (int): Perplexity. The default is set to 30. Tradition is between 30 and 50.
