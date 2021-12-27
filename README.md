@@ -29,6 +29,7 @@
   - [SAUCIE](#saucie)
   - [BH t-SNE](#bh-t-sne)
 - [Updates](#updates)
+  - [December 26, 2021](#december-26-2021)
   - [November 9, 2021](#november-9-2021)
   - [August 31, 2021](#august-31-2021)
   - [August 28, 2021](#august-28-2021)
@@ -386,6 +387,11 @@ The project already supports two implementations of BH t-SNE: sklearn and openTS
 However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
 
 ## Updates
+### December 26, 2021
+- Added GrandPrix and NMF
+- Fixed NMI naming in ``metric.py``
+- Updated docstrings and typing for ``dr`` and ``metric`` modules
+
 ### November 9, 2021 
 - Added PHATE interface and CLI parameters
 - Fixed NPE metric
