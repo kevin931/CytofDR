@@ -9,7 +9,7 @@ from openTSNE import affinity
 from openTSNE import initialization
 import phate
 
-from fileio import FileIO
+from CytofDR.fileio import FileIO
 
 import time
 import os

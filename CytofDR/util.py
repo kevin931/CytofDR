@@ -1,7 +1,7 @@
 import numpy as np
 from annoy import AnnoyIndex
 
-from fileio import FileIO
+from CytofDR.fileio import FileIO
 from typing import List, Optional, Tuple
 
 class Annoy():
