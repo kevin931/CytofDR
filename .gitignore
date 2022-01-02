@@ -1,18 +1,31 @@
+# Cache Files 
+*.pyc
+*__pycache__
+*_cache
 .Rhistory
-__pycache__
 .vscode
 
+# Pyton Build Files and Directory
+*.egg-info
+
+# CI: Testing and coverage
+*.coverage
+
+# Documentation
+/docs/build
+
+# Local Directories
 bhtsne
 fitsne
 SAUCIE
 MEDist
+grandprix
 
+analysis
 data
 out
 sbatch
 temp
 
+# Other Files
 *.fcs
-
-plot.R
-preprocess.R
