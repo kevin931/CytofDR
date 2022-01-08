@@ -32,7 +32,7 @@ def main(cmdargs: Dict[str, Any]):
         Annoy.save_annoy(model, annoy_path)
     
     if cmdargs["downsample"] is not None:
-        data_col_names: Optional["np.ndarray"] = data[0] if cmdargs["downsample_save_data_colnames"] is not None else None
+        data_col_names: Optional["np.ndarray"] = data[0] if cmdargs["downsample_save_data_colnames"] else None
         DownSample.downsample_from_data(data=data[1],
                                         n=cmdargs["downsample"],
                                         n_fold=cmdargs["k_fold"],
@@ -253,7 +253,7 @@ class _Arguments():
         # Downsampling
         self.parser.add_argument("--k_fold", type=int, action="store", default=1,
                                  help="Repeatedly downsample k times to evaluate results.")
-        self.parser.add_argument("--save_downsample_index", action="store_true",
+        self.parser.add_argument("--save_downsample_index", action="store_true", default=None,
                                  help="Save indicies in a subdirectory 'index'.")
         self.parser.add_argument("--downsample_replace", action="store_true",
                                  help="Downsample with replacement.")
