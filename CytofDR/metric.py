@@ -7,7 +7,7 @@ import scipy.spatial
 import scipy.stats
 import sklearn.metrics
 
-from util import Annoy
+from CytofDR.util import Annoy
 import itertools
 from typing import Optional, Any, Union, List, Tuple, Callable
 

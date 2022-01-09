@@ -9,7 +9,7 @@ from openTSNE import affinity
 from openTSNE import initialization
 import phate
 
-from fileio import FileIO
+from CytofDR.fileio import FileIO
 
 import time
 import os
@@ -82,43 +82,39 @@ class DR():
                     phate_decay: int=40,
                     phate_knn: int=5
                     ) -> List[List[Union[str, float]]]:
-        
-        ''' Run dimension reduction methods.
-        
+        """Run dimension reduction methods.
+
         This is a one-size-fits-all dispatcher that runs all supported methods in the module. It
         supports running multiple methods at the same time at the sacrifice of some more
         granular control of parameters. This method is also what the CLI uses.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out (str): The output directory to save embeddings.
-            transform (numpy.ndarray): An array to transform after training on the traning set.
-            methods (str, List[str]): DR methods to run (not case sensitive).
-            out_dims (int): Output dimension of DR.
-            save_embedding_colnames (bool): Whether to save the columnnames as the first row.
-            perp (int, List[int]): Perplexity or multiple perplexity for tSNE.
-            early_exaggeration (float): Early exaggeration for tSNE.
-            early_exaggeration_iter (int): Early exaggeration iteration for tSNE.
-            tsne_learning_rate (str, float, optional): Learning rate for tSNE.
-            max_iter (int): Maximum number of iterations for tSNE.
-            init (str): tSNE and UMAP initialization method.
-            dist_metric (str): Distance metric for methods that support it.
-            open_tsne_method (str): Method for openTSNE.
-            umap_min_dist (float): Minimum distane for UMAP
-            umap_neighbors (int): Number of neighborsi for UMAP.
-            SAUCIE_lambda_c (float): ID regularization.
-            SAUCIE_lambda_d (float): Within-cluster distance regularization.
-            SAUCIE_steps (int): Number of iterations for SAUCIE
-            SAUCIE_batch_size (int): Batch size for SAUCIE
-            SAUCIE_learning_rate (float): Learning rate for SAUCIE
-            kernel (str): Kernel for KernelPCA.
-            phate_decay (int): Decay rate for PHATE.
-            phate_knn (int): Number of neighbors in PHATE.
+        :param data: The input high-dimensional array.
+        :param out: The output directory to save embeddings.
+        :param transform: An array to transform after training on the traning set.
+        :param methods: DR methods to run (not case sensitive).
+        :param out_dims: Output dimension of DR.
+        :param save_embedding_colnames: Whether to save the columnnames as the first row.
+        :param perp: Perplexity or multiple perplexity for tSNE.
+        :param early_exaggeration: Early exaggeration for tSNE.
+        :param early_exaggeration_iter (int): Early exaggeration iteration for tSNE.
+        :param tsne_learning_rate: Learning rate for tSNE.
+        :param max_iter: Maximum number of iterations for tSNE.
+        :param init: tSNE and UMAP initialization method.
+        :param dist_metric: Distance metric for methods that support it.
+        :param open_tsne_method: Method for openTSNE.
+        :param umap_min_dist: Minimum distane for UMAP
+        :param umap_neighbors: Number of neighborsi for UMAP.
+        :param SAUCIE_lambda_c: ID regularization.
+        :param SAUCIE_lambda_d: Within-cluster distance regularization.
+        :param SAUCIE_steps: Number of iterations for SAUCIE
+        :param SAUCIE_batch_size: Batch size for SAUCIE
+        :param SAUCIE_learning_rate: Learning rate for SAUCIE
+        :param kernel: Kernel for KernelPCA.
+        :param phate_decay: Decay rate for PHATE.
+        :param phate_knn: Number of neighbors in PHATE.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
-        '''
+        :return: A nested list of methods run and runtime. 
+        """
         
         dir_path: str = out+"/embedding"
         try:
@@ -420,8 +416,8 @@ class DR():
         
 
 class LinearMethods():
-    """Linear DR Methods.
-
+    """Linear DR Methods
+    
     This class contains static methods of a group of Linear DR Methods.
     """
     
@@ -429,19 +425,16 @@ class LinearMethods():
     def PCA(data: "np.ndarray",
             out_dims: int=2
             ) -> Tuple[float, "np.ndarray"]:
-        
-        ''' Scikit-Learn Principal Component Analysis (PCA)
-        
+        """Scikit-Learn Principal Component Analysis (PCA)
+
         This method uses the SKlearn's standard PCA.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         print("Running PCA.")
         
@@ -458,20 +451,18 @@ class LinearMethods():
     @staticmethod
     def ICA(data: "np.ndarray",
             out_dims: int,
-            max_iter: int=200) -> Tuple[float, "np.ndarray"]:
-        
-        ''' Scikit-Learn Independent Component Analysis (ICA)
-        
+            max_iter: int=200) -> Tuple[float, "np.ndarray"]:   
+        """Scikit-Learn Independent Component Analysis (ICA)
+
         This method uses the SKlearn's FastICA implementation of ICA.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param max_iter: The maximum number of iterations for the algorithm.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional ICA embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
         
@@ -486,19 +477,16 @@ class LinearMethods():
     @staticmethod
     def ZIFA(data: "np.ndarray",
              out_dims: int) -> Tuple[float, "np.ndarray"]:
-        ''' Zero-Inflated Factor Analysis (ZIFA)
-        
+        """Zero-Inflated Factor Analysis (ZIFA)
+
         This method implements ZIFA as developed by Pierson & Yau (2015).
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional ICA embedding.
-        '''
-        
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         data = LinearMethods._remove_col_zeros(data)
         start_time: float = time.perf_counter()
@@ -514,19 +502,17 @@ class LinearMethods():
     
     @staticmethod
     def factor_analysis(data: "np.ndarray",
-                        out_dims: int):
-        ''' Scikit-Learn Factor Analysis (FA)
-        
+                        out_dims: int) -> Tuple[float, "np.ndarray"]:
+        """Scikit-Learn Factor Analysis (FA)
+
         This method uses the SKlearn's FA implementation.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional ICA embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
         
@@ -542,21 +528,19 @@ class LinearMethods():
     def MDS(data: "np.ndarray",
             out_dims: int,
             metric: bool=True,
-            n_jobs: int=-1):
-        ''' Scikit-Learn Multi-Dimensional Scaling (MDS)
-        
+            n_jobs: int=-1) -> Tuple[float, "np.ndarray"]:
+        """Scikit-Learn Multi-Dimensional Scaling (MDS)
+
         This method uses the SKlearn's MDS implementation.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            metric (bool): Whether to run metric MDS.
-            n_jobs (int): The number of jobs to run concurrantly.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param metric: Whether to run metric MDS.
+        :param n_jobs: The number of jobs to run concurrantly.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional ICA embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
         
@@ -573,19 +557,17 @@ class LinearMethods():
     
     @staticmethod
     def NMF(data: "np.ndarray",
-            out_dims: int):
-        ''' Scikit-Learn Nonnegative Matrix Factorization (NMF)
-        
+            out_dims: int) -> Tuple[float, "np.ndarray"]:
+        """Scikit-Learn Nonnegative Matrix Factorization (NMF)
+
         This method uses the SKlearn's NMF implementation.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional ICA embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
         
@@ -599,16 +581,16 @@ class LinearMethods():
     
     @staticmethod
     def _remove_col_zeros(data: "np.ndarray") -> "np.ndarray":
-        ''' Remove a column consisting of entireing zeroes
-        
+        """Remove a column consisting of entireing zeroes
+
         This private method is used by ZIFA to fix errors.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
+        :param data: The input high-dimensional array.
 
-        Returns:
-            data (numpy.ndarray): The output array without zero columns.
-        '''
+        :return: The output array without zero columns.
+        :rtype: "np.ndarray"
+        """
+        
         nonzero_col: List[int] = []
         col: int
         for col in range(data.shape[1]):
@@ -631,23 +613,20 @@ class NonLinearMethods():
              metric: str="euclidean",
              init: Union["np.ndarray", str]="spectral"
              ) -> Tuple[float, "np.ndarray"]:
-        
-        ''' UMAP
-        
+        """UMAP
+
         This method uses the UMAP package's UMAP implementation.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            n_neighbors (int): The number of neighbors to consider.
-            min_dist (float): The minimum distance between points in the embedding.
-            metric (str): The distance metric used in calculation.
-            init (Union[str, "numpy.ndarray"]): Method of initialiazation. 'random', 'spectral', or array.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param n_neighbors: The number of neighbors to consider.
+        :param min_dist: The minimum distance between points in the embedding.
+        :param metric: The distance metric used in calculation.
+        :param init: Method of initialiazation. 'random', 'spectral', or array.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional UMAP embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
         
@@ -672,23 +651,22 @@ class NonLinearMethods():
                batch_size: int=256,
                learning_rate: float=0.001
                ) -> Tuple[float, "np.ndarray"]:
-        ''' SAUCIE
-        
+        """SAUCIE
+
         This method is a wrapper for SAUCIE package's SAUCIE model. Specifically,
         dimension reduction is of interest.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            lambda_c (float): ID regularization.
-            lambda_d (float): Within-cluster distance regularization.
-            steps (int): The number of training steps to use.
-            batch_size (int): The batch size for training.
-            learning_rate (float): The learning rate of traning.
+        :param data: The input high-dimensional array.
+        :param lambda_c: ID regularization.
+        :param lambda_d: Within-cluster distance regularization.
+        :param steps: The number of training steps to use.
+        :param batch_size: The batch size for training.
+        :param learning_rate: The learning rate of traning.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional SUACIE embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
+        
         start_time: float = time.perf_counter()
         
         saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1],
@@ -714,21 +692,19 @@ class NonLinearMethods():
                n_neighbors: int=5,
                dist_metric: str="euclidean"
                ) -> Tuple[float, "np.ndarray"]:
-        
-        ''' Isomap
-        
+        """Isomap
+
         This method is a wrapper for sklearn's implementation of Isomap.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            n_neighbors (int): The number of neighbors to consider.
-            dist_metric (str): The distance metric used in calculation.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param transform: The array to transform with the trained model.
+        :param n_neighbors: The number of neighbors to consider.
+        :param dist_metric: The distance metric used in calculation.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional Isomap embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
         
@@ -755,20 +731,18 @@ class NonLinearMethods():
             transform: Optional["np.ndarray"]=None,
             n_neighbors: int=5
             ) -> Tuple[float, "np.ndarray"]: 
-        
-        ''' Locally Linear Embedding (LLE)
-        
+        """Locally Linear Embedding (LLE)
+
         This method is a wrapper for sklearn's implementation of LLE.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            n_neighbors (int): The number of neighbors to consider.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param transform: The array to transform with the trained model.
+        :param n_neighbors: The number of neighbors to consider.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional LLE embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
 
@@ -792,20 +766,17 @@ class NonLinearMethods():
                   out_dims: int=2,
                   kernel: str="poly"
                   ) -> Tuple[float, "np.ndarray"]: 
-        
-        ''' Kernel PCA
-        
+        """Kernel PCA
+
         This method is a wrapper for sklearn's implementation of kernel PCA.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            kernel (str): The kernel to use: "poly," "linear," "rbf," "sigmoid," or "cosine."
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param kernel: The kernel to use: "poly," "linear," "rbf," "sigmoid," or "cosine."
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional kernel PCA embedding.
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
 
@@ -822,19 +793,16 @@ class NonLinearMethods():
     @staticmethod
     def spectral(data: "np.ndarray",
                  out_dims: int=2):
-        
-        ''' Spectral Embedding
-        
+        """Spectral Embedding
+
         This method is a wrapper for sklearn's implementation of spectral embedding.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional spectral embedding.
-        ''' 
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
 
@@ -853,18 +821,19 @@ class NonLinearMethods():
               t: Union[str, int]="auto",
               decay: Optional[int]=40,
               knn: Optional[int]=5):
-        ''' PHATE
-        
+        """PHATE
+
         This method is a wrapper for PHATE.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param t: The power of diffusion operator.
+        :param decay: The decay of PHATE model.
+        :param knn: The number of neighbors of the model.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional PHATE embedding.
-        ''' 
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
 
@@ -883,25 +852,20 @@ class NonLinearMethods():
     @staticmethod
     def grandprix(data: "np.ndarray",
                   out_dims: int=2):
-        ''' GrandPrix
-        
+        """GrandPrix
+
         This method is a wrapper for GrandPrix.
         
-        Note:
-            The ``GrandPrix`` is not mandatory for this package to run.
-        
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional PHATE embedding.
-        ''' 
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         start_time: float = time.perf_counter()
 
-        embedding: "np.ndarray" = GrandPrix.fit_model(data = data, n_latent_dims = out_dims)[0]
+        embedding: "np.ndarray" = GrandPrix.fit_model(data = data, n_latent_dims = out_dims)[0] # type: ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
@@ -929,29 +893,25 @@ class TSNE():
                      angle: float=0.5,
                      metric: str="euclidean"
                      )-> Tuple[float, "np.ndarray"]:
-        
-        ''' Scikit-Learn t-SNE
-        
+        """Scikit-Learn t-SNE
+
         This method uses the Scikit-learn implementation of t-SNE. It supports both
         traditional and BH t-SNE with more control of variables.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            perp (int): Perplexity. The default is set to 30. Tradition is between 30 and 50.
-            early_exaggeration (float): The early exaggeration factor of alpha.
-            learning_rate (float): The learning rate used during gradient descent.
-            max_iter (int): Maximum number of iterations to optimize.
-            init (Union[str, "np.ndarray"]): Random ('random') or PCA ('pca') or array initialization. 
-            method (str): Original ("exact") or Barnes-Hut ("barnes_hut") implementation.
-            angle (float): The speed/accuracy tradeoff for Barnes-Hut t-SNE.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
+        :param early_exaggeration: The early exaggeration factor of alpha.
+        :param learning_rate: The learning rate used during gradient descent.
+        :param max_iter: Maximum number of iterations to optimize.
+        :param init: Random ('random') or PCA ('pca') or array initialization. 
+        :param method: Original ("exact") or Barnes-Hut ("barnes_hut") implementation.
+        :param angle: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
-
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
-        '''
         print("Running Scikit-Learn t-SNE: {}".format(method))
         
         start_time: float = time.perf_counter()
@@ -981,29 +941,22 @@ class TSNE():
                 use_pca: bool=False, 
                 max_iter: int=3000
                 ) -> Tuple[float, "np.ndarray"]:
-        
-        ''' Barnes-Hut t-SNE
-        
+        """Barnes-Hut t-SNE
+
         This method uses the BH t-SNE as proposed and implemented by van der Maaten (2014). As
         opposed to the sklearn implementation, this uses the original implementation.
         
-        Note:
-            This implementation's installation is not mandatory for this package to run.
-        
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
-            theta: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
-            initial_dims: Number of dimensions for initial PCA dimension reduction.
-            use_pca: Whether to use PCA to first reduce dimension to 50.
-            max_iter: Maximum number of iterations to optimize.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
+        :param theta: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
+        :param initial_dims: Number of dimensions for initial PCA dimension reduction.
+        :param use_pca: Whether to use PCA to first reduce dimension to 50.
+        :param max_iter: Maximum number of iterations to optimize.
 
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
-        
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         # Learning rate: 200
         print("Running BH t-SNE.")
         
@@ -1049,46 +1002,38 @@ class TSNE():
                 df: int=1,
                 max_step_norm: Optional[float]=5.0,
                 ) -> Tuple[float, "np.ndarray"]:
-        
-        '''FIt-SNE.
-        
+        """FIt-SNE
+
         This is the FIt-SNE as implemented and introduced by Linderman et al. (2018). It uses interpolation
         and fast fourier transform to accelerate t-SNE.
         
-        Note:
-            This FIt-SNE implementation is not mandatory for this package to run.
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
+        :param theta: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
+        :param stop_early_exag_iter: When to stop early exaggeration.
+        :param mom_switch_iter: When to switch momentum.
+        :param momentum: Initial value of momentum.
+        :param final_momentum: Final value of momentum.
+        :param learning_rate: The learning rate used during gradient descent.
+        :param early_exaggeration: Early exaggeration factor.
+        :param no_momentum_during_exag: Whether to use momentum during early exaggeration.
+        :param n_trees: Number of trees used with Annoy library.
+        :param search_k: The number of nodes to inspect during search while using Annoy.
+        :param start_late_exag_iter: When to start late exaggeration. 
+        :param late_exag_coeff: Union[float, int] The late exaggeration coefficient to use. Disable with -1.
+        :param nterms: The number of interpolation points per inteval.
+        :param intervals_per_integer: Used in calculating interpolating intervals.
+        :param min_num_intervals: Number of interval for interpolation.
+        :param init: Method of initialiazation. 'random', 'pca', or array.
+        :param load_affinities: Load previous affinities or save them.
+        :param perplexity_list: List of perplexity for multiperplexity t-SNE.
+        :param df: T-distribution degree of freedom.
+        :param max_step_norm: Maximum step in gradient descent.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            perp (int): Perplexity. The default is set to 30. Tradition is between 30 and 50.
-            theta (float): The speed/accuracy trade-off.
-            max_iter (int): Maximum number of iterations to optimize.
-            stop_early_exag_iter (int): When to stop early exaggeration.
-            mom_switch_iter (int): When to switch momentum.
-            momentum (float): Initial value of momentum.
-            final_momentum (float): Final value of momentum.
-            learning_rate (Union[str, float]): The learning rate used during gradient descent.
-            early_exaggeration (float): Early exaggeration factor.
-            no_momentum_during_exag (bool): Whether to use momentum during early exaggeration.
-            n_trees (int): Number of trees used with Annoy library.
-            search_k (Optional[int]): The number of nodes to inspect during search while using Annoy.
-            start_late_exag_iter [str]: When to start late exaggeration. 
-            late_exag_coeff: Union[float, int] The late exaggeration coefficient to use. Disable with -1.
-            nterms (int): The number of interpolation points per inteval.
-            intervals_per_integer (int): Used in calculating interpolating intervals.
-            min_num_intervals (int): Number of interval for interpolation.
-            init (Union[str, "numpy.ndarray"]): Method of initialiazation. 'random', 'pca', or array.
-            load_affinities (Optional[str]): Load previous affinities or save them.
-            perplexity_list (Optional[int]): List of perplexity for multiperplexity t-SNE.
-            df (int): T-distribution degree of freedom.
-            max_step_norm (Optional[float]): Maximum step in gradient descent.
-            
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
-        
-        '''
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         
         print("Running FIt-SNE.")
         start_time: float = time.perf_counter()
@@ -1138,29 +1083,25 @@ class TSNE():
                   init: Union["np.ndarray", str]="pca",
                   negative_gradient_method: str="fft"
                   ) -> Tuple[float, "np.ndarray"]:
-        
-        '''Open t-SNE.
-        
+        """Open t-SNE
+
         This is the Python implementation of FIt-SNE through the ``openTSNE`` package. Its implementation
         is based on research from Linderman et al. (2019). This is the default recommended implementation.
         
-        Args:
-            data (numpy.ndarray): The input high-dimensional array.
-            out_dims (int): The number of dimensions of the output.
-            perp (int): Perplexity. The default is set to 30. Tradition is between 30 and 50.
-            learning_rate (Union[str, float]): The learning rate used during gradient descent.
-            early_exaggeration_iter (float): Number of early exaggeration iterations.
-            early_exaggeration (float): Early exaggeration factor.
-            max_iter (int): Maximum number of iterations to optimize.
-            dof (int): T-distribution degree of freedom.
-            theta (float): The speed/accuracy trade-off.
-            init (Union[str, "numpy.ndarray"]): Method of initialiazation. 'random', 'pca', 'spectral', or array.
-            
-        Returns:
-            run_time (float): Time used to produce the embedding.
-            embedding (numpy.ndarray): The low-dimensional t-SNE embedding.
-        
-        '''
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
+        :param learning_rate: The learning rate used during gradient descent.
+        :param early_exaggeration_iter: Number of early exaggeration iterations.
+        :param early_exaggeration: Early exaggeration factor.
+        :param max_iter: Maximum number of iterations to optimize.
+        :param dof: T-distribution degree of freedom.
+        :param theta: The speed/accuracy trade-off.
+        :param init: Method of initialiazation. 'random', 'pca', 'spectral', or array.
+
+        :return: A tuple of runtime and the low-dimensional embedding.
+        :rtype: Tuple[float, "np.ndarray"]
+        """
         print("Running Open t-SNE.")
         
         n_iter: int = max_iter - early_exaggeration_iter
