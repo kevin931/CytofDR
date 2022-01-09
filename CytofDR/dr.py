@@ -865,7 +865,7 @@ class NonLinearMethods():
         
         start_time: float = time.perf_counter()
 
-        embedding: "np.ndarray" = GrandPrix.fit_model(data = data, n_latent_dims = out_dims)[0]
+        embedding: "np.ndarray" = GrandPrix.fit_model(data = data, n_latent_dims = out_dims)[0] # type: ignore
         
         end_time: float = time.perf_counter()
         run_time: float = end_time - start_time
