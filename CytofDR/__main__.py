@@ -83,9 +83,9 @@ parser.add_argument("--comparison_classes", type=str, nargs="+", action="store",
 # Downsampling
 parser.add_argument("--k_fold", type=int, action="store", default=1,
                         help="Repeatedly downsample k times to evaluate results.")
-parser.add_argument("--save_downsample_index", action="store_true",
+parser.add_argument("--save_downsample_index", action="store_true", default=None,
                         help="Save indicies in a subdirectory 'index'.")
-parser.add_argument("--downsample_replace", action="store_true",
+parser.add_argument("--downsample_replace", action="store_true", default=None,
                         help="Downsample with replacement.")
 parser.add_argument("--downsample_save_data_colnames", action="store_true",
                         help="Whether to save column names for downsampled data.")
