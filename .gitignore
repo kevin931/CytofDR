@@ -13,19 +13,3 @@
 
 # Documentation
 /docs/build
-
-# Local Directories
-bhtsne
-fitsne
-SAUCIE
-MEDist
-grandprix
-
-analysis
-data
-out
-sbatch
-temp
-
-# Other Files
-*.fcs
