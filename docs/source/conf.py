@@ -26,10 +26,8 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.autoprogram",
     "sphinx_autodoc_typehints",
-    "sphinx_git",
-    "sphinx.ext.napoleon"
+    "sphinx_git"
 ]
 
 # Add any paths that contain templates here, relative to this directory.

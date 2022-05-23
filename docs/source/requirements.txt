@@ -1,5 +1,4 @@
 sphinx
 sphinx-rtd-theme
 sphinx-git
-sphinxcontrib-autoprogram
 sphinx-autodoc-typehints
