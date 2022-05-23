@@ -13,6 +13,9 @@ import scipy.spatial
 import scipy.stats
 from CytofDR.metric import EvaluationMetrics, PointClusterDistance
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import warnings
 from typing import Union, Optional, List, Dict, Any
 
@@ -58,8 +61,8 @@ class Reductions():
         self.original_data: Optional["np.ndarray"] = None
         self.original_labels: Optional["np.ndarray"] = None
         self.original_cell_types: Optional["np.ndarray"] = None
-        self.embedding_labels: Optional["np.ndarray"] = None
-        self.embedding_cell_types: Optional["np.ndarray"] = None
+        self.embedding_labels: Optional[Dict[str, "np.ndarray"]] = None
+        self.embedding_cell_types: Optional[Dict[str, "np.ndarray"]] = None
         self.comparison_data: Optional["np.ndarray"] = None
         self.comparison_cell_types: Optional["np.ndarray"] = None
         self.comparison_classes: Optional[Union[str, List[str]]] = None
@@ -97,8 +100,8 @@ class Reductions():
                                 original_data: "np.ndarray",
                                 original_labels: Optional["np.ndarray"]=None,
                                 original_cell_types: Optional["np.ndarray"]=None,
-                                embedding_labels: Optional["np.ndarray"]=None,
-                                embedding_cell_types: Optional["np.ndarray"]=None,
+                                embedding_labels: Optional[Dict[str, "np.ndarray"]]=None,
+                                embedding_cell_types: Optional[Dict[str, "np.ndarray"]]=None,
                                 comparison_data: Optional["np.ndarray"]=None,
                                 comparison_cell_types: Optional["np.ndarray"]=None,
                                 comparison_classes: Optional[Union[str, List[str]]]=None,
@@ -118,7 +121,6 @@ class Reductions():
         :param comparison_data: The comparison data (matched with original data in some way) for concordance analysis.
         :param comparison_cell_types: Cell types based on comparison data.
         :param comparison_classes: Common cell types between embedding and comparison data.
-
         """
         self.original_data = original_data
         self.original_data = original_data
@@ -226,15 +228,15 @@ class Reductions():
                                                                                                                  labels=self.original_labels)
                 
                 self.evaluations["downstream"]["cluster concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.original_labels,
-                                                                                                      y_labels=self.embedding_labels)
+                                                                                                      y_labels=self.embedding_labels[e])
                 self.evaluations["downstream"]["cluster concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.original_labels,
-                                                                                                      y_labels=self.embedding_labels)
+                                                                                                      y_labels=self.embedding_labels[e])
                 
                 if self.original_cell_types is not None:
                     self.evaluations["downstream"]["cell type-clustering concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.original_cell_types,
-                                                                                                                    y_labels=self.embedding_labels)
+                                                                                                                    y_labels=self.embedding_labels[e])
                     self.evaluations["downstream"]["cell type-clustering concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.original_cell_types,
-                                                                                                                    y_labels=self.embedding_labels)
+                                                                                                                    y_labels=self.embedding_labels[e])
                 else:
                     warnings.warn("")
             
@@ -245,23 +247,23 @@ class Reductions():
             self.evaluations["concordance"] = {"cluster distance": {}, "emd": {}, "gating concordance: ARI": {}, "gating concordance: NMI": {}}
             for e in self.reductions.keys():
                 self.evaluations["concordance"]["emd"][e] = EvaluationMetrics.embedding_concordance(self.reductions[e],
-                                                                                                    self.embedding_cell_types,
+                                                                                                    self.embedding_cell_types[e],
                                                                                                     self.comparison_data,
                                                                                                     self.comparison_cell_types,
                                                                                                     self.comparison_classes,
                                                                                                     "emd")
                 self.evaluations["concordance"]["cluster distance"][e] = EvaluationMetrics.embedding_concordance(self.reductions[e],
-                                                                                                                 self.embedding_cell_types,
+                                                                                                                 self.embedding_cell_types[e],
                                                                                                                  self.comparison_data,
                                                                                                                  self.comparison_cell_types,
                                                                                                                  self.comparison_classes,
                                                                                                                  "cluster_distance")
-                self.evaluations["concordance"]["gating concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.embedding_cell_types,
+                self.evaluations["concordance"]["gating concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.embedding_cell_types[e],
                                                                                                       y_labels=self.comparison_cell_types)
-                self.evaluations["concordance"]["gating concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.embedding_cell_types,
+                self.evaluations["concordance"]["gating concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.embedding_cell_types[e],
                                                                                                       y_labels=self.comparison_cell_types)
           
-                
+
     def rank_dr_methods(self, method: str="max"):
         """Rank DR Methods Using Default DR Evaluation.
 
@@ -313,7 +315,7 @@ class Reductions():
             overall_rank += concordance_eval
             
         overall_rank = overall_rank/category_counter
-        return dict(zip(self.reductions.keys(), list(overall_rank))), dict(zip(self.reductions.keys(), list(global_eval))), dict(zip(self.reductions.keys(), list(local_eval)))
+        return dict(zip(self.reductions.keys(), list(overall_rank)))
     
     
     def custom_evaluate(self):
@@ -324,6 +326,22 @@ class Reductions():
         pass
                 
             
+    def plot_reduction(self, name: str, save_path: str, style: str="darkgrid", hue: Optional["np.ndarray"]=None, **kwargs):
+        """Draw embedding using a scatter plot.
+
+        This method generates a scatter plot for reductions in the class. 
+        
+        :param name: The name of the reduction.
+        :param save_path: The path to save the plot.
+        :param hue: Labels used to color the points.
+        :param **kwargs: Keyword arguments passed into the ``sns.scatterplot`` method.
+        
+        .. note:: Live viewing is not supported by this method.
+        """
+        sns.set_style(style)
+        sns_plot = sns.scatterplot(x=self.reductions[name][:,0], y=self.reductions[name][:,1], hue=hue, **kwargs)
+        fig = sns_plot.get_figure()
+        fig.savefig(save_path)
     
     
 class LinearMethods():
