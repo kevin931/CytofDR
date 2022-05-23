@@ -22,6 +22,9 @@ Note: All installation instructions are PENDING!
     - umap-learn
     - scipy
     - phate
+    - annoy
+    - matplotlib
+    - seaborn
 
 ### Optional Dependencies
 See below for notes on how to get these installed.

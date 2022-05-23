@@ -43,6 +43,9 @@ your own.
 * umap-learn
 * openTSNE
 * phate
+* annoy
+* matplotlib
+* seaborn
 
 -------------
 
