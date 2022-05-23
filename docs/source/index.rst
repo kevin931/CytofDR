@@ -1,3 +1,6 @@
+.. image:: ../../assets/logo.png
+   :alt: Logo
+
 CytofDR: Your Solution for CyTOF Dimension Reduction and Benchmarking
 =======================================================================
 
@@ -43,7 +46,6 @@ Whether your workflow calls for multiple DR techniques or you are planning on be
    Dr. Tao Wang <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>
    DBAI <https://dbai.biohpc.swmed.edu/>
    GitHub <https://github.com/kevin931/CytofDR/>
-   Benchmark Workflows <>
 
 ***********************
 Resources
@@ -55,4 +57,3 @@ For more resources on our labs, collaborators, and related projects, please visi
    * `Dr. Tao Wang Lab <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>`_
    * `Database for Actionable Immunology (DBAI) for more computational immunology-related tools <https://dbai.biohpc.swmed.edu/>`_
    * `GitHub Page for project development <https://github.com/kevin931/CytofDR/>`_
-   * `Our workflows and benchmark results <>`_

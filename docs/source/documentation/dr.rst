@@ -2,6 +2,6 @@ Module: CytofDR.dr
 ======================================
 
 .. automodule:: CytofDR.dr
-    :members: DR, NonLinearMethods, LinearMethods, TSNE
+    :members: run_dr_methods, Reductions, NonLinearMethods, LinearMethods
     :undoc-members:
     :show-inheritance:

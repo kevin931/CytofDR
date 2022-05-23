@@ -11,5 +11,4 @@ Module References
 .. toctree::
    :maxdepth: 1
 
-   main
    dr
