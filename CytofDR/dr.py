@@ -182,7 +182,7 @@ class Reductions():
             if pwd_metric.lower() == "pcd":
                 data_distance = PointClusterDistance(self.original_data, self.original_labels).fit(flatten=True)
                 for e in self.reductions.keys():
-                    embedding_distance[e] = PointClusterDistance(self.original_data, self.original_labels).fit(flatten=True)
+                    embedding_distance[e] = PointClusterDistance(self.reductions[e], self.original_labels).fit(flatten=True)
                 
             else:
                 data_distance = scipy.spatial.distance.pdist(self.original_data)
@@ -204,7 +204,7 @@ class Reductions():
             for e in self.reductions.keys():
                 embedding_neighbors: "np.ndarray" = EvaluationMetrics.build_annoy(self.reductions[e], None, k_neighbors)
                 self.evaluations["local"]["npe"][e] = EvaluationMetrics.NPE(labels = self.original_labels, data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
-                self.evaluations["local"]["npe"][e] = EvaluationMetrics.KNN(data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
+                self.evaluations["local"]["knn"][e] = EvaluationMetrics.KNN(data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
                              
         if "downstream" in category:
             self.evaluations["downstream"] = {"cluster reconstruction: silhouette": {},
@@ -222,7 +222,7 @@ class Reductions():
                                                                                                                     labels=self.original_labels)
                 self.evaluations["downstream"]["cluster reconstruction: CHI"][e] = EvaluationMetrics.calinski_harabasz(embedding=self.reductions[e],
                                                                                                                        labels=self.original_labels)
-                self.evaluations["downstream"]["cluster reconstruction:RF"][e] = EvaluationMetrics.random_forest(embedding=self.reductions[e],
+                self.evaluations["downstream"]["cluster reconstruction: RF"][e] = EvaluationMetrics.random_forest(embedding=self.reductions[e],
                                                                                                                  labels=self.original_labels)
                 
                 self.evaluations["downstream"]["cluster concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.original_labels,
@@ -262,7 +262,7 @@ class Reductions():
                                                                                                       y_labels=self.comparison_cell_types)
           
                 
-    def rank_dr_methods(self):
+    def rank_dr_methods(self, method: str="max"):
         """Rank DR Methods Using Default DR Evaluation.
 
         Based on the results from the ``evaluate`` method, this method ranks the DR methods
@@ -276,29 +276,29 @@ class Reductions():
         overall_rank: np.ndarray = np.zeros(len(self.reductions))
         if "global" in self.evaluations.keys():
             category_counter += 1
-            global_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["global"]["spearman"].values())/2
-            global_eval += scipy.stats.rankdata(self.evaluations["global"]["emd"].values())/2
+            global_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["global"]["spearman"].values()), method=method)/2
+            global_eval += scipy.stats.rankdata(list(self.evaluations["global"]["emd"].values()), method=method)/2
             overall_rank += global_eval
             
         if "local" in self.evaluations.keys():
             category_counter += 1
-            local_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["local"]["knn"].values())/2
-            local_eval += scipy.stats.rankdata(self.evaluations["local"]["npe"].values())/2
+            local_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["local"]["knn"].values()), method=method)/2
+            local_eval += scipy.stats.rankdata(list(self.evaluations["local"]["npe"].values()), method=method)/2
             overall_rank += local_eval
     
         if "downstream" in self.evaluations.keys():
             category_counter += 1
-            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: RF"].values())/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values())/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: DBI"].values())/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: CSI"].values())/4
+            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: RF"].values()), method=method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values()), method=method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: DBI"].values()), method=method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: CHI"].values()), method=method)/4
             
-            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["downstream"]["cluster concordance: ARI"].values())/2
-            cluster_concordance_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster concordance: NMI"].values())/2
+            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: ARI"].values()), method=method)/2
+            cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: NMI"].values()), method=method)/2
             
-            if "cell type-clustering concordance: ARI" in self.evaluations["downstream"].keys():
-                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values())/2
-                type_cluster_concordance_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values())/2
+            if len(self.evaluations["downstream"]["cell type-clustering concordance: ARI"]) > 0:
+                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=method)/2
+                type_cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=method)/2
                 downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval + type_cluster_concordance_eval)/3
             else:
                 downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval)/2
@@ -306,13 +306,14 @@ class Reductions():
                 
         if "concordance" in self.evaluations.keys():
             category_counter += 1
-            concordance_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["concordance"]["cluster distance"].values())/3
-            concordance_eval += scipy.stats.rankdata(self.evaluations["concordance"]["emd"].values())/3
-            concordance_eval += scipy.stats.rankdata(self.evaluations["concordance"]["gating concordance: ARI"].values())/6
-            concordance_eval += scipy.stats.rankdata(self.evaluations["concordance"]["gating concordance: NMI"].values())/6
+            concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["concordance"]["cluster distance"].values()), method=method)/3
+            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["emd"].values()), method=method)/3
+            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: ARI"].values()), method=method)/6
+            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: NMI"].values()), method=method)/6
             overall_rank += concordance_eval
             
-        return dict(zip(self.reductions.keys(), list(overall_rank)))
+        overall_rank = overall_rank/category_counter
+        return dict(zip(self.reductions.keys(), list(overall_rank))), dict(zip(self.reductions.keys(), list(global_eval))), dict(zip(self.reductions.keys(), list(local_eval)))
     
     
     def custom_evaluate(self):
