@@ -1,7 +1,7 @@
 import numpy as np
-import sklearn
+import scipy
 from sklearn.decomposition import FastICA, PCA, FactorAnalysis, KernelPCA, NMF
-from sklearn.manifold import Isomap, MDS, LocallyLinearEmbedding, SpectralEmbedding
+from sklearn.manifold import Isomap, MDS, LocallyLinearEmbedding, SpectralEmbedding, TSNE
 
 import umap
 from openTSNE import TSNEEmbedding
@@ -9,25 +9,14 @@ from openTSNE import affinity
 from openTSNE import initialization
 import phate
 
-from CytofDR.fileio import FileIO
+import scipy.spatial
+import scipy.stats
+from CytofDR.metric import EvaluationMetrics, PointClusterDistance
 
-import time
-import os
-from typing import Tuple, Union, Optional, List, Dict
+import warnings
+from typing import Union, Optional, List, Dict, Any
 
-METHODS: Dict[str, bool]  = {"fit_sne": True, "bh_tsne": True, "saucie": True, "ZIFA": True}
-
-try:
-    from fitsne.fast_tsne import fast_tsne
-except:
-    METHODS["fit_sne"] = False
-    print("No 'fit-sne' implementation. Please use 'open_tsne' instead.")
-
-try:
-    from bhtsne.bhtsne import run_bh_tsne
-except:
-    METHODS["bh_tsne"] = False
-    print("No 'bh_tsne' implementation. Use 'sklearn_tsne_bh' or 'open_tsne' instead.")
+METHODS: Dict[str, bool]  = {"saucie": True, "ZIFA": True, "Grandprix": True}
     
 try:
     import SAUCIE
@@ -47,436 +36,342 @@ except:
     METHODS["GrandPrix"] = False
     print("No 'Grandprix' implementation.")
     
+  
+class Reductions():
+    """A class for reductions and their evaluation. 
 
-class DR():
-    """Dimension Reduction Class.
+    This class is a convenient data class for storing and evaluaqting reductions.
 
-    This class is simply a wrapper for a utility function that dispatches
-    various DR methods.
+    :param reductions: A dictionary of reductions as indexed by their names.
+    
+    :raises ValueError: Reduction already exists but users choose not to replace the original.
     """
-
-    @classmethod
-    def run_methods(cls,
-                    data: "np.ndarray",
-                    out: str,
-                    transform: Optional["np.ndarray"]=None,
-                    methods: Union[str, List[str]]="all",
-                    out_dims: int=2,
-                    save_embedding_colnames: bool=False,
-                    perp: Union[int, List[int]]=30,
-                    early_exaggeration: float=12.0,
-                    early_exaggeration_iter: int=250,
-                    tsne_learning_rate: Optional[Union[float, str]]=None,
-                    max_iter: int=1000,
-                    init: str="random",
-                    dist_metric: str="euclidean",
-                    open_tsne_method: str="fft",
-                    umap_min_dist: float=0.1,
-                    umap_neighbors: int=15,
-                    SAUCIE_lambda_c: float=0.0,
-                    SAUCIE_lambda_d: float=0.0,
-                    SAUCIE_steps: int=1000,
-                    SAUCIE_batch_size: int=256,
-                    SAUCIE_learning_rate: float=0.001,
-                    kernel: str="poly",
-                    phate_decay: int=40,
-                    phate_knn: int=5
-                    ) -> List[List[Union[str, float]]]:
-        """Run dimension reduction methods.
-
-        This is a one-size-fits-all dispatcher that runs all supported methods in the module. It
-        supports running multiple methods at the same time at the sacrifice of some more
-        granular control of parameters. This method is also what the CLI uses.
+    
+    def __init__(self, reductions: Optional[Dict[str, "np.ndarray"]]=None):
+        """Constructor method for Reductions.
+        """
+        if reductions is None:
+            self.reductions: Dict[str, "np.ndarray"] = {}
+        else:
+            self.reductions = reductions
+            
+        self.original_data: Optional["np.ndarray"] = None
+        self.original_labels: Optional["np.ndarray"] = None
+        self.original_cell_types: Optional["np.ndarray"] = None
+        self.embedding_labels: Optional["np.ndarray"] = None
+        self.embedding_cell_types: Optional["np.ndarray"] = None
+        self.comparison_data: Optional["np.ndarray"] = None
+        self.comparison_cell_types: Optional["np.ndarray"] = None
+        self.comparison_classes: Optional[Union[str, List[str]]] = None
         
-        :param data: The input high-dimensional array.
-        :param out: The output directory to save embeddings.
-        :param transform: An array to transform after training on the traning set.
-        :param methods: DR methods to run (not case sensitive).
-        :param out_dims: Output dimension of DR.
-        :param save_embedding_colnames: Whether to save the columnnames as the first row.
-        :param perp: Perplexity or multiple perplexity for tSNE.
-        :param early_exaggeration: Early exaggeration for tSNE.
-        :param early_exaggeration_iter (int): Early exaggeration iteration for tSNE.
-        :param tsne_learning_rate: Learning rate for tSNE.
-        :param max_iter: Maximum number of iterations for tSNE.
-        :param init: tSNE and UMAP initialization method.
-        :param dist_metric: Distance metric for methods that support it.
-        :param open_tsne_method: Method for openTSNE.
-        :param umap_min_dist: Minimum distane for UMAP
-        :param umap_neighbors: Number of neighborsi for UMAP.
-        :param SAUCIE_lambda_c: ID regularization.
-        :param SAUCIE_lambda_d: Within-cluster distance regularization.
-        :param SAUCIE_steps: Number of iterations for SAUCIE
-        :param SAUCIE_batch_size: Batch size for SAUCIE
-        :param SAUCIE_learning_rate: Learning rate for SAUCIE
-        :param kernel: Kernel for KernelPCA.
-        :param phate_decay: Decay rate for PHATE.
-        :param phate_knn: Number of neighbors in PHATE.
+        self.evaluations: Dict[str, Any] = {}
+    
+    
+    def add_reduction(self, reduction: "np.ndarray", name: str, replace: bool=False):
+        """Add a reduction embedding.
 
-        :return: A nested list of methods run and runtime. 
+        This method allows users to add additional embeddings.
+
+        :param reduction: The reduction array.
+        :param name: The name of the reduction.
+        :param replace: If the original name exists, whether to replace the original, defaults to False
+        
+        :raises ValueError: Reduction already exists but users choose not to replace the original.
+        """
+        if name in list(self.reductions.keys()) and not replace:
+            raise ValueError("Reduction already exists. Set 'replace' to True if replacement is intended.")
+        self.reductions[name] = reduction
+        
+        
+    def get_reduction(self, name: str):
+        """Retrieve a reduction my name.
+
+        This method allows users to retrieve a reduction by name. This equivalent to running ``self.reductions[name]``.
+
+        :param name: The name of the reduction.
+        """
+        return self.reductions[name]
+    
+    
+    def add_evaluation_metadata(self,
+                                original_data: "np.ndarray",
+                                original_labels: Optional["np.ndarray"]=None,
+                                original_cell_types: Optional["np.ndarray"]=None,
+                                embedding_labels: Optional["np.ndarray"]=None,
+                                embedding_cell_types: Optional["np.ndarray"]=None,
+                                comparison_data: Optional["np.ndarray"]=None,
+                                comparison_cell_types: Optional["np.ndarray"]=None,
+                                comparison_classes: Optional[Union[str, List[str]]]=None,
+                                ):
+        """Add supporting metadata for DR evaluation.
+
+        A few more metadata are crucial for evaluation. ``original_data``, ``original_labels``,
+        and ``embedding_labels`` are mendatory. Other metadata are optional, based on the metrics you
+        wish to run.
+        
+        :param original_data: The original space data before DR.
+        :param original_labels: Clusterings based on original space data.
+        :param original_cell_types: Cell types based on original space data. 
+        :param embedding_data: The embedding space reduction.
+        :param embedding_labels: Clusterings based on embedding space reduction.
+        :param embedding_cell_types: Cell types based on embedding space reduction. 
+        :param comparison_data: The comparison data (matched with original data in some way) for concordance analysis.
+        :param comparison_cell_types: Cell types based on comparison data.
+        :param comparison_classes: Common cell types between embedding and comparison data.
+
+        """
+        self.original_data = original_data
+        self.original_data = original_data
+        self.original_labels = original_labels
+        self.original_cell_types = original_cell_types
+        self.embedding_labels = embedding_labels
+        self.embedding_cell_types = embedding_cell_types
+        self.comparison_data = comparison_data
+        self.comparison_cell_types = comparison_cell_types
+        self.comparison_classes = comparison_classes
+        
+    
+    def evaluate(self,
+                 category: Union[str, List[str]],
+                 pwd_metric: str="PCD",
+                 k_neighbors: int=5,
+                 annoy_original_data_path: Optional[str]=None):     
+        """Evaluate DR Methods Using Default DR Evaluation Scheme.
+
+        This method ranks the DR methods based on any of the four default categories:
+        ``global``, ``local``, ``downstream``, or ``concordance``. 
+        
+        :param category: The major evaluation category: ``global``, ``local``, ``downstream``, or ``concordance``.
+        :param pwd_metric: The pairwise distance metric. Two options are "PCD" or "pairwise".
+            PCD refers to Point Cluster Distance as implemented in this package; pairwise 
+            is the traditional pairwise distance. For large datasets, PCD is recommended. Defaults to "PCD".
+        :param k_neighbors: The number of neighbors to use for ``local`` metrics. Defaults to 5.
+        :param annoy_original_data_path: The file path to an ANNOY object for original data.
+
+        .. note::
+        
+            This method required ``add_evaluation_metadata`` to run first. ``original_cell_types`` and
+            ``embedding_cell_types`` are optional for the downstream category. For ``concordance``, if
+            you wish to use clustering results for embedding and comparison files, set the appropriate
+            clusterings to ``embedding_cell_types`` and ``comparison_cell_types``. 
         """
         
-        dir_path: str = out+"/embedding"
-        try:
-            os.mkdir(dir_path)
-        except FileExistsError:
-            pass
+        if len(self.reductions) == 0:
+            raise ValueError("No reductions to evalate. Add your reductions first.")
+        if pwd_metric.lower() not in  ["pcd", "pairwise"]:
+            raise ValueError("Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only.")
         
-        if not isinstance(methods, list):
-            methods = [methods]
-        methods = [each_method.lower() for each_method in methods]
-        
-        if "all" in methods:
-            methods = ["pca", "umap", "sklearn_tsne_original", "sklearn_tsne_bh", "open_tsne", "factor_analysis", "isomap", "mds"]
-            if METHODS["fit_sne"]:
-                methods.append("fit_sne")
-            if METHODS["bh_tsne"]:
-                methods.append("bh_tsne")
-            if METHODS["saucie"]:
-                methods.append("saucie")
-            if METHODS["zifa"]:
-                methods.append("zifa")
+        self.evaluations = {}
                 
-        if not isinstance(perp, list):
-            perp = [perp]
-            
-        colnames: Optional[np.ndarray] = None
-        if save_embedding_colnames:
-            colnames = np.arange(out_dims)
-
-        time: List[List[Union[str, float]]] = [[], []]
-        time_PCA: float
-        time_UMAP: float
-        time_tsne_original: float
-        time_sklearn_tsne_bh: float
-        time_bh_tsne: float
-        time_fit_sne: float
-        time_open_tsne: float
-        
-        embedding_PCA: "np.ndarray"
-        embedding_UMAP: "np.ndarray"
-        embedding_tsne_original: "np.ndarray"
-        embedding_sklearn_tsne_bh: "np.ndarray"
-        embedding_bh_tsne: "np.ndarray"
-        embedding_fit_sne: "np.ndarray"
-        embedding_open_tsne: "np.ndarray"
-        
-        if tsne_learning_rate == "auto":
-            tsne_learning_rate = round(data.shape[0]/12) if data.shape[0]>=2400 else 200.0
-        elif tsne_learning_rate is not None:
-            tsne_learning_rate = float(tsne_learning_rate)
+        if isinstance(category, list):
+            category = [c.lower() for c in category]
         else:
-            tsne_learning_rate = 200.0
-        
-        if "pca" in methods:
-            try:
-                time_PCA, embedding_PCA = LinearMethods.PCA(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_PCA, dir_path, "PCA", col_names=colnames)
-                time[0].append("PCA")
-                time[1].append(time_PCA)
-            except Exception as e:
-                print(e)
-                
-        if "ica" in methods:
-            try:
-                time_ICA, embedding_ICA = LinearMethods.ICA(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_ICA, dir_path, "ICA", col_names=colnames)
-                time[0].append("ICA")
-                time[1].append(time_ICA)
-            except Exception as e:
-                print(e)
-            
-        if "umap" in methods:
-            try: 
-                if init != "spectral" or init != "random":
-                    init_umap: str = "spectral"
-                else:
-                    init_umap: str = init
+            category = [category.lower()]
                     
-                time_UMAP, embedding_UMAP = NonLinearMethods.UMAP(data,
-                                                                  out_dims=out_dims,
-                                                                  init=init_umap,
-                                                                  metric=dist_metric,
-                                                                  min_dist=umap_min_dist,
-                                                                  n_neighbors=umap_neighbors)
-                FileIO.save_np_array(embedding_UMAP, dir_path, "UMAP", col_names=colnames)
-                time[0].append("UMAP")
-                time[1].append(time_UMAP)
-            except Exception as e:
-                print(e)
-                
-        if "saucie" in methods:
-            try:
-                time_saucie, embedding_saucie = NonLinearMethods.saucie(data,
-                                                                        lambda_c=SAUCIE_lambda_c,
-                                                                        lambda_d=SAUCIE_lambda_d,
-                                                                        steps=SAUCIE_steps,
-                                                                        batch_size=SAUCIE_batch_size,
-                                                                        learning_rate=SAUCIE_learning_rate)
-                FileIO.save_np_array(embedding_saucie, dir_path, "SAUCIE", col_names=colnames)
-                time[0].append("SAUCIE")
-                time[1].append(time_saucie)
-            except Exception as e:
-                print(e)
+        if self.original_data is None or self.original_labels is None or self.embedding_labels is None:
+            message: str = "Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes. "
+            message += "Run 'add_evaluation_metadata()' methods first."
+            raise ValueError(message)
         
-        # Sklearn original
-        if "sklearn_tsne_original" in methods:
-            try:
-                time_tsne_original, embedding_tsne_original = TSNE.sklearn_tsne(data,
-                                                                                out_dims=out_dims,
-                                                                                perp=perp[0],
-                                                                                early_exaggeration=early_exaggeration,
-                                                                                learning_rate=tsne_learning_rate,
-                                                                                max_iter=max_iter,
-                                                                                method="exact",
-                                                                                init=init,
-                                                                                metric=dist_metric)
-                FileIO.save_np_array(embedding_tsne_original, dir_path, "tsne_original", col_names=colnames)
-                time[0].append("sklearn_tsne_original")
-                time[1].append(time_tsne_original)
-            except Exception as e:
-                print(e)
-        
-        # sklearn BH
-        if "sklearn_tsne_bh" in methods:
-            try:
-                time_sklearn_tsne_bh, embedding_sklearn_tsne_bh = TSNE.sklearn_tsne(data,
-                                                                                    out_dims=out_dims,
-                                                                                    perp=perp[0],
-                                                                                    early_exaggeration=early_exaggeration,
-                                                                                    learning_rate=tsne_learning_rate,
-                                                                                    max_iter=max_iter,
-                                                                                    init=init,
-                                                                                    metric=dist_metric)
-                FileIO.save_np_array(embedding_sklearn_tsne_bh, dir_path, "sklearn_tsne_bh", col_names=colnames)
-                time[0].append("sklearn_tsne_bh")
-                time[1].append(time_sklearn_tsne_bh)
-            except Exception as e:
-                print(e)
-        
-        if "bh_tsne" in methods:
-            try:
-                time_bh_tsne, embedding_bh_tsne = TSNE.bh_tsne(data,
-                                                               out_dims=out_dims,
-                                                               perp=perp[0],
-                                                               max_iter=max_iter)
-                FileIO.save_np_array(embedding_bh_tsne, dir_path, "bh_tsne", col_names=colnames)
-                time[0].append("bh_tsne")
-                time[1].append(time_bh_tsne)
-            except Exception as e:
-                print(e)
-        
-        if "fit_sne" in methods:
-            perp_list: Optional[List[int]] = None
-            perp_fit_sne: int = 0
+        e: str
+        if "global" in category:
+            self.evaluations["global"] = {"spearman": {}, "emd": {}}
+            data_distance: "np.ndarray"
+            embedding_distance: Dict[str, "np.ndarray"] = {}
             
-            if len(perp)==1:
-                perp_fit_sne = perp[0]
+            if pwd_metric.lower() == "pcd":
+                data_distance = PointClusterDistance(self.original_data, self.original_labels).fit(flatten=True)
+                for e in self.reductions.keys():
+                    embedding_distance[e] = PointClusterDistance(self.original_data, self.original_labels).fit(flatten=True)
+                
             else:
-                perp_list = perp
+                data_distance = scipy.spatial.distance.pdist(self.original_data)
+                for e in self.reductions.keys():
+                    embedding_distance[e] = scipy.spatial.distance.pdist(e, metric="euclidean")
+                    
+            for e in self.reductions.keys():
+                val: float = EvaluationMetrics.correlation(x=data_distance, y=embedding_distance[e], metric="Spearman")
+                self.evaluations["global"]["spearman"][e] = val
                 
-            try:
-                time_fit_sne, embedding_fit_sne = TSNE.fit_sne(data,
-                                                               out_dims=out_dims,
-                                                               perp=perp_fit_sne,
-                                                               early_exaggeration=early_exaggeration,
-                                                               stop_early_exag_iter=early_exaggeration_iter,
-                                                               learning_rate=tsne_learning_rate,
-                                                               max_iter=max_iter,
-                                                               perplexity_list=perp_list, #type:ignore
-                                                               init=init) 
-                FileIO.save_np_array(embedding_fit_sne, dir_path, "fit_sne", col_names=colnames)
-                time[0].append("fit_sne")
-                time[1].append(time_fit_sne)
-            except Exception as e:
-                print(e)
+                val: float = EvaluationMetrics.EMD(x=data_distance, y=embedding_distance[e])
+                self.evaluations["global"]["emd"][e] = val
+                   
+        if "local" in category:
+            assert self.original_labels is not None
+            self.evaluations["local"] = {"knn": {}, "npe": {}}
+            
+            data_neighbors: "np.ndarray" = EvaluationMetrics.build_annoy(self.original_data, annoy_original_data_path, k_neighbors)
+            for e in self.reductions.keys():
+                embedding_neighbors: "np.ndarray" = EvaluationMetrics.build_annoy(self.reductions[e], None, k_neighbors)
+                self.evaluations["local"]["npe"][e] = EvaluationMetrics.NPE(labels = self.original_labels, data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
+                self.evaluations["local"]["npe"][e] = EvaluationMetrics.KNN(data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
+                             
+        if "downstream" in category:
+            self.evaluations["downstream"] = {"cluster reconstruction: silhouette": {},
+                                              "cluster reconstruction: DBI": {},
+                                              "cluster reconstruction: CHI": {},
+                                              "cluster reconstruction: RF": {},
+                                              "cluster concordance: ARI": {},
+                                              "cluster concordance: NMI": {},
+                                              "cell type-clustering concordance: ARI": {},
+                                              "cell type-clustering concordance: NMI": {}}
+            for e in self.reductions.keys():
+                self.evaluations["downstream"]["cluster reconstruction: silhouette"][e] = EvaluationMetrics.silhouette(embedding=self.reductions[e],
+                                                                                                             labels=self.original_labels)
+                self.evaluations["downstream"]["cluster reconstruction: DBI"][e] = EvaluationMetrics.davies_bouldin(embedding=self.reductions[e],
+                                                                                                                    labels=self.original_labels)
+                self.evaluations["downstream"]["cluster reconstruction: CHI"][e] = EvaluationMetrics.calinski_harabasz(embedding=self.reductions[e],
+                                                                                                                       labels=self.original_labels)
+                self.evaluations["downstream"]["cluster reconstruction:RF"][e] = EvaluationMetrics.random_forest(embedding=self.reductions[e],
+                                                                                                                 labels=self.original_labels)
                 
-            try:
-                os.remove("data.dat")
-                os.remove("result.dat")
-            except Exception as e:
-                print(e)
-        
-        if "open_tsne" in methods:
-            try:
-                time_open_tsne, embedding_open_tsne = TSNE.open_tsne(data,
-                                                                     out_dims=out_dims,
-                                                                     perp=perp,
-                                                                     early_exaggeration=early_exaggeration,
-                                                                     early_exaggeration_iter=early_exaggeration_iter,
-                                                                     learning_rate=tsne_learning_rate,
-                                                                     max_iter=max_iter,
-                                                                     init=init,
-                                                                     negative_gradient_method=open_tsne_method,
-                                                                     metric=dist_metric)
-                FileIO.save_np_array(embedding_open_tsne, dir_path, "open_tsne", col_names=colnames)
-                time[0].append("open_tsne")
-                time[1].append(time_open_tsne)
-            except Exception as e:
-                print(e)
+                self.evaluations["downstream"]["cluster concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.original_labels,
+                                                                                                      y_labels=self.embedding_labels)
+                self.evaluations["downstream"]["cluster concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.original_labels,
+                                                                                                      y_labels=self.embedding_labels)
                 
-        if "zifa" in methods:
-            try:
-                time_zifa, embedding_zifa = LinearMethods.ZIFA(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_zifa, dir_path, "zifa", col_names=colnames)
-                time[0].append("ZIFA")
-                time[1].append(time_zifa)
-            except Exception as e:
-                print(e)
+                if self.original_cell_types is not None:
+                    self.evaluations["downstream"]["cell type-clustering concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.original_cell_types,
+                                                                                                                    y_labels=self.embedding_labels)
+                    self.evaluations["downstream"]["cell type-clustering concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.original_cell_types,
+                                                                                                                    y_labels=self.embedding_labels)
+                else:
+                    warnings.warn("")
+            
+        if "condordance" in category:
+            assert self.embedding_cell_types is not None
+            assert self.comparison_cell_types is not None
+            assert self.comparison_data is not None
+            self.evaluations["concordance"] = {"cluster distance": {}, "emd": {}, "gating concordance: ARI": {}, "gating concordance: NMI": {}}
+            for e in self.reductions.keys():
+                self.evaluations["concordance"]["emd"][e] = EvaluationMetrics.embedding_concordance(self.reductions[e],
+                                                                                                    self.embedding_cell_types,
+                                                                                                    self.comparison_data,
+                                                                                                    self.comparison_cell_types,
+                                                                                                    self.comparison_classes,
+                                                                                                    "emd")
+                self.evaluations["concordance"]["cluster distance"][e] = EvaluationMetrics.embedding_concordance(self.reductions[e],
+                                                                                                                 self.embedding_cell_types,
+                                                                                                                 self.comparison_data,
+                                                                                                                 self.comparison_cell_types,
+                                                                                                                 self.comparison_classes,
+                                                                                                                 "cluster_distance")
+                self.evaluations["concordance"]["gating concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.embedding_cell_types,
+                                                                                                      y_labels=self.comparison_cell_types)
+                self.evaluations["concordance"]["gating concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.embedding_cell_types,
+                                                                                                      y_labels=self.comparison_cell_types)
+          
                 
-        if "factor_analysis" in methods:
-            try:
-                time_factor_analysis, embedding_factor_analysis = LinearMethods.factor_analysis(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_factor_analysis, dir_path, "factor_analysis", col_names=colnames)
-                time[0].append("factor_analysis")
-                time[1].append(time_factor_analysis)
-            except Exception as e:
-                print(e)
-                
-        if "isomap" in methods:
-            try:
-                time_isomap, embedding_isomap = NonLinearMethods.isomap(data,
-                                                                        out_dims=out_dims,
-                                                                        transform=transform,
-                                                                        dist_metric=dist_metric)
-                FileIO.save_np_array(embedding_isomap, dir_path, "isomap", col_names=colnames)
-                time[0].append("isomap")
-                time[1].append(time_isomap)
-            except Exception as e:
-                print(e)
-                
-        if "mds" in methods:
-            try:
-                time_mds, embedding_mds = LinearMethods.MDS(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_mds, dir_path, "mds", col_names=colnames)
-                time[0].append("mds")
-                time[1].append(time_mds)
-            except Exception as e:
-                print(e)
-                
-        if "lle" in methods:
-            try:
-                time_lle, embedding_lle = NonLinearMethods.LLE(data,
-                                                               out_dims=out_dims,
-                                                               transform=transform)
-                FileIO.save_np_array(embedding_lle, dir_path, "lle", col_names=colnames)
-                time[0].append("lle")
-                time[1].append(time_lle)
-            except Exception as e:
-                print(e)
-                
-        if "spectral" in methods:
-            try:
-                time_spectral, embedding_spectral = NonLinearMethods.spectral(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_spectral, dir_path, "spectral", col_names=colnames)
-                time[0].append("spectral")
-                time[1].append(time_spectral)
-            except Exception as e:
-                print(e)
-                        
-        if "kernelpca" in methods:
-            try:
-                time_kernelPCA, embedding_kernelPCA = NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel=kernel)
-                FileIO.save_np_array(embedding_kernelPCA, dir_path, "kernelPCA", col_names=colnames)
-                time[0].append("kernelPCA")
-                time[1].append(time_kernelPCA)
-            except Exception as e:
-                print(e)
-                
-        if "phate" in methods:
-            try:
-                time_phate, embedding_phate = NonLinearMethods.phate(data, out_dims=out_dims, decay=phate_decay, knn=phate_knn)
-                FileIO.save_np_array(embedding_phate, dir_path, "phate", col_names=colnames)
-                time[0].append("phate")
-                time[1].append(time_phate)
-            except Exception as e:
-                print(e)
-                
-        if "nmf" in methods:
-            try:
-                time_phate, embedding_phate = LinearMethods.NMF(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_phate, dir_path, "nmf", col_names=colnames)
-                time[0].append("nmf")
-                time[1].append(time_phate)
-            except Exception as e:
-                print(e)
-                
-                
-        if "grandprix" in methods:
-            try:
-                time_phate, embedding_phate = NonLinearMethods.grandprix(data, out_dims=out_dims)
-                FileIO.save_np_array(embedding_phate, dir_path, "grandprix", col_names=colnames)
-                time[0].append("grandprix")
-                time[1].append(time_phate)
-            except Exception as e:
-                print(e)
-                
-        FileIO.save_list_to_csv(time, out, "time")
-        return time
-        
+    def rank_dr_methods(self):
+        """Rank DR Methods Using Default DR Evaluation.
 
+        Based on the results from the ``evaluate`` method, this method ranks the DR methods
+        based on the categories chosen. All weighting schemes are consistent with the paper.
+        Custom evaluation and weighting schemes are not supported in this case.
+
+        :return: A dictionary of DR methods and their final weighted ranks.
+        :rtype: Dict[str, float]
+        """
+        category_counter: int = 0
+        overall_rank: np.ndarray = np.zeros(len(self.reductions))
+        if "global" in self.evaluations.keys():
+            category_counter += 1
+            global_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["global"]["spearman"].values())/2
+            global_eval += scipy.stats.rankdata(self.evaluations["global"]["emd"].values())/2
+            overall_rank += global_eval
+            
+        if "local" in self.evaluations.keys():
+            category_counter += 1
+            local_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["local"]["knn"].values())/2
+            local_eval += scipy.stats.rankdata(self.evaluations["local"]["npe"].values())/2
+            overall_rank += local_eval
+    
+        if "downstream" in self.evaluations.keys():
+            category_counter += 1
+            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: RF"].values())/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values())/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: DBI"].values())/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster reconstruction: CSI"].values())/4
+            
+            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["downstream"]["cluster concordance: ARI"].values())/2
+            cluster_concordance_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cluster concordance: NMI"].values())/2
+            
+            if "cell type-clustering concordance: ARI" in self.evaluations["downstream"].keys():
+                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values())/2
+                type_cluster_concordance_eval += scipy.stats.rankdata(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values())/2
+                downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval + type_cluster_concordance_eval)/3
+            else:
+                downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval)/2
+            overall_rank += downstream_eval
+                
+        if "concordance" in self.evaluations.keys():
+            category_counter += 1
+            concordance_eval: np.ndarray = scipy.stats.rankdata(self.evaluations["concordance"]["cluster distance"].values())/3
+            concordance_eval += scipy.stats.rankdata(self.evaluations["concordance"]["emd"].values())/3
+            concordance_eval += scipy.stats.rankdata(self.evaluations["concordance"]["gating concordance: ARI"].values())/6
+            concordance_eval += scipy.stats.rankdata(self.evaluations["concordance"]["gating concordance: NMI"].values())/6
+            overall_rank += concordance_eval
+            
+        return dict(zip(self.reductions.keys(), list(overall_rank)))
+    
+    
+    def custom_evaluate(self):
+        pass
+
+
+    def rank_dr_method_custom(self):
+        pass
+                
+            
+    
+    
 class LinearMethods():
     """Linear DR Methods
     
-    This class contains static methods of a group of Linear DR Methods.
+    This class contains static methods of a group of Linear DR Methods. If
+    available, the sklearn implementation is used. All keyword arguments are
+    passed directly to the method itself to allow for flexibility.
     """
     
     @staticmethod
     def PCA(data: "np.ndarray",
-            out_dims: int=2
-            ) -> Tuple[float, "np.ndarray"]:
+            out_dims: int=2,
+            **kwargs
+            ) -> "np.ndarray":
         """Scikit-Learn Principal Component Analysis (PCA)
 
-        This method uses the SKlearn's standard PCA.
+        This method uses the Sklearn's standard PCA.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        print("Running PCA.")
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = PCA(n_components=out_dims).fit_transform(data)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return PCA(n_components=out_dims, **kwargs).fit_transform(data)
     
     
     @staticmethod
     def ICA(data: "np.ndarray",
             out_dims: int,
-            max_iter: int=200) -> Tuple[float, "np.ndarray"]:   
+            **kwargs) -> "np.ndarray":   
         """Scikit-Learn Independent Component Analysis (ICA)
 
         This method uses the SKlearn's FastICA implementation of ICA.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
-        :param max_iter: The maximum number of iterations for the algorithm.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = FastICA(n_components=out_dims, max_iter=max_iter).fit_transform(data) #type:ignore
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return FastICA(n_components=out_dims, **kwargs).fit_transform(data) #type: ignore
     
     
     @staticmethod
     def ZIFA(data: "np.ndarray",
-             out_dims: int) -> Tuple[float, "np.ndarray"]:
+             out_dims: int,
+             **kwargs) -> "np.ndarray":
         """Zero-Inflated Factor Analysis (ZIFA)
 
         This method implements ZIFA as developed by Pierson & Yau (2015).
@@ -484,25 +379,27 @@ class LinearMethods():
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        data = LinearMethods._remove_col_zeros(data)
-        start_time: float = time.perf_counter()
+        # Fix all-zero columns
+        nonzero_col: List[int] = []
+        col: int
+        for col in range(data.shape[1]):
+            if not np.all(data[:,col]==0):
+                nonzero_col.append(col)
+        data = data[:, nonzero_col]
         
         z: "np.ndarray"
-        z, _ = ZIFA.fitModel(data, out_dims)
+        z, _ = ZIFA.fitModel(data, out_dims, **kwargs)
         
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, z
+        return z
     
     
     @staticmethod
     def factor_analysis(data: "np.ndarray",
-                        out_dims: int) -> Tuple[float, "np.ndarray"]:
+                        out_dims: int,
+                        **kwargs) -> "np.ndarray":
         """Scikit-Learn Factor Analysis (FA)
 
         This method uses the SKlearn's FA implementation.
@@ -510,54 +407,16 @@ class LinearMethods():
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = FactorAnalysis(n_components=out_dims).fit_transform(data)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
-    
-    
-    @staticmethod
-    def MDS(data: "np.ndarray",
-            out_dims: int,
-            metric: bool=True,
-            n_jobs: int=-1) -> Tuple[float, "np.ndarray"]:
-        """Scikit-Learn Multi-Dimensional Scaling (MDS)
-
-        This method uses the SKlearn's MDS implementation.
-        
-        :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param metric: Whether to run metric MDS.
-        :param n_jobs: The number of jobs to run concurrantly.
-
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
-        """
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = MDS(n_components=out_dims,
-                                      metric=metric,
-                                      n_jobs=n_jobs
-                                      ).fit_transform(data) #type:ignore
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return FactorAnalysis(n_components=out_dims, **kwargs).fit_transform(data)
     
     
     @staticmethod
     def NMF(data: "np.ndarray",
-            out_dims: int) -> Tuple[float, "np.ndarray"]:
+            out_dims: int,
+            **kwargs) -> "np.ndarray":
         """Scikit-Learn Nonnegative Matrix Factorization (NMF)
 
         This method uses the SKlearn's NMF implementation.
@@ -565,38 +424,10 @@ class LinearMethods():
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
-        """
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = NMF(n_components=out_dims, init = "nndsvd").fit_transform(data) #type:ignore
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
-    
-    
-    @staticmethod
-    def _remove_col_zeros(data: "np.ndarray") -> "np.ndarray":
-        """Remove a column consisting of entireing zeroes
-
-        This private method is used by ZIFA to fix errors.
-        
-        :param data: The input high-dimensional array.
-
-        :return: The output array without zero columns.
+        :return: The low-dimensional embedding.
         :rtype: "np.ndarray"
         """
-        
-        nonzero_col: List[int] = []
-        col: int
-        for col in range(data.shape[1]):
-            if not np.all(data[:,col]==0):
-                nonzero_col.append(col)
-        return data[:, nonzero_col]
+        return NMF(n_components=out_dims, init = "nndsvd", **kwargs).fit_transform(data)
     
     
 class NonLinearMethods():
@@ -606,252 +437,215 @@ class NonLinearMethods():
     """
     
     @staticmethod
+    def MDS(data: "np.ndarray",
+            out_dims: int,
+            n_jobs: int=-1,
+            **kwargs) -> "np.ndarray":
+        """Scikit-Learn Multi-Dimensional Scaling (MDS)
+
+        This method uses the SKlearn's MDS implementation.
+        
+        :param data: The input high-dimensional array.
+        :param out_dims: The number of dimensions of the output.
+        :param n_jobs: The number of jobs to run concurrantly.
+
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
+        """
+        return MDS(n_components=out_dims,
+                   n_jobs=n_jobs,
+                   **kwargs
+                   ).fit_transform(data)
+    
+    
+    @staticmethod
     def UMAP(data: "np.ndarray",
-             out_dims: int=2, 
-             n_neighbors: int=15,
-             min_dist: float=0.3,
-             metric: str="euclidean",
-             init: Union["np.ndarray", str]="spectral"
-             ) -> Tuple[float, "np.ndarray"]:
+             out_dims: int=2,
+             n_jobs: int=-1,
+             **kwargs
+             ) -> "np.ndarray":
         """UMAP
 
         This method uses the UMAP package's UMAP implementation.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
-        :param n_neighbors: The number of neighbors to consider.
-        :param min_dist: The minimum distance between points in the embedding.
-        :param metric: The distance metric used in calculation.
-        :param init: Method of initialiazation. 'random', 'spectral', or array.
+        :param n_jobs: The number of jobs to run concurrantly.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = umap.UMAP(n_components=out_dims,
-                                            n_neighbors=n_neighbors,
-                                            min_dist=min_dist,
-                                            metric=metric,
-                                            init=init
-                                            ).fit_transform(data) #type: ignore
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return umap.UMAP(n_components=out_dims,
+                         n_jobs=n_jobs,
+                         **kwargs
+                         ).fit_transform(data) #type: ignore
     
     
     @staticmethod
     def saucie(data: "np.ndarray",
-               lambda_c: float=0,
-               lambda_d: float=0,
                steps: int=1000,
                batch_size: int=256,
-               learning_rate: float=0.001
-               ) -> Tuple[float, "np.ndarray"]:
+               **kwargs
+               ) -> "np.ndarray":
         """SAUCIE
 
         This method is a wrapper for SAUCIE package's SAUCIE model. Specifically,
-        dimension reduction is of interest.
+        dimension reduction is of interest. Here, all keyword arguments are passed
+        into the ``SAUCIE.SAUCIE`` method. The training parameters ``steps`` and 
+        ``batch_size`` are directly exposed in this wrapper.
         
         :param data: The input high-dimensional array.
-        :param lambda_c: ID regularization.
-        :param lambda_d: Within-cluster distance regularization.
         :param steps: The number of training steps to use.
         :param batch_size: The batch size for training.
-        :param learning_rate: The learning rate of traning.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
         
-        start_time: float = time.perf_counter()
-        
-        saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1],
-                                                      lambda_c=lambda_c,
-                                                      lambda_d=lambda_d,
-                                                      learning_rate=learning_rate)
+        saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1], **kwargs)
         train: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=True)
         saucie.train(train, steps=steps, batch_size=batch_size)
         
         eval: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=False)
         embedding: "np.ndarray" = saucie.get_embedding(eval) #type: ignore
         
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return embedding
     
     
     @staticmethod
     def isomap(data: "np.ndarray",
                out_dims: int=2,
                transform: Optional["np.ndarray"]=None,
-               n_neighbors: int=5,
-               dist_metric: str="euclidean"
-               ) -> Tuple[float, "np.ndarray"]:
-        """Isomap
+               n_jobs: int=-1,
+               **kwargs
+               ) -> "np.ndarray":
+        """Scikit-Learn Isomap
 
         This method is a wrapper for sklearn's implementation of Isomap.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
         :param transform: The array to transform with the trained model.
-        :param n_neighbors: The number of neighbors to consider.
-        :param dist_metric: The distance metric used in calculation.
+        :param n_jobs: The number of threads to use.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
         
-        start_time: float = time.perf_counter()
-        
         if transform is None:
-            embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
-                                            n_components=out_dims,
-                                            metric=dist_metric,
-                                            n_jobs=-1).fit_transform(data)
+            embedding: "np.ndarray" = Isomap(n_components=out_dims,
+                                             n_jobs=n_jobs,
+                                             **kwargs).fit_transform(data)
         else:
-            embedding: "np.ndarray" = Isomap(n_neighbors=n_neighbors,
-                                             n_components=out_dims,
-                                             metric=dist_metric,
-                                             n_jobs=-1).fit(data).transform(transform)
+            embedding: "np.ndarray" = Isomap(n_components=out_dims,
+                                             n_jobs=n_jobs,
+                                             **kwargs).fit(data).transform(transform)
         
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return embedding
     
     
     @staticmethod
     def LLE(data: "np.ndarray",
             out_dims: int=2,
             transform: Optional["np.ndarray"]=None,
-            n_neighbors: int=5
-            ) -> Tuple[float, "np.ndarray"]: 
-        """Locally Linear Embedding (LLE)
+            n_jobs: int=-1,
+            **kwargs
+            ) -> "np.ndarray": 
+        """Scikit-Learn Locally Linear Embedding (LLE)
 
         This method is a wrapper for sklearn's implementation of LLE.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
         :param transform: The array to transform with the trained model.
-        :param n_neighbors: The number of neighbors to consider.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
         
-        start_time: float = time.perf_counter()
-
         if transform is None:
-            embedding: "np.ndarray" = LocallyLinearEmbedding(n_neighbors=n_neighbors,
-                                                             n_components=out_dims,
-                                                             n_jobs=-1).fit_transform(data)
+            embedding: "np.ndarray" = LocallyLinearEmbedding(n_components=out_dims,
+                                                             n_jobs=n_jobs,
+                                                             **kwargs).fit_transform(data)
         else:
-            embedding: "np.ndarray" = LocallyLinearEmbedding(n_neighbors=n_neighbors,
-                                                             n_components=out_dims,
-                                                             n_jobs=-1).fit(data).transform(transform)
+            embedding: "np.ndarray" = LocallyLinearEmbedding(n_components=out_dims,
+                                                             n_jobs=n_jobs,
+                                                             **kwargs).fit(data).transform(transform)
         
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return embedding
     
     
     @staticmethod
     def kernelPCA(data: "np.ndarray",
                   out_dims: int=2,
-                  kernel: str="poly"
-                  ) -> Tuple[float, "np.ndarray"]: 
-        """Kernel PCA
+                  kernel: str="poly",
+                  n_jobs: int=-1,
+                  **kwargs
+                  ) -> "np.ndarray": 
+        """Scikit-Learn Kernel PCA
 
         This method is a wrapper for sklearn's implementation of kernel PCA.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
         :param kernel: The kernel to use: "poly," "linear," "rbf," "sigmoid," or "cosine."
+        :param n_jobs: The number of jobs to run concurrantly.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-
-        embedding: "np.ndarray" = KernelPCA(n_components=out_dims,
-                                            kernel=kernel,
-                                            n_jobs=-1).fit_transform(data)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return KernelPCA(n_components=out_dims,
+                         kernel=kernel,
+                         n_jobs=n_jobs,
+                         **kwargs).fit_transform(data)
 
 
     @staticmethod
     def spectral(data: "np.ndarray",
-                 out_dims: int=2):
-        """Spectral Embedding
+                 out_dims: int=2,
+                 n_jobs: int=-1,
+                 **kwargs):
+        """Scikit-Learn Spectral Embedding
 
         This method is a wrapper for sklearn's implementation of spectral embedding.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
+        :param n_jobs: The number of jobs to run concurrantly.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-
-        embedding: "np.ndarray" = SpectralEmbedding(n_components=out_dims,
-                                                    n_jobs=-1).fit_transform(data)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return SpectralEmbedding(n_components=out_dims,
+                                 n_jobs=n_jobs,
+                                 **kwargs).fit_transform(data)
 
     
     @staticmethod
     def phate(data: "np.ndarray",
               out_dims: int=2,
-              t: Union[str, int]="auto",
-              decay: Optional[int]=40,
-              knn: Optional[int]=5):
+              n_jobs: int=-1,
+              **kwargs):
         """PHATE
 
         This method is a wrapper for PHATE.
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
-        :param t: The power of diffusion operator.
-        :param decay: The decay of PHATE model.
-        :param knn: The number of neighbors of the model.
+        :param n_jobs: The number of jobs to run concurrantly.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-
-        embedding: "np.ndarray" = phate.PHATE(n_components=out_dims,
-                                              t=t,
-                                              decay=decay,
-                                              knn=knn,
-                                              n_jobs=-1).fit_transform(data)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return phate.PHATE(n_components=out_dims,
+                           n_jobs=n_jobs,
+                           **kwargs).fit_transform(data)
     
     
     @staticmethod
     def grandprix(data: "np.ndarray",
-                  out_dims: int=2):
+                  out_dims: int=2,
+                  **kwargs):
         """GrandPrix
 
         This method is a wrapper for GrandPrix.
@@ -859,40 +653,18 @@ class NonLinearMethods():
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        start_time: float = time.perf_counter()
-
-        embedding: "np.ndarray" = GrandPrix.fit_model(data = data, n_latent_dims = out_dims)[0] # type: ignore
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
-
-
-class TSNE():
-    """Various tSNE implementations.
-
-    This class contains static methods of four different tSNE implementations. In general, we
-    recommend the openTSNE implementation for its combination of speed, ease of use, and
-    features.
-    """
+        return GrandPrix.fit_model(data = data, n_latent_dims = out_dims, **kwargs)[0]
+    
     
     @staticmethod
     def sklearn_tsne(data: "np.ndarray",
-                     out_dims: int=2, 
-                     perp: int=30,
-                     early_exaggeration: float=12.0,
-                     learning_rate: float=200.0,
-                     max_iter: int=1000,
-                     init: Union[str, "np.ndarray"]="random",
-                     method: str="barnes_hut",
-                     angle: float=0.5,
-                     metric: str="euclidean"
-                     )-> Tuple[float, "np.ndarray"]:
+                     out_dims: int=2,
+                     n_jobs: int=-1,
+                     **kwargs
+                     )-> "np.ndarray":
         """Scikit-Learn t-SNE
 
         This method uses the Scikit-learn implementation of t-SNE. It supports both
@@ -900,173 +672,15 @@ class TSNE():
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
-        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
-        :param early_exaggeration: The early exaggeration factor of alpha.
-        :param learning_rate: The learning rate used during gradient descent.
-        :param max_iter: Maximum number of iterations to optimize.
-        :param init: Random ('random') or PCA ('pca') or array initialization. 
-        :param method: Original ("exact") or Barnes-Hut ("barnes_hut") implementation.
-        :param angle: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
+        :param n_jobs: The number of jobs to run concurrantly.
 
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        
-        print("Running Scikit-Learn t-SNE: {}".format(method))
-        
-        start_time: float = time.perf_counter()
-        embedding: "np.ndarray" = sklearn.manifold.TSNE(n_components=out_dims, #type: ignore
-                                                           perplexity=perp,
-                                                           early_exaggeration=early_exaggeration,
-                                                           learning_rate=learning_rate,
-                                                           n_iter=max_iter,
-                                                           init=init,
-                                                           method=method,
-                                                           angle=angle,
-                                                           metric=metric
-                                                           ).fit_transform(data)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
-    
-    
-    @staticmethod
-    def bh_tsne(data: "np.ndarray", 
-                out_dims: int=2, 
-                perp: int=30,
-                theta: float=0.5,
-                initial_dims: int=50,
-                use_pca: bool=False, 
-                max_iter: int=3000
-                ) -> Tuple[float, "np.ndarray"]:
-        """Barnes-Hut t-SNE
-
-        This method uses the BH t-SNE as proposed and implemented by van der Maaten (2014). As
-        opposed to the sklearn implementation, this uses the original implementation.
-        
-        :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
-        :param theta: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
-        :param initial_dims: Number of dimensions for initial PCA dimension reduction.
-        :param use_pca: Whether to use PCA to first reduce dimension to 50.
-        :param max_iter: Maximum number of iterations to optimize.
-
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
-        """
-        # Learning rate: 200
-        print("Running BH t-SNE.")
-        
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = run_bh_tsne(data=data,
-                                                 no_dims=out_dims,
-                                                 perplexity=perp,
-                                                 theta=theta,
-                                                 initial_dims=initial_dims,
-                                                 use_pca=use_pca,
-                                                 max_iter=max_iter)
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
-        
-        
-    @staticmethod
-    def fit_sne(data: "np.ndarray",
-                out_dims: int=2,
-                perp: Union[int, List[int]]=30,
-                theta: float=0.5,
-                max_iter: int=750,
-                stop_early_exag_iter: int=250,
-                mom_switch_iter: int=250,
-                momentum: float=0.5,
-                final_momentum: float=0.8,
-                learning_rate: Union[str, float]="auto",
-                early_exaggeration: float=12.0,
-                no_momentum_during_exag: bool=False,
-                n_trees: int=50,
-                search_k: Optional[int]=None,
-                start_late_exag_iter: Union[int, str]="auto",
-                late_exag_coeff: Union[float, int]=-1,
-                nterms: int=3,
-                intervals_per_integer: int=1,
-                min_num_intervals: int=50,
-                init: Union[str, "np.ndarray"]="pca",
-                load_affinities: Optional[str]=None,
-                perplexity_list: Optional[int]=None,
-                df: int=1,
-                max_step_norm: Optional[float]=5.0,
-                ) -> Tuple[float, "np.ndarray"]:
-        """FIt-SNE
-
-        This is the FIt-SNE as implemented and introduced by Linderman et al. (2018). It uses interpolation
-        and fast fourier transform to accelerate t-SNE.
-        
-        :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
-        :param theta: The speed/accuracy tradeoff for Barnes-Hut t-SNE.
-        :param stop_early_exag_iter: When to stop early exaggeration.
-        :param mom_switch_iter: When to switch momentum.
-        :param momentum: Initial value of momentum.
-        :param final_momentum: Final value of momentum.
-        :param learning_rate: The learning rate used during gradient descent.
-        :param early_exaggeration: Early exaggeration factor.
-        :param no_momentum_during_exag: Whether to use momentum during early exaggeration.
-        :param n_trees: Number of trees used with Annoy library.
-        :param search_k: The number of nodes to inspect during search while using Annoy.
-        :param start_late_exag_iter: When to start late exaggeration. 
-        :param late_exag_coeff: Union[float, int] The late exaggeration coefficient to use. Disable with -1.
-        :param nterms: The number of interpolation points per inteval.
-        :param intervals_per_integer: Used in calculating interpolating intervals.
-        :param min_num_intervals: Number of interval for interpolation.
-        :param init: Method of initialiazation. 'random', 'pca', or array.
-        :param load_affinities: Load previous affinities or save them.
-        :param perplexity_list: List of perplexity for multiperplexity t-SNE.
-        :param df: T-distribution degree of freedom.
-        :param max_step_norm: Maximum step in gradient descent.
-        
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
-        """
-        
-        print("Running FIt-SNE.")
-        start_time: float = time.perf_counter()
-        
-        embedding: "np.ndarray" = fast_tsne(X=data,
-                                            theta=theta,
-                                            perplexity=perp,
-                                            map_dims=out_dims,
-                                            max_iter=max_iter,
-                                            stop_early_exag_iter=stop_early_exag_iter,
-                                            mom_switch_iter=mom_switch_iter,
-                                            momentum=momentum,
-                                            final_momentum=final_momentum,
-                                            learning_rate=learning_rate,
-                                            early_exag_coeff=early_exaggeration,
-                                            no_momentum_during_exag=no_momentum_during_exag,
-                                            n_trees=n_trees,
-                                            search_k=search_k,
-                                            start_late_exag_iter=start_late_exag_iter,
-                                            late_exag_coeff=late_exag_coeff,
-                                            nterms=nterms,
-                                            intervals_per_integer=intervals_per_integer,
-                                            min_num_intervals=min_num_intervals,
-                                            initialization=init,
-                                            load_affinities=load_affinities,
-                                            perplexity_list=perplexity_list,
-                                            df=df,
-                                            max_step_norm=max_step_norm) #type: ignore
-        
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
-        
-        return run_time, embedding
+        return TSNE(n_components=out_dims,
+                    n_jobs=n_jobs,
+                    **kwargs
+                    ).fit_transform(data)
     
     
     @staticmethod
@@ -1081,16 +695,20 @@ class TSNE():
                   dof: int=1,
                   theta: float=0.5, 
                   init: Union["np.ndarray", str]="pca",
-                  negative_gradient_method: str="fft"
-                  ) -> Tuple[float, "np.ndarray"]:
-        """Open t-SNE
+                  negative_gradient_method: str="fft",
+                  n_jobs: int=-1
+                  ) -> "np.ndarray":
+        """openTSNE implementation of FIt-SNE
 
         This is the Python implementation of FIt-SNE through the ``openTSNE`` package. Its implementation
         is based on research from Linderman et al. (2019). This is the default recommended implementation.
+        To allow for flexibility and avoid confusion, common parameters are directly exposed without allowing
+        additional keyword arguments. 
         
         :param data: The input high-dimensional array.
         :param out_dims: The number of dimensions of the output.
         :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
+            This also supports multiple perplexities with a list.
         :param learning_rate: The learning rate used during gradient descent.
         :param early_exaggeration_iter: Number of early exaggeration iterations.
         :param early_exaggeration: Early exaggeration factor.
@@ -1098,15 +716,13 @@ class TSNE():
         :param dof: T-distribution degree of freedom.
         :param theta: The speed/accuracy trade-off.
         :param init: Method of initialiazation. 'random', 'pca', 'spectral', or array.
-
-        :return: A tuple of runtime and the low-dimensional embedding.
-        :rtype: Tuple[float, "np.ndarray"]
+        :param n_jobs: The number of jobs to run concurrantly.
+        
+        :return: The low-dimensional embedding.
+        :rtype: "np.ndarray"
         """
-        print("Running Open t-SNE.")
         
         n_iter: int = max_iter - early_exaggeration_iter
-        start_time: float = time.perf_counter()
-        
         affinities_array: Union["affinity.PerplexityBasedNN", "affinity.Multiscale"]
         init_array: "np.ndarray" = np.empty((data.shape[0], out_dims))
         
@@ -1114,14 +730,14 @@ class TSNE():
             affinities_array = affinity.Multiscale(data=data,
                                                    perplexities=perp,
                                                    metric=metric,
-                                                   n_jobs=-1,
+                                                   n_jobs=n_jobs,
                                                    verbose=True)
         else:
             perp = perp[0] if isinstance(perp, list) else perp
             affinities_array = affinity.PerplexityBasedNN(data=data,
                                                           perplexity=perp,
                                                           metric=metric,
-                                                          n_jobs=-1,
+                                                          n_jobs=n_jobs,
                                                           verbose=True)
 
         if isinstance(init, str):
@@ -1140,7 +756,7 @@ class TSNE():
                                                 learning_rate=learning_rate,
                                                 theta=theta,
                                                 dof=dof,
-                                                n_jobs=-1,
+                                                n_jobs=n_jobs,
                                                 verbose=True)
         # Early exaggeration
         embedding.optimize(n_iter=early_exaggeration_iter,
@@ -1152,7 +768,149 @@ class TSNE():
                            inplace=True,
                            momentum=0.8)
         
-        end_time: float = time.perf_counter()
-        run_time: float = end_time - start_time
+        return embedding
+    
+    
+
+def run_dr_methods(data: "np.ndarray",
+                   methods: Union[str, List[str]]="all",
+                   out_dims: int=2,
+                   transform: Optional["np.ndarray"]=None,
+                   n_jobs: int=-1
+                   ) -> "Reductions":
+    """Run dimension reduction methods.
+
+    This is a one-size-fits-all dispatcher that runs all supported methods in the module. It
+    supports running multiple methods at the same time at the sacrifice of some more
+    granular control of parameters. If you would like more customization, run each method
+    indicidually instead.
+    
+    :param data: The input high-dimensional array.
+    :param methods: DR methods to run (not case sensitive).
+    :param out_dims: Output dimension of DR.
+    :param transform: An array to transform after training on the traning set.
+    :param n_jobs: The number of jobs to run when applicable
+
+    :return: A Reductions object with all dimension reductions.
+    """
+    
+    if not isinstance(methods, list):
+        methods = [methods]
+    methods = [each_method.lower() for each_method in methods]
+    
+    if "all" in methods:
+        methods = ["pca", "ica", "umap", "sklearn_tsne", "open_tsne", "factor_analysis", "isomap", "mds", "lle",
+                   "kernelpca_poly", "kernelpca_rbf", "phate", "nmf", "spectral"]
+        if METHODS["saucie"]:
+            methods.append("saucie")
+        if METHODS["zifa"]:
+            methods.append("zifa")
+        if METHODS["GrandPrix"]:
+            methods.append("grandprix")
+            
+    reductions: Reductions = Reductions()
+    
+    if "pca" in methods:
+        try:
+            reductions.add_reduction(LinearMethods.PCA(data, out_dims=out_dims), "PCA")
+        except Exception as e:
+            print(e)
+            
+    if "ica" in methods:
+        try:
+            reductions.add_reduction(LinearMethods.ICA(data, out_dims=out_dims), "ICA") 
+        except Exception as e:
+            print(e)
         
-        return run_time, embedding
+    if "umap" in methods:
+        try:    
+            reductions.add_reduction(NonLinearMethods.UMAP(data, out_dims=out_dims, n_jobs=n_jobs), "UMAP")
+        except Exception as e:
+            print(e)
+            
+    if "saucie" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.saucie(data), "SAUCIE")
+        except Exception as e:
+            print(e)
+    
+    # sklearn BH
+    if "sklearn_tsne" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.sklearn_tsne(data, out_dims=out_dims, n_jobs=n_jobs), "tSNE: Sklearn")
+        except Exception as e:
+            print(e)
+    
+    if "open_tsne" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.open_tsne(data, out_dims=out_dims, n_jobs=n_jobs), "openTSNE")
+        except Exception as e:
+            print(e)
+            
+    if "zifa" in methods:
+        try:
+            reductions.add_reduction(LinearMethods.ZIFA(data, out_dims=out_dims), "ZIFA")
+        except Exception as e:
+            print(e)
+            
+    if "factor_analysis" in methods:
+        try:
+            reductions.add_reduction(LinearMethods.factor_analysis(data, out_dims=out_dims), "FA")
+        except Exception as e:
+            print(e)
+            
+    if "isomap" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.isomap(data, out_dims=out_dims,transform=transform, n_jobs=n_jobs), "Isomap")
+        except Exception as e:
+            print(e)
+            
+    if "mds" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.MDS(data, out_dims=out_dims, n_jobs=n_jobs), "MDS")
+        except Exception as e:
+            print(e)
+            
+    if "lle" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.LLE(data, out_dims=out_dims, transform=transform, n_jobs=n_jobs), "LLE")
+        except Exception as e:
+            print(e)
+            
+    if "spectral" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.spectral(data, out_dims=out_dims, n_jobs=n_jobs), "Spectral")
+        except Exception as e:
+            print(e)
+                    
+    if "kernelpca_poly" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel="poly", n_jobs=n_jobs), "KernelPCA: Poly")
+        except Exception as e:
+            print(e)
+            
+    if "kernelpca_rbf" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel="rbf", n_jobs=n_jobs), "KernelPCA: RBF")
+        except Exception as e:
+            print(e)
+            
+    if "phate" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.phate(data, out_dims=out_dims, n_jobs=n_jobs), "PHATE")
+        except Exception as e:
+            print(e)
+            
+    if "nmf" in methods:
+        try:
+            reductions.add_reduction(LinearMethods.NMF(data, out_dims=out_dims), "NMF")
+        except Exception as e:
+            print(e)
+            
+    if "grandprix" in methods:
+        try:
+            reductions.add_reduction(NonLinearMethods.grandprix(data, out_dims=out_dims), "GrandPrix")
+        except Exception as e:
+            print(e)
+            
+    return reductions

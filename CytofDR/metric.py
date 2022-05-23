@@ -7,364 +7,21 @@ import scipy.spatial
 import scipy.stats
 import sklearn.metrics
 
-from CytofDR.util import Annoy
+from annoy import AnnoyIndex
 import itertools
 from typing import Optional, Any, Union, List, Tuple, Callable
 
-class Metric():
+
+class EvaluationMetrics():
+    """Evaluation metrics for dimension reduction
     
-    @classmethod
-    def run_metrics_downsample(cls,
-                               data: "np.ndarray",
-                               embedding: Union["np.ndarray", List["np.ndarray"]],
-                               downsample_indices: List["np.ndarray"],
-                               methods: Union[str, List[str]]="all",
-                               pwd_metric: str="PCD",
-                               labels: Optional["np.ndarray"]=None,
-                               labels_embedding: Optional["np.ndarray"]=None,
-                               comparison_file: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
-                               comparison_labels: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
-                               comparison_classes: Optional[Union[str, List[str]]]=None,
-                               embedding_names: Optional["np.ndarray"]=None,
-                               k: int=5,
-                               data_annoy_path: Optional[str]=None
-                               ) -> List[List[Union[str, float]]]:
+    This class contains methods to run evluation metrics.
+    """
         
-        '''Run evaluation metrics with downsampling.
-        
-        This method first downsamples and runs the methods with the ``run_metrics`` method. This
-        is done for efficiency reasons as the current pairwise distance metric is can be memory
-        intensive with large datasets.
-        
-        Args:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
-            downsample (int): The sample size of downsampling.
-            downsample_indices (List["np.ndarray], optional): A list of indicies_embedding for repeated downsampling.
-            n_fold (int): Downsample n times and average the results.
-            methods (Union[str, List[str]]): The metrics to run.
-            labels ("np.ndarray", optional): True labels or labels from the original space.
-            labels_embedding ("np.ndarray", optional): Classification or clustering labels from the embedding space.
-            embedding_names ("np.ndarray", optional): Names of the embedding methods to be saved.
-            k (int): The number of neighbors for KNN.
-            save_indices_dir (str, optional): The directory to save indices generated, if previous indices are not provided.
-            data_annoy_path (str, optional): The file path to input data's saved ANNOY model.
-
-        Returns:
-            List[List[Union[str, float]]]: A nested list of results with names of metrics, metrics results,
-                name of embedding, and downsample index.
-        '''
-        
-        if not isinstance(embedding, list):
-            embedding = [embedding]
-            
-        index: "np.ndarray"
-        data_downsample: "np.ndarray"
-        embedding_downsample: Optional[List["np.ndarray"]]=None
-        labels_downsample: Optional["np.ndarray"]=None
-        labels_embedding_downsample: Optional["np.ndarray"]=None
-        results: List[List[Union[str, float]]] = []
-        results_downsample_index: List[int] = []
-        results_combined: List[List[Any]] = [[],[],[]]
-        
-        n: int 
-        for n in range(len(downsample_indices)):
-            index = downsample_indices[n].astype(int)
-            data_downsample = data[index, :]
-
-            embedding_downsample = [e[index, :] for e in embedding]
-            if labels is not None:
-                labels_downsample = labels[index]
-            if labels_embedding is not None:
-                labels_embedding_downsample = labels_embedding[index]
-            
-            results = cls.run_metrics(data=data_downsample,
-                                      embedding=embedding_downsample,
-                                      methods=methods,
-                                      pwd_metric=pwd_metric,
-                                      labels=labels_downsample,
-                                      labels_embedding=labels_embedding_downsample,
-                                      comparison_file=comparison_file,
-                                      comparison_labels=comparison_labels,
-                                      comparison_classes=comparison_classes,
-                                      embedding_names=embedding_names,
-                                      k=k,
-                                      data_annoy_path=data_annoy_path)
-            
-            for col in range(len(results)):
-                results_combined[col].extend(results[col])
-            results_downsample_index.extend([n]*len(results[0]))
-
-        results_combined.append(results_downsample_index)
-        return results_combined
-        
-        
-    @classmethod
-    def run_metrics(cls,
-                    data: "np.ndarray",
-                    embedding: Union["np.ndarray", List["np.ndarray"]],
-                    methods: Union[str, List[str]]="all",
-                    pwd_metric: str="PCD",
-                    labels: Optional["np.ndarray"]=None,
-                    labels_embedding: Optional["np.ndarray"]=None,
-                    comparison_file: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
-                    comparison_labels: Optional[Union["np.ndarray", List["np.ndarray"]]]=None,
-                    comparison_classes: Optional[Union[str, List[str]]]=None,
-                    embedding_names: Optional["np.ndarray"]=None,
-                    data_annoy_path: Optional[str]=None,
-                    k: int=5
-                    ) -> List[List[Union[str, float]]]:
-        
-        '''Run evaluation metrics.
-        
-        This is an all-in-one method as a dispatcher that supports running multiple metrics
-        with one function call.
-        
-        Args:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
-            methods (Union[str, List[str]]): The metrics to run.
-            labels ("np.ndarray", optional): True labels or labels from the original space.
-            labels_embedding ("np.ndarray", optional): Classification or clustering labels from the embedding space.
-            embedding_names ("np.ndarray", optional): Names of the embedding methods to be saved.
-            data_annoy_path (str, optional): The path to the saved ANNOY model for input data.
-            k (int, optional): The number of neighbors for KNN.
-
-        Returns:
-            List[List[Union[str, float]]]: A nested list of results with names of metrics, names of embedding, and metrics results.
-        '''
-        if isinstance(methods, list):
-            methods = [m.lower() for m in methods]
-        else:
-            methods = [methods.lower()]
-            
-        if not isinstance(embedding, list):
-            embedding = [embedding]
-            
-        if embedding_names is None:
-            embedding_names = np.array(list(map(str, range(len(embedding)))))
-            
-        if pwd_metric.lower() != "pcd" or labels is None:
-            pwd_metric = "pairwise"
-        
-        i: int
-        e: "np.ndarray"    
-        data = cls._median_impute(data)
-        for i, e in enumerate(embedding):
-            embedding[i] = cls._median_impute(e)
-            
-        if "all" in methods:
-            methods = ["knn", "neighborhood_agreement", "npe", "random_forest", "silhouette", "pearsonr", "spearmanr", "residual_variance", "emd"]
-            if labels is not None:
-                methods.extend(["npe", "random_forest", "silhouette"])
-            if labels is not None and labels_embedding is not None:
-                methods.extend(["ari", "nmi"])
-            if comparison_labels is not None and comparison_file is not None:
-                methods.extend(["embedding_concordance"])
-                
-        data_distance: Optional["np.ndarray"] = None
-        embedding_distance: Optional[List["np.ndarray"]] = None
-        if any(m in methods for m in ["pearsonr", "spearmanr", "residual_variance", "emd"]):
-            if pwd_metric.lower() == "pcd":
-                assert labels is not None
-                data_distance, embedding_distance = cls.pcd_distance(data, embedding, labels,  dist_metric="euclidean")
-                
-            else:
-                data_distance = scipy.spatial.distance.pdist(data)
-                embedding_distance = []
-                for e in embedding:
-                    embedding_distance.append(scipy.spatial.distance.pdist(e, metric="euclidean"))
-        
-        annoy_data_neighbors: Optional["np.ndarray"] = None
-        annoy_embedding_neighbors: Optional[List["np.ndarray"]] = None
-        if any(m in methods for m in ["knn", "npe", "neighborhood_agreement"]):
-            annoy_data_neighbors, annoy_embedding_neighbors = cls.build_annoy(data, embedding, data_annoy_path, k)
-
-        results: List[List[Any]] = [[],[],[]]
-        
-        for i in range(embedding_names.shape[0]):
-            
-            e = embedding[i]
-            e = cls._median_impute(e)
-             
-            if "pearsonr" in methods:
-                print("running pearsonr")
-                assert data_distance is not None and embedding_distance is not None
-                cor: float=cls.correlation(x=data_distance, y=embedding_distance[i], metric="Pearson")
-                results[0].append("correlation_pearson")
-                results[1].append(cor)
-                results[2].append(embedding_names[i])
-                
-            if "spearmanr" in methods:
-                print("running spearmanr")
-                assert data_distance is not None and embedding_distance is not None
-                cor: float=cls.correlation(x=data_distance, y=embedding_distance[i], metric="Spearman")
-                results[0].append("correlation_spearman")
-                results[1].append(cor)
-                results[2].append(embedding_names[i])
-                
-            if "residual_variance" in methods:
-                print("running residual variance")
-                # TODO: Implement r when pearsonr is not None.
-                assert data_distance is not None and embedding_distance is not None
-                results[0].append("residual_variance")
-                results[1].append(cls.residual_variance(x=data_distance, y=embedding_distance[i]))
-                results[2].append(embedding_names[i])
-                
-            if "knn" in methods:
-                print("running knn")
-                assert annoy_data_neighbors is not None and annoy_embedding_neighbors is not None
-                results[0].append("knn")
-                results[1].append(cls.KNN(data_neighbors=annoy_data_neighbors, embedding_neighbors=annoy_embedding_neighbors[i]))
-                results[2].append(embedding_names[i])
-            
-            if "npe" in methods:
-                print("running npe")
-                assert annoy_data_neighbors is not None and annoy_embedding_neighbors is not None
-                assert labels is not None
-                results[0].append("npe")
-                results[1].append(cls.NPE(labels = labels, data_neighbors=annoy_data_neighbors, embedding_neighbors=annoy_embedding_neighbors[i]))
-                results[2].append(embedding_names[i])
-                
-            if "neighborhood_agreement" in methods:
-                print("running neighborhood agreement")
-                assert annoy_data_neighbors is not None and annoy_embedding_neighbors is not None
-                results[0].append("neighborhood_agreement")
-                results[1].append(cls.neighborhood_agreement(data_neighbors=annoy_data_neighbors, embedding_neighbors=annoy_embedding_neighbors[i]))
-                results[2].append(embedding_names[i])
-                
-            if "emd" in methods:
-                print("running emd")
-                assert data_distance is not None and embedding_distance is not None
-                results[0].append("emd")
-                results[1].append(cls.EMD(x=data_distance, y=embedding_distance[i]))
-                results[2].append(embedding_names[i])
-                
-            if "random_forest" in methods:
-                print("running random_forest")
-                assert labels is not None and e is not None
-                results[0].append("random_forest")
-                results[1].append(cls.random_forest(embedding=e, labels=labels))
-                results[2].append(embedding_names[i])
-                
-            if "silhouette" in methods:
-                print("running silhouette")
-                assert labels is not None and e is not None
-                results[0].append("silhouette")
-                results[1].append(cls.silhouette(embedding=e, labels=labels))
-                results[2].append(embedding_names[i])
-                
-            if "nmi" in methods:
-                print("running nmi")
-                assert labels is not None and labels_embedding is not None
-                results[0].append("nmi")
-                results[1].append(cls.NMI(labels=labels, labels_embedding=labels_embedding))
-                results[2].append(embedding_names[i])
-                
-            if "ari" in methods:
-                print("running ari")
-                assert labels is not None and labels_embedding is not None
-                results[0].append("ari")
-                results[1].append(cls.ARI(labels=labels, labels_embedding=labels_embedding))
-                results[2].append(embedding_names[i])
-                
-            if "calinski_harabasz" in methods:
-                print("running calinski_harabasz")
-                assert labels is not None and e is not None
-                results[0].append("calinski_harabasz")
-                results[1].append(cls.calinski_harabasz(embedding=e, labels=labels))
-                results[2].append(embedding_names[i])
-                
-            if "davies_bouldin" in methods:
-                print("running davies_bouldin")
-                assert labels is not None and e is not None
-                results[0].append("davies_bouldin")
-                results[1].append(cls.davies_bouldin(embedding=e, labels=labels))
-                results[2].append(embedding_names[i])
-                
-            if "concordance_emd" in methods:
-                print("running concordance_emd")
-                assert labels_embedding is not None
-                assert comparison_file is not None and comparison_labels is not None
-                results[0].append("concordance_emd")
-                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_file, comparison_labels, comparison_classes, "emd"))
-                results[2].append(embedding_names[i])
-                
-            if "concordance_cluster_distance" in methods:
-                print("running concordance_cluster_distance")
-                assert labels_embedding is not None
-                assert comparison_file is not None and comparison_labels is not None
-                results[0].append("concordance_cluster_distance")
-                results[1].append(cls.embedding_concordance(e, labels_embedding, comparison_file, comparison_labels, comparison_classes, "cluster_distance"))
-                results[2].append(embedding_names[i])
-            
-        return results
-    
-    
-    @staticmethod
-    def _median_impute(data: "np.ndarray") -> "np.ndarray":
-        '''Median imputation for NaN.
-                
-        Utility method to fix any NaN in datsets with median imputation. When there is no
-        NaN, the original array is returned.
-        
-        Args:
-            data (np.ndarray): The input high-dimensional array.
-
-        Returns:
-           np.ndarray: An array without NaN.
-        '''
-        nan: "np.ndarray" = np.unique(np.where(np.isnan(data))[0])
-        
-        if nan.size == 0:
-            return data
-        else:
-            median: "np.ndarray" = np.nanmedian(data, axis=0)
-            i: int
-            for i in nan:
-                data[i] = median
-            return data
-    
-    
-    @staticmethod
-    def pcd_distance(data: "np.ndarray",
-                     embedding: List["np.ndarray"],
-                     labels: "np.ndarray",
-                     dist_metric: "str" = "euclidean"
-                     ) -> Tuple["np.ndarray", List["np.ndarray"]]:
-        
-        '''Calculate Point Cluster Distanced (PCD).
-        
-        Utility wrapper method to compute the Point Cluster Distance. The point cluster distance computes the
-        distance between each point and each cluster's centroid.
-        
-        Args:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
-            labels ("np.ndarray"): True labels or labels from the original space.
-
-        Returns:
-            Tuple["np.ndarray", List["np.ndarray"]]: A tuple with PCD of original space data and lower dimension embedding.
-        '''
-        
-        data_distance: "np.ndarray"
-        embedding_distance: List["np.ndarray"]
-        
-        pcd_data: "PointClusterDistance" = PointClusterDistance(X=data, labels=labels, dist_metric=dist_metric)
-        data_distance = pcd_data.fit(flatten=True)[0]
-        embedding_distance = []
-        for e in embedding:
-            pcd_embedding: "PointClusterDistance" = PointClusterDistance(X=e, labels=labels, dist_metric="euclidean")
-            embedding_distance.append(pcd_embedding.fit(flatten=True)[0])
-            
-        return data_distance, embedding_distance
-        
-    
     @staticmethod
     def build_annoy(data: "np.ndarray",
-                    embedding: List["np.ndarray"],
-                    data_annoy_path: Optional[str]=None,
-                    k: int=5) -> Tuple["np.ndarray", List["np.ndarray"]]:
+                    saved_annoy_path: Optional[str]=None,
+                    k: int=5) -> "np.ndarray":
         '''Build ANNOY and returns nearest neighbors.
         
         This is a utility function for building ANNOY models and returning the nearest-neighbor matrices for original
@@ -372,15 +29,15 @@ class Metric():
         
         Args:
             data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
-            data_annoy_path (str): The path to pre-built ANNOY model for original data.
+            saved_annoy_path (str): The path to pre-built ANNOY model for original data.
+            k (int): The number of neighbors.
 
         Returns:
-            Tuple["np.ndarray", List["np.ndarray"]]: A tuple with nearest-neighbor matrices of original space data and lower dimension embedding.
+            "np.ndarray": Nearest-neighbor matrices of original space data.
         '''
         
-        if data_annoy_path is not None:
-            annoy_model_data = Annoy.load_annoy(path=data_annoy_path, ncol=data.shape[1])
+        if saved_annoy_path is not None:
+            annoy_model_data = Annoy.load_annoy(path=saved_annoy_path, ncol=data.shape[1])
         else:
             annoy_model_data = Annoy.build_annoy(data)
             
@@ -395,22 +52,7 @@ class Metric():
                 
             annoy_data_neighbors[i] = data_neighbors
         
-        annoy_embedding_neighbors = []
-        for e in embedding:
-            annoy_model_embedding: "AnnoyIndex" = Annoy.build_annoy(e)
-            e_neighbors: "np.ndarray" = np.empty((e.shape[0], k), dtype=int)
-            for i in range(e.shape[0]):
-                embedding_neighbors: List[int] = annoy_model_embedding.get_nns_by_item(i, k+1)
-                
-                try:
-                    embedding_neighbors.remove(i)
-                except ValueError:
-                    embedding_neighbors = embedding_neighbors[0:(len(embedding_neighbors)-1)]
-                    
-                e_neighbors[i] = embedding_neighbors
-            annoy_embedding_neighbors.append(e_neighbors)
-        
-        return annoy_data_neighbors, annoy_embedding_neighbors
+        return annoy_data_neighbors
         
     
     @staticmethod
@@ -462,12 +104,13 @@ class Metric():
             if x is None or y is None:
                 raise ValueError("Either 'r' or both 'x' and 'y' is needed.")
             else:
-                cor = Metric.correlation(x, y, metric="Pearson")
+                cor = EvaluationMetrics.correlation(x, y, metric="Pearson")
                 return 1 - cor**2
         elif r > 1 or r < -1:
             raise ValueError("'r' must be between -1 and 1.")
         else:
             return 1 - r**2
+        
         
     @staticmethod
     def EMD(x: "np.ndarray",
@@ -684,8 +327,8 @@ class Metric():
     
     
     @staticmethod
-    def NMI(labels: "np.ndarray",
-            labels_embedding: "np.ndarray") -> float:
+    def NMI(x_labels: "np.ndarray",
+            y_labels: "np.ndarray") -> float:
         '''Normalized Mutual Information (NMI)
         
         The NMI metric computes the mutual information between labels of the original space
@@ -694,23 +337,23 @@ class Metric():
         and it is used in Xiang et al. (2021).
         
         Args:
-            labels (np.ndarray): The class labels of of the original space.
-            labels_embedding (np.ndarray): The class labels generated from the embedding space.
+            x_labels (np.ndarray): The first set of labels. 
+            y_labels_embedding (np.ndarray): The second set of labels on the same data. 
 
         Returns:
             float: Silhouette score.
         '''
         
-        mi: float = sklearn.metrics.mutual_info_score(labels, labels_embedding)
+        mi: float = sklearn.metrics.mutual_info_score(x_labels, y_labels)
         
         labels_count: "np.ndarray"
         embedding_count: "np.ndarray"
         
-        _ , labels_count = np.unique(labels, return_counts=True)
-        _ , embedding_count = np.unique(labels_embedding, return_counts=True)
+        _ , labels_count = np.unique(x_labels, return_counts=True)
+        _ , embedding_count = np.unique(y_labels, return_counts=True)
         
-        labels_count = labels_count/labels.size
-        embedding_count = embedding_count/labels_embedding.size
+        labels_count = labels_count/x_labels.size
+        embedding_count = embedding_count/y_labels.size
         normalization: float = np.maximum(scipy.stats.entropy(labels_count),
                                           scipy.stats.entropy(embedding_count))
         
@@ -718,16 +361,16 @@ class Metric():
     
     
     @staticmethod
-    def ARI(labels: "np.ndarray",
-            labels_embedding: "np.ndarray") -> float:
+    def ARI(x_labels: "np.ndarray",
+            y_labels: "np.ndarray") -> float:
         '''Adjusted Rand Index (ARI)
         
         The ARI uses the labels from the original space and the embedding space to measure
         the similarity between them using pairs. It is used in Xiang et al. (2021).
         
         Args:
-            labels (np.ndarray): The class labels of of the original space.
-            labels_embedding (np.ndarray): The class labels generated from the embedding space.
+            x_labels (np.ndarray): The first set of labels. 
+            y_labels_embedding (np.ndarray): The second set of labels on the same data. 
 
         Returns:
             float: ARI.
@@ -781,7 +424,7 @@ class Metric():
             OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         '''
         
-        confusion: "np.ndarray" = sklearn.metrics.pair_confusion_matrix(labels, labels_embedding)
+        confusion: "np.ndarray" = sklearn.metrics.pair_confusion_matrix(x_labels, y_labels)
         
         tn: int = int(confusion[0][0])
         fp: int = int(confusion[0][1])
@@ -891,17 +534,17 @@ class Metric():
                 continue
             
             if method == "emd":
-                scores[i] = Metric._concordance_emd(embedding,
-                                                    labels_embedding,
-                                                    comparison_file[i],
-                                                    comparison_labels[comparison_labels_index],
-                                                    common_types)
+                scores[i] = EvaluationMetrics._concordance_emd(embedding,
+                                                               labels_embedding,
+                                                               comparison_file[i],
+                                                               comparison_labels[comparison_labels_index],
+                                                               common_types)
             elif method == "cluster_distance":
-                scores[i] = Metric._concordance_cluster_distance(embedding,
-                                                                 labels_embedding,
-                                                                 comparison_file[i],
-                                                                 comparison_labels[comparison_labels_index],
-                                                                 common_types)
+                scores[i] = EvaluationMetrics._concordance_cluster_distance(embedding,
+                                                                            labels_embedding,
+                                                                            comparison_file[i],
+                                                                            comparison_labels[comparison_labels_index],
+                                                                            common_types)
             comparison_status = True
             
         if comparison_status:
@@ -1037,7 +680,7 @@ class PointClusterDistance():
         self.dist: Optional["np.ndarray"] = None
         
         
-    def fit(self, flatten: bool=False) -> Tuple["np.ndarray", "np.ndarray"]:
+    def fit(self, flatten: bool=False) -> "np.ndarray":
         """Fit the distance metric.
 
         This method calculates the distance metric based on the class attributes.
@@ -1047,7 +690,6 @@ class PointClusterDistance():
 
         Returns:
             np.ndarray: The calculate distance array.
-            np.ndarray: The unique labels of the input data.
         """
         index: "np.ndarray"
         inverse: "np.ndarray"
@@ -1063,9 +705,9 @@ class PointClusterDistance():
             self.dist[i] = dist(obs, centroid)
             
         if flatten:
-            return self.flatten(self.dist), index
+            return self.flatten(self.dist)
         else:
-            return self.dist, index
+            return self.dist
         
     
     @staticmethod
@@ -1161,3 +803,33 @@ class PointClusterDistance():
             centroid[i] = np.mean(X[inverse==i])
             
         return centroid
+
+
+class Annoy():
+    
+    @staticmethod
+    def build_annoy(data: "np.ndarray",
+                    metric: str = "angular",
+                    n_trees: int=10) -> "AnnoyIndex":
+        
+        model: "AnnoyIndex" = AnnoyIndex(data.shape[1], metric = metric) #type: ignore
+        for i in range(data.shape[0]):
+            model.add_item(i, data[i])
+        model.build(n_trees=n_trees, n_jobs=-1)
+        return model
+    
+    
+    @staticmethod
+    def load_annoy(path: str,
+                   ncol: int,
+                   metric: str = "angular"
+                   ) -> "AnnoyIndex":
+        
+        model: "AnnoyIndex" = AnnoyIndex(ncol, metric) #type: ignore
+        model.load(path)
+        return model
+    
+    
+    @staticmethod
+    def save_annoy(model: "AnnoyIndex", path: str):
+        model.save(path)
