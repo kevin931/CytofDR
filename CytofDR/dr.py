@@ -52,7 +52,16 @@ class Reductions():
 
     :param reductions: A dictionary of reductions as indexed by their names.
     
-    :raises ValueError: Reduction already exists but users choose not to replace the original.
+    :Attributes:
+    - **original_data**: The original space data before DR.
+    - **original_labels**: Clusterings based on original space data.
+    - **original_cell_types**: Cell types based on original space data. 
+    - **embedding_data**: The embedding space reduction.
+    - **embedding_labels**: Clusterings based on embedding space reduction.
+    - **embedding_cell_types**: Cell types based on embedding space reduction. 
+    - **comparison_data**: The comparison data (matched with original data in some way) for concordance analysis.
+    - **comparison_cell_types**: Cell types based on comparison data.
+    - **comparison_classes**: Common cell types between embedding and comparison data.
     """
     
     def __init__(self, reductions: Optional[Dict[str, "np.ndarray"]]=None):
@@ -155,6 +164,11 @@ class Reductions():
             is the traditional pairwise distance. For large datasets, PCD is recommended. Defaults to "PCD".
         :param k_neighbors: The number of neighbors to use for ``local`` metrics. Defaults to 5.
         :param annoy_original_data_path: The file path to an ANNOY object for original data.
+        
+        :raises ValueError: No reductions to evalate.
+        :raises ValueError: Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only.
+        :raises ValueError: Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes.
+        
 
         .. note::
         
@@ -274,43 +288,44 @@ class Reductions():
                                                                                                       y_labels=self.comparison_cell_types)
           
 
-    def rank_dr_methods(self, method: str="max"):
+    def rank_dr_methods(self, tie_method: str="max"):
         """Rank DR Methods Using Default DR Evaluation.
 
         Based on the results from the ``evaluate`` method, this method ranks the DR methods
         based on the categories chosen. All weighting schemes are consistent with the paper.
         Custom evaluation and weighting schemes are not supported in this case.
+        
+        :param tie_method: The method to deal with ties when ranking, defaults to "max".
 
         :return: A dictionary of DR methods and their final weighted ranks.
-        :rtype: Dict[str, float]
         """
         category_counter: int = 0
         overall_rank: np.ndarray = np.zeros(len(self.reductions))
         if "global" in self.evaluations.keys():
             category_counter += 1
-            global_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["global"]["spearman"].values()), method=method)/2
-            global_eval += scipy.stats.rankdata(list(self.evaluations["global"]["emd"].values()), method=method)/2
+            global_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["global"]["spearman"].values()), method=tie_method)/2
+            global_eval += scipy.stats.rankdata(list(self.evaluations["global"]["emd"].values()), method=tie_method)/2
             overall_rank += global_eval
             
         if "local" in self.evaluations.keys():
             category_counter += 1
-            local_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["local"]["knn"].values()), method=method)/2
-            local_eval += scipy.stats.rankdata(list(self.evaluations["local"]["npe"].values()), method=method)/2
+            local_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["local"]["knn"].values()), method=tie_method)/2
+            local_eval += scipy.stats.rankdata(list(self.evaluations["local"]["npe"].values()), method=tie_method)/2
             overall_rank += local_eval
     
         if "downstream" in self.evaluations.keys():
             category_counter += 1
-            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: RF"].values()), method=method)/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values()), method=method)/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: DBI"].values()), method=method)/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: CHI"].values()), method=method)/4
+            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: RF"].values()), method=tie_method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values()), method=tie_method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: DBI"].values()), method=tie_method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: CHI"].values()), method=tie_method)/4
             
-            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: ARI"].values()), method=method)/2
-            cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: NMI"].values()), method=method)/2
+            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: ARI"].values()), method=tie_method)/2
+            cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: NMI"].values()), method=tie_method)/2
             
             if len(self.evaluations["downstream"]["cell type-clustering concordance: ARI"]) > 0:
-                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=method)/2
-                type_cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=method)/2
+                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=tie_method)/2
+                type_cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=tie_method)/2
                 downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval + type_cluster_concordance_eval)/3
             else:
                 downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval)/2
@@ -318,10 +333,10 @@ class Reductions():
                 
         if "concordance" in self.evaluations.keys():
             category_counter += 1
-            concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["concordance"]["cluster distance"].values()), method=method)/3
-            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["emd"].values()), method=method)/3
-            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: ARI"].values()), method=method)/6
-            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: NMI"].values()), method=method)/6
+            concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["concordance"]["cluster distance"].values()), method=tie_method)/3
+            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["emd"].values()), method=tie_method)/3
+            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: ARI"].values()), method=tie_method)/6
+            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: NMI"].values()), method=tie_method)/6
             overall_rank += concordance_eval
             
         overall_rank = overall_rank/category_counter
@@ -343,6 +358,7 @@ class Reductions():
         
         :param name: The name of the reduction.
         :param save_path: The path to save the plot.
+        :param stype: The plot style, defaults to "darkgrid".
         :param hue: Labels used to color the points.
         :param kwargs: Keyword arguments passed into the ``sns.scatterplot`` method.
         
@@ -372,44 +388,41 @@ class LinearMethods():
         This method uses the Sklearn's standard PCA.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return PCA(n_components=out_dims, **kwargs).fit_transform(data)
     
     
     @staticmethod
     def ICA(data: "np.ndarray",
-            out_dims: int,
+            out_dims: int=2,
             **kwargs) -> "np.ndarray":   
         """Scikit-Learn Independent Component Analysis (ICA)
 
         This method uses the SKlearn's FastICA implementation of ICA.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return FastICA(n_components=out_dims, **kwargs).fit_transform(data) #type: ignore
     
     
     @staticmethod
     def ZIFA(data: "np.ndarray",
-             out_dims: int,
+             out_dims: int=2,
              **kwargs) -> "np.ndarray":
         """Zero-Inflated Factor Analysis (ZIFA)
 
         This method implements ZIFA as developed by Pierson & Yau (2015).
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         # Fix all-zero columns
         nonzero_col: List[int] = []
@@ -427,34 +440,32 @@ class LinearMethods():
     
     @staticmethod
     def factor_analysis(data: "np.ndarray",
-                        out_dims: int,
+                        out_dims: int=2,
                         **kwargs) -> "np.ndarray":
         """Scikit-Learn Factor Analysis (FA)
 
         This method uses the SKlearn's FA implementation.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return FactorAnalysis(n_components=out_dims, **kwargs).fit_transform(data)
     
     
     @staticmethod
     def NMF(data: "np.ndarray",
-            out_dims: int,
+            out_dims: int=2,
             **kwargs) -> "np.ndarray":
         """Scikit-Learn Nonnegative Matrix Factorization (NMF)
 
         This method uses the SKlearn's NMF implementation.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return NMF(n_components=out_dims, init = "nndsvd", **kwargs).fit_transform(data)
     
@@ -467,7 +478,7 @@ class NonLinearMethods():
     
     @staticmethod
     def MDS(data: "np.ndarray",
-            out_dims: int,
+            out_dims: int=2,
             n_jobs: int=-1,
             **kwargs) -> "np.ndarray":
         """Scikit-Learn Multi-Dimensional Scaling (MDS)
@@ -475,11 +486,10 @@ class NonLinearMethods():
         This method uses the SKlearn's MDS implementation.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param n_jobs: The number of jobs to run concurrantly.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return MDS(n_components=out_dims,
                    n_jobs=n_jobs,
@@ -498,11 +508,10 @@ class NonLinearMethods():
         This method uses the UMAP package's UMAP implementation.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param n_jobs: The number of jobs to run concurrantly.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return umap.UMAP(n_components=out_dims,
                          n_jobs=n_jobs,
@@ -524,11 +533,10 @@ class NonLinearMethods():
         ``batch_size`` are directly exposed in this wrapper.
         
         :param data: The input high-dimensional array.
-        :param steps: The number of training steps to use.
-        :param batch_size: The batch size for training.
+        :param steps: The number of training steps to use, defaults to 1000.
+        :param batch_size: The batch size for training, defaults to 256.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         
         saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1], **kwargs)
@@ -553,12 +561,11 @@ class NonLinearMethods():
         This method is a wrapper for sklearn's implementation of Isomap.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
         :param transform: The array to transform with the trained model.
         :param n_jobs: The number of threads to use.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         
         if transform is None:
@@ -585,11 +592,10 @@ class NonLinearMethods():
         This method is a wrapper for sklearn's implementation of LLE.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
         :param transform: The array to transform with the trained model.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         
         if transform is None:
@@ -616,12 +622,11 @@ class NonLinearMethods():
         This method is a wrapper for sklearn's implementation of kernel PCA.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
         :param kernel: The kernel to use: "poly," "linear," "rbf," "sigmoid," or "cosine."
-        :param n_jobs: The number of jobs to run concurrantly.
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return KernelPCA(n_components=out_dims,
                          kernel=kernel,
@@ -639,11 +644,10 @@ class NonLinearMethods():
         This method is a wrapper for sklearn's implementation of spectral embedding.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param n_jobs: The number of jobs to run concurrantly.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return SpectralEmbedding(n_components=out_dims,
                                  n_jobs=n_jobs,
@@ -660,11 +664,10 @@ class NonLinearMethods():
         This method is a wrapper for PHATE.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param n_jobs: The number of jobs to run concurrantly.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return phate.PHATE(n_components=out_dims,
                            n_jobs=n_jobs,
@@ -680,10 +683,9 @@ class NonLinearMethods():
         This method is a wrapper for GrandPrix.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return GrandPrix.fit_model(data = data, n_latent_dims = out_dims, **kwargs)[0]
     
@@ -700,11 +702,10 @@ class NonLinearMethods():
         traditional and BH t-SNE with more control of variables.
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
-        :param n_jobs: The number of jobs to run concurrantly.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
 
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         return TSNE(n_components=out_dims,
                     n_jobs=n_jobs,
@@ -735,20 +736,20 @@ class NonLinearMethods():
         additional keyword arguments. 
         
         :param data: The input high-dimensional array.
-        :param out_dims: The number of dimensions of the output.
+        :param out_dims: The number of dimensions of the output, defaults to 2.
         :param perp: Perplexity. The default is set to 30. Tradition is between 30 and 50.
-            This also supports multiple perplexities with a list.
-        :param learning_rate: The learning rate used during gradient descent.
-        :param early_exaggeration_iter: Number of early exaggeration iterations.
-        :param early_exaggeration: Early exaggeration factor.
-        :param max_iter: Maximum number of iterations to optimize.
-        :param dof: T-distribution degree of freedom.
-        :param theta: The speed/accuracy trade-off.
-        :param init: Method of initialiazation. 'random', 'pca', 'spectral', or array.
-        :param n_jobs: The number of jobs to run concurrantly.
+            This also supports multiple perplexities with a list, defaults to 30.
+        :param learning_rate: The learning rate used during gradient descent, defaults to "auto".
+        :param early_exaggeration_iter: Number of early exaggeration iterations, defaults to 250.
+        :param early_exaggeration: Early exaggeration factor, defaults to 12.
+        :param max_iter: Maximum number of iterations to optimize, defaults to 500
+        :param dof: T-distribution degree of freedom, defaults to "euclidean"
+        :param theta: The speed/accuracy trade-off, defaults to 0.5.
+        :param init: Method of initialiazation. 'random', 'pca', 'spectral', or array, defaults to "pca"
+        :negative_gradient_method: Whether to use "bh" or "fft" tSNE, defaults to "fft".
+        :param n_jobs: The number of jobs to run concurrantly, defaults to -1.
         
         :return: The low-dimensional embedding.
-        :rtype: "np.ndarray"
         """
         
         n_iter: int = max_iter - early_exaggeration_iter
@@ -806,7 +807,7 @@ def run_dr_methods(data: "np.ndarray",
                    transform: Optional["np.ndarray"]=None,
                    n_jobs: int=-1,
                    verbose: bool=True,
-                   supress_error_msg: bool=False
+                   suppress_error_msg: bool=False
                    ) -> "Reductions":
     """Run dimension reduction methods.
 
@@ -819,7 +820,9 @@ def run_dr_methods(data: "np.ndarray",
     :param methods: DR methods to run (not case sensitive).
     :param out_dims: Output dimension of DR.
     :param transform: An array to transform after training on the traning set.
-    :param n_jobs: The number of jobs to run when applicable
+    :param n_jobs: The number of jobs to run when applicable, defaults to -1.
+    :param verbose: Whether to print out progress, defaults to ``True``.
+    :param suppress_error_msg: Whether to suppress error messages print outs, defaults to ``False``.
 
     :return: A Reductions object with all dimension reductions.
     """
@@ -845,28 +848,28 @@ def run_dr_methods(data: "np.ndarray",
             _verbose("Running pca", verbose=verbose)
             reductions.add_reduction(LinearMethods.PCA(data, out_dims=out_dims), "pca")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "ica" in methods:
         try:
             _verbose("Running ica", verbose=verbose)
             reductions.add_reduction(LinearMethods.ICA(data, out_dims=out_dims), "ica") 
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
         
     if "umap" in methods:
         try:
             _verbose("Running umap", verbose=verbose)    
             reductions.add_reduction(NonLinearMethods.UMAP(data, out_dims=out_dims, n_jobs=n_jobs), "umap")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "saucie" in methods:
         try:
             _verbose("Running saucie", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.saucie(data), "saucie")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
     
     # sklearn BH
     if "sklearn_tsne" in methods:
@@ -874,90 +877,90 @@ def run_dr_methods(data: "np.ndarray",
             _verbose("Running sklearn_tsne", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.sklearn_tsne(data, out_dims=out_dims, n_jobs=n_jobs), "sklearn_tsne")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
     
     if "open_tsne" in methods:
         try:
             _verbose("Running open_tsne", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.open_tsne(data, out_dims=out_dims, n_jobs=n_jobs), "open_tsne")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "zifa" in methods:
         try:
             _verbose("Running zifa", verbose=verbose)
             reductions.add_reduction(LinearMethods.ZIFA(data, out_dims=out_dims), "zifa")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "fa" in methods:
         try:
             _verbose("Running fa", verbose=verbose)
             reductions.add_reduction(LinearMethods.factor_analysis(data, out_dims=out_dims), "fa")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "isomap" in methods:
         try:
             _verbose("Running isomap", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.isomap(data, out_dims=out_dims,transform=transform, n_jobs=n_jobs), "isomap")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "mds" in methods:
         try:
             _verbose("Running mds", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.MDS(data, out_dims=out_dims, n_jobs=n_jobs), "mds")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "lle" in methods:
         try:
             _verbose("Running lle", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.LLE(data, out_dims=out_dims, transform=transform, n_jobs=n_jobs), "lle")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "spectral" in methods:
         try:
             _verbose("Running spectral", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.spectral(data, out_dims=out_dims, n_jobs=n_jobs), "spectral")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
                     
     if "kpca_poly" in methods:
         try:
             _verbose("Running kpca_poly", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel="poly", n_jobs=n_jobs), "kpca_poly")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "kpca_rbf" in methods:
         try:
             _verbose("Running kpca_rbf", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel="rbf", n_jobs=n_jobs), "kpca_rbf")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "phate" in methods:
         try:
             _verbose("Running phate", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.phate(data, out_dims=out_dims, n_jobs=n_jobs), "phate")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "nmf" in methods:
         try:
             _verbose("Running nmf", verbose=verbose)
             reductions.add_reduction(LinearMethods.NMF(data, out_dims=out_dims), "nmf")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     if "grandprix" in methods:
         try:
             _verbose("Running grandprix", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.grandprix(data, out_dims=out_dims), "grandprix")
         except Exception as e:
-            _verbose(str(e), verbose=not supress_error_msg)
+            _verbose(str(e), verbose=not suppress_error_msg)
             
     return reductions
