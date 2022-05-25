@@ -334,7 +334,7 @@ class Reductions():
         :param name: The name of the reduction.
         :param save_path: The path to save the plot.
         :param hue: Labels used to color the points.
-        :param **kwargs: Keyword arguments passed into the ``sns.scatterplot`` method.
+        :param kwargs: Keyword arguments passed into the ``sns.scatterplot`` method.
         
         .. note:: Live viewing is not supported by this method.
         """

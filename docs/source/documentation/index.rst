@@ -12,3 +12,4 @@ Module References
    :maxdepth: 1
 
    dr
+   metric

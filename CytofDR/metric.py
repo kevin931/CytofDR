@@ -27,13 +27,12 @@ class EvaluationMetrics():
         This is a utility function for building ANNOY models and returning the nearest-neighbor matrices for original
         space data and low-dimensional embedding. 
         
-        Args:
-            data (np.ndarray): The input high-dimensional array.
-            saved_annoy_path (str): The path to pre-built ANNOY model for original data.
-            k (int): The number of neighbors.
+        
+        : param data: The input high-dimensional array.
+        : param saved_annoy_path: The path to pre-built ANNOY model for original data.
+        : param k: The number of neighbors.
 
-        Returns:
-            "np.ndarray": Nearest-neighbor matrices of original space data.
+        :return: Nearest-neighbor matrices of original space data.
         '''
         
         if saved_annoy_path is not None:
@@ -62,16 +61,13 @@ class EvaluationMetrics():
         '''Calculate Correlation Coefficient
         
         This method computes the pearson or spearman correlation between the inputs.
-        
-        Args:
-            x (np.ndarray): The first 1D array. 
-            y (np.ndarray): The second 1D array.
-            metric (str): The metric to use. 'Pearson' or 'Spearman'.
 
-        Returns:
-            float: Correlation.
+        :param x: The first 1D array. 
+        :param y: The second 1D array.
+        :param metric: The metric to use. 'Pearson' or 'Spearman', defaults to "Pearson".
+
+        :return: Correlation coefficient.
         '''
-        
         if metric.lower() == "pearson":
             cor: float=scipy.stats.pearsonr(x, y)[0]
         elif metric.lower() == "spearman":
@@ -91,10 +87,9 @@ class EvaluationMetrics():
         The residual variance is computed with the following formuation with r as the
         pearson correlation: 1-r**2. If r is provided, x and y are optional for efficiency.
         
-        Args:
-            x (np.ndarray, optional): The first 1D array. 
-            y (np.ndarray, optional): The second 1D array.
-            r (float, optional): Pearson correlation between x and y.
+        :param x: The first 1D array, optional. 
+        :param y: The second 1D array, optional.
+        :param r: Pearson correlation between x and y, optional.
 
         Returns:
             float: Redisual variance.
@@ -121,13 +116,10 @@ class EvaluationMetrics():
         high and low dimensional space. This implementation uses the ``scipy.stats.wasserstein_distance``.
         The usage of EMD is proposed in Heiser & Lou (2020).
         
-        Args:
-            x (np.ndarray): The first distribution x as a 1D array.
-            y (np.ndarray): The second distribution y as a 1D array.
+        :param x: The first distribution x as a 1D array.
+        :param y: The second distribution y as a 1D array.
 
-        Returns:
-            float: Earth mover's distance.
-        
+        :return: Earth mover's distance.
         '''
         return scipy.stats.wasserstein_distance(x, y)
 
@@ -140,21 +132,12 @@ class EvaluationMetrics():
         The KNN metric computes the percentage of k-neighbors of each point is preserved in the
         embedding space, and it is average across the entire dataset.
         
-        Note:
-            This method is not used to calculate KNN itself.
-        
-        Args:
-            data (np.ndarray): The input high-dimensional array.
-            embedding (np.ndarray): The low-dimensional embedding.
-            k (int, optional): The number of neighbors for KNN. This is required when either knn_model_data
-                or knn_model_embedding is not supplied.
-            knn_model_data (sklearn.neighbors.NearestNeighbors, optional):
-                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``data``.
-            knn_model_embedding (sklearn.neighbors.NearestNeighbors, optional): 
-                A fitted instance of ``sklearn.neighbors.NearestNeighbors`` with ``embedding``.
+        .. note:: This method is not used to calculate KNN itself.
 
-        Returns:
-            float: K-nearest neighbors preservation.
+        :param data_neighbors: A nearest-neighbor array of the original data.
+        :param embedding_neighbors: A nearest-neighbor array of the embedding.
+
+        :return: K-nearest neighbors preservation.
         '''
         
         i: int
@@ -175,13 +158,11 @@ class EvaluationMetrics():
         the proportion of nearest points belonging to the same class of each point in the HD and LD space. The
         lower the NPE, the more similar the embedding and the original data are.
         
-        Args:
-            data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
-            embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
-            labels (np.ndarray): The class labels of each observation.
+        :param data_neighbors: A nearest-neighbor array of the original data.
+        :param embedding_neighbors: A nearest-neighbor array of the embedding.
+        :param labels: The class labels of each observation.
 
-        Returns:
-            float: Neighborhood proportion error.
+        :return: Neighborhood proportion error.
         '''
         
         classes: "np.ndarray"
@@ -223,12 +204,10 @@ class EvaluationMetrics():
         the agreement of KNN, but ``Metric.KNN`` simply takes the average of the KNN graph
         agreement without any scaling.
         
-        Args:
-            data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
-            embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
+        :param data_neighbors: A nearest-neighbor array of the original data.
+        :param embedding_neighbors: A nearest-neighbor array of the embedding.
 
-        Returns:
-            float: Neighborhood agreement.
+        :return: Neighborhood agreement.
         '''
         
         k: int = data_neighbors.shape[1]
@@ -254,14 +233,11 @@ class EvaluationMetrics():
         original HD space distance matrix, the less trustworthy the new embedding is. The measure
         is scaled between 0 and 1 with a higher score reflecting a more trustworthy embedding.
         
-        Args:
-            data_neighbors (np.ndarray): A nearest-neighbor matrix of the original data.
-            embedding_neighbors (np.ndarray): A nearest-neighbor matrix of the embedding.
-            dist_data (np.ndarray): A pairwise distance matrix for the original data.
+        :param data_neighbors: A nearest-neighbor matrix of the original data.
+        :param embedding_neighbors: A nearest-neighbor matrix of the embedding.
+        :param dist_data: A pairwise distance matrix for the original data.
 
-        Returns:
-            float: Neighborhood trustworthiness.
-        
+        :return: Neighborhood trustworthiness.
         '''
         
         dist_data = scipy.spatial.distance.squareform(dist_data)
@@ -289,12 +265,10 @@ class EvaluationMetrics():
         of the classifier using the 33% of the embedding data. This metric was first proposed in
         Becht et al. (2019).
         
-        Args:
-            embedding (np.ndarray): The low-dimensional embedding.
-            labels (np.ndarray): The class labels of each observation.
+        :param embedding: The low-dimensional embedding.
+        :param labels: The class labels of each observation.
 
-        Returns:
-            float: Random forest accuracy.
+        :return: Random forest prediction accuracy.
         '''
         
         embedding_train, embedding_test, labels_train, labels_test = train_test_split(embedding, labels, test_size=0.33)
@@ -315,12 +289,10 @@ class EvaluationMetrics():
         evaluate the effectiveness of the embedding technique. This metric is used in 
         Xiang et al. (2021).
         
-        Args:
-            embedding (np.ndarray): The low-dimensional embedding.
-            labels (np.ndarray): The class labels of each observation.
+        :param embedding: The low-dimensional embedding.
+        :param labels: The class labels of each observation.
 
-        Returns:
-            float: Silhouette score.
+        :return: Silhouette score.
         '''
         
         return sklearn.metrics.silhouette_score(embedding, labels)
@@ -336,12 +308,10 @@ class EvaluationMetrics():
         This metric is a measure of clustering performance before and after dimension reduction,
         and it is used in Xiang et al. (2021).
         
-        Args:
-            x_labels (np.ndarray): The first set of labels. 
-            y_labels_embedding (np.ndarray): The second set of labels on the same data. 
+        :param x_labels: The first set of labels. 
+        :param y_labels: The second set of labels on the same data. 
 
-        Returns:
-            float: Silhouette score.
+        :return: Silhouette score.
         '''
         
         mi: float = sklearn.metrics.mutual_info_score(x_labels, y_labels)
@@ -368,17 +338,18 @@ class EvaluationMetrics():
         The ARI uses the labels from the original space and the embedding space to measure
         the similarity between them using pairs. It is used in Xiang et al. (2021).
         
-        Args:
-            x_labels (np.ndarray): The first set of labels. 
-            y_labels_embedding (np.ndarray): The second set of labels on the same data. 
+        :param x_labels: The first set of labels. 
+        :param y_labels: The second set of labels on the same data. 
 
-        Returns:
-            float: ARI.
+        :return: ARI.
             
-        References:
-            This implementation adapts from sklearn's implementation of ARI with a bug fix of overflow
-            issue. 
-            
+        :References:
+        
+        This implementation adapts from sklearn's implementation of ARI with a bug fix of overflow
+        issue. 
+        
+        .. code-block:: text
+        
             @article{scikit-learn,
             title={Scikit-learn: Machine Learning in {P}ython},
             author={Pedregosa, F. and Varoquaux, G. and Gramfort, A. and Michel, V.
@@ -391,7 +362,9 @@ class EvaluationMetrics():
             year={2011}
             }
             
-        Licenses:
+        :License:
+        
+        .. code-block:: text
         
             BSD 3-Clause License
 
@@ -443,12 +416,10 @@ class EvaluationMetrics():
         clusters should be coherent, and using labels obtained from the original space can
         evaluate the effectiveness of the embedding technique.
         
-        Args:
-            embedding (np.ndarray): The low-dimensional embedding.
-            labels (np.ndarray): The class labels of each observation.
+        :param embedding: The low-dimensional embedding.
+        :param labels: The class labels of each observation.
 
-        Returns:
-            float: Calinski-Harabasz Index.
+        :return: Calinski-Harabasz Index.
         '''
         
         return sklearn.metrics.calinski_harabasz_score(embedding, labels)
@@ -462,12 +433,10 @@ class EvaluationMetrics():
         clusters should be coherent, and using labels obtained from the original space can
         evaluate the effectiveness of the embedding technique.
         
-        Args:
-            embedding (np.ndarray): The low-dimensional embedding.
-            labels (np.ndarray): The class labels of each observation.
+        :param embedding: The low-dimensional embedding.
+        :param labels: The class labels of each observation.
 
-        Returns:
-            float: Davies-Bouldin Index.
+        :return: Davies-Bouldin Index.
         
         '''
         
@@ -497,19 +466,16 @@ class EvaluationMetrics():
         For Cluster Distance, pairwise rank distance between all cluster centroids are calculated
         in each embedding. Then, the Euclidean distance between these two vectors are taken.
         
-        Args:
-            embedding (np.ndarray): The first (main) embedding.
-            labels_embedding (np.ndarray): Labels for all obervations in the embedding.
-            comparison_file (np.ndarray): The second embedding.
-            comparison_labels (np.ndarray): The labels for all observations in the comparison embedding.
-            comparison_classes (np.ndarray): Which classes in labels to compare. If ``None``, all overlapping labels used.
-            method (str): "EMD" or "cluster_distance"
+        :param embedding: The first (main) embedding.
+        :param labels_embedding: Labels for all obervations in the embedding.
+        :param comparison_file: The second embedding.
+        :param comparison_labels: The labels for all observations in the comparison embedding.
+        :param comparison_classes: Which classes in labels to compare. If ``None``, all overlapping labels used, optional
+        :param method: "emd" or "cluster_distance", defaults to "emd"
             
-        Returns: 
-            Union[float, str]: The score or "NA"
+        :return: The score or "NA"
             
-        Note:
-            When there is no overlapping labels, "NA" is automatically returned as ``str``.
+        .. Note:: When there is no overlapping labels, "NA" is automatically returned as ``str``.
         """
         
         if not isinstance(comparison_file, list):
@@ -518,6 +484,8 @@ class EvaluationMetrics():
             comparison_labels = [comparison_labels]
         if not isinstance(comparison_classes, list) and comparison_classes is not None:
             comparison_classes = [comparison_classes]
+            
+        method = method.lower()
             
         scores: "np.ndarray" = np.zeros(len(comparison_file))
         i: int
@@ -564,15 +532,13 @@ class EvaluationMetrics():
         
         This is a private that computes the concordance EMD as described in the ``embedding_concordance`` method.
         
-        Args:
-            embedding (np.ndarray): The first (main) embedding.
-            labels_embedding (np.ndarray): Labels for all obervations in the embedding.
-            comparison_file (np.ndarray): The second embedding.
-            comparison_labels (np.ndarray): The labels for all observations in the comparison embedding.
-            common_types (np.ndarray): The common cluster labels for EMD computation.
+        :param embedding: The first (main) embedding.
+        :param labels_embedding: Labels for all obervations in the embedding.
+        :param comparison_file: The second embedding.
+        :param comparison_labels: The labels for all observations in the comparison embedding.
+        :param common_types: The common cluster labels for EMD computation.
             
-        Returns: 
-            float: The EMD score
+        :return: The EMD score
         """
         
         combinations: List[Tuple[int, ...]] = list(itertools.permutations(common_types, 2))
@@ -607,15 +573,13 @@ class EvaluationMetrics():
         This is a private that computes the concordance Ckuster Distance metric as described in the
         ``embedding_concordance`` method.
         
-        Args:
-            embedding (np.ndarray): The first (main) embedding.
-            labels_embedding (np.ndarray): Labels for all obervations in the embedding.
-            comparison_file (np.ndarray): The second embedding.
-            comparison_labels (np.ndarray): The labels for all observations in the comparison embedding.
-            common_types (np.ndarray): The common cluster labels for EMD computation.
+        :param embedding: The first (main) embedding.
+        :param labels_embedding: Labels for all obervations in the embedding.
+        :param comparison_file: The second embedding.
+        :param comparison_labels: The labels for all observations in the comparison embedding.
+        :param common_types: The common cluster labels for EMD computation.
             
-        Returns: 
-            float: The EMD score
+        :return: The EMD score
         """
         
         combinations: List[Tuple[int, ...]] = list(itertools.permutations(common_types, 2))
@@ -657,27 +621,24 @@ class PointClusterDistance():
     distance, this distance metric computes the distance between each cluster centroid
     and all other point. The memory complexity is N_cluster*N instead of (N^2)/2.
     
-    Args:
-        X (np.ndarray): The input data array.
-        labels (np.ndarray): Labels for the data array.
-        dist_metric (str): The distance metric to use. This supports "euclidean", "manhattan",
-            or "cosine".
+    :param X: The input data array.
+    :param labels: Labels for the data array.
+    :param dist_metric: The distance metric to use. This supports "euclidean", "manhattan", or "cosine", defaults to "euclidean"
         
-    Attributes:
-        X (np.ndarray): The input data array.
-        labels (np.ndarray): Labels for the data array.
-        dist_metric (str): The distance metric to use. This supports "euclidean", "manhattan",
-            or "cosine".
-        dist (np.ndarray, optional): The calculated distance array. The first axis corresponds
-            to each observation in the original array and the second axis is all the cluster
-            centroids.
+    :Attributes:
+    
+    - **X**: The input data array.
+    - **labels**: Labels for the data array.
+    - **dist_metric**: The distance metric to use. This supports "euclidean", "manhattan", or "cosine", defaults to "euclidean"
+    - **dist**: The calculated distance array. The first axis corresponds to each observation in the original array and the second axis is all the cluster centroids, optional.
     """
     
     def __init__(self, X: "np.ndarray", labels: "np.ndarray", dist_metric: str="euclidean"):
         self.X: "np.ndarray" = X
         self.labels: "np.ndarray" = labels
-        self.dist_metric = dist_metric
+        self.dist_metric = dist_metric.lower()
         self.dist: Optional["np.ndarray"] = None
+        self.index: Optional["np.ndarray"] = None
         
         
     def fit(self, flatten: bool=False) -> "np.ndarray":
@@ -685,17 +646,16 @@ class PointClusterDistance():
 
         This method calculates the distance metric based on the class attributes.
         
-        Args:
-            flatten: Whether to flatten the return into a 1-d vector
+        :param flatten: Whether to flatten the return into a 1-d vector
 
-        Returns:
-            np.ndarray: The calculate distance array.
+        :return: The calculate distance array.
         """
         index: "np.ndarray"
         inverse: "np.ndarray"
         index, inverse = np.unique(self.labels, return_inverse=True)
         
         self.dist = np.empty((self.X.shape[0], index.size))
+        self.index = index
         centroid: "np.ndarray" = self._cluster_centroid(self.X, index, inverse)
         dist = self._distance_func(dist_metric=self.dist_metric)
         
@@ -716,11 +676,9 @@ class PointClusterDistance():
 
         This method is a wrapper for the ``flatten`` method in ``numpy``.
 
-        Args:
-            dist (np.ndarray): The distance array.
+        :param dist: The distance array.
 
-        Returns:
-            np.ndarray: The flattened array.
+        :return: The flattened array.
         """
         return dist.flatten()
     
@@ -742,11 +700,10 @@ class PointClusterDistance():
         This is an implementation of the Euclidean distance.
 
         Args:
-            X1 (np.ndarray): The array to calculate Euclidean distance.
-            X2 (np.ndarray): The array to calculate Euclidean distance.
+        :param X1: The array to calculate Euclidean distance.
+        :param X2: The array to calculate Euclidean distance.
 
-        Returns:
-            float: The euclidean distance
+        :return: The euclidean distance
         """
         return np.sqrt(np.sum(np.square(X1-X2), axis=1))
     
@@ -758,11 +715,10 @@ class PointClusterDistance():
         This is an implementation of the Manhattan distance.
 
         Args:
-            X1 (np.ndarray): The array to calculate Manhattan distance.
-            X2 (np.ndarray): The array to calculate Manhattan distance.
+        :param X1: The array to calculate Manhattan distance.
+        :param X2: The array to calculate Manhattan distance.
 
-        Returns:
-            float: The Manhattan distance
+        :return: The Manhattan distance
         """
         return np.sum(np.abs(X1-X2), axis=1)
     
@@ -774,11 +730,10 @@ class PointClusterDistance():
         This is an implementation of the Cosine distance.
 
         Args:
-            X1 (np.ndarray): The array to calculate Cosine distance.
-            X2 (np.ndarray): The array to calculate Cosine distance.
+        :param X1: The array to calculate Cosine distance.
+        :param X2: The array to calculate Cosine distance.
 
-        Returns:
-            float: The Cosine distance
+        :return: The Cosine distance
         """
         return np.sum(X1*X2, axis=1)/(np.sqrt(np.sum(X1**2))*np.sqrt(np.sum(X2**2, axis=1)))
     
@@ -790,13 +745,11 @@ class PointClusterDistance():
         With the input array and labels, this method computes all centroids using
         the labels as clusters.
 
-        Args:
-            X (np.ndarray): [description]
-            index (np.ndarray): [description]
-            inverse (np.ndarray): [description]
+        :param X: The original data array.
+        :param index: The unique IDs of the observations.
+        :param inverse: The indicies to reconstruct the original array.
 
-        Returns:
-            np.ndarray: [description]
+        :return: The cluster centroids.
         """
         centroid: "np.ndarray" = np.empty((index.size, X.shape[1]))
         for i in range(len(index)):
@@ -811,6 +764,14 @@ class Annoy():
     def build_annoy(data: "np.ndarray",
                     metric: str = "angular",
                     n_trees: int=10) -> "AnnoyIndex":
+        """Build ``AnnoyIndex`` object from data.
+
+        :param data: The data array
+        :param metric: The distance metric to use, defaults to "angular"
+        :param n_trees: The number of trees, defaults to 10
+        
+        :return: An ``AnnoyIndex`` object.
+        """
         
         model: "AnnoyIndex" = AnnoyIndex(data.shape[1], metric = metric) #type: ignore
         for i in range(data.shape[0]):
@@ -824,7 +785,15 @@ class Annoy():
                    ncol: int,
                    metric: str = "angular"
                    ) -> "AnnoyIndex":
+        """Load ``AnnoyIndex`` object from disk.
         
+        This loads an AnnoyIndex object saved using this class or the ANnoy's buildin IO function.   
+
+        :param path: The path to the object.
+        :param ncol: The number of columns.
+        :param metric: _description_, defaults to "angular"
+        :return: The loaded ``AnnoyIndex`` object.
+        """
         model: "AnnoyIndex" = AnnoyIndex(ncol, metric) #type: ignore
         model.load(path)
         return model
@@ -832,4 +801,12 @@ class Annoy():
     
     @staticmethod
     def save_annoy(model: "AnnoyIndex", path: str):
+        """Save ``AnnoyIndex`` object to disk.
+        
+        This saves an ``AnnoyIndex`` object to a specified path.   
+
+        :param model: An ``AnnoyIndex`` object to be saved.
+        :param path: The path to the object.
+        :return: The loaded ``AnnoyIndex`` object.
+        """
         model.save(path)
