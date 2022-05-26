@@ -303,29 +303,29 @@ class Reductions():
         overall_rank: np.ndarray = np.zeros(len(self.reductions))
         if "global" in self.evaluations.keys():
             category_counter += 1
-            global_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["global"]["spearman"].values()), method=tie_method)/2
-            global_eval += scipy.stats.rankdata(list(self.evaluations["global"]["emd"].values()), method=tie_method)/2
+            global_eval: np.ndarray = scipy.stats.rankdata(np.array(list(self.evaluations["global"]["spearman"].values())), method=tie_method)/2
+            global_eval += scipy.stats.rankdata(-np.array(list(self.evaluations["global"]["emd"].values())), method=tie_method)/2
             overall_rank += global_eval
             
         if "local" in self.evaluations.keys():
             category_counter += 1
-            local_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["local"]["knn"].values()), method=tie_method)/2
-            local_eval += scipy.stats.rankdata(list(self.evaluations["local"]["npe"].values()), method=tie_method)/2
+            local_eval: np.ndarray = scipy.stats.rankdata(np.array(list(self.evaluations["local"]["knn"].values())), method=tie_method)/2
+            local_eval += scipy.stats.rankdata(-np.array(list(self.evaluations["local"]["npe"].values())), method=tie_method)/2
             overall_rank += local_eval
     
         if "downstream" in self.evaluations.keys():
             category_counter += 1
-            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: RF"].values()), method=tie_method)/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values()), method=tie_method)/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: DBI"].values()), method=tie_method)/4
-            cluster_reconstruction_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster reconstruction: CHI"].values()), method=tie_method)/4
+            cluster_reconstruction_eval: np.ndarray = scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cluster reconstruction: RF"].values())), method=tie_method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cluster reconstruction: silhouette"].values())), method=tie_method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(-np.array(list(self.evaluations["downstream"]["cluster reconstruction: DBI"].values())), method=tie_method)/4
+            cluster_reconstruction_eval += scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cluster reconstruction: CHI"].values())), method=tie_method)/4
             
-            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: ARI"].values()), method=tie_method)/2
-            cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cluster concordance: NMI"].values()), method=tie_method)/2
+            cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cluster concordance: ARI"].values())), method=tie_method)/2
+            cluster_concordance_eval += scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cluster concordance: NMI"].values())), method=tie_method)/2
             
             if len(self.evaluations["downstream"]["cell type-clustering concordance: ARI"]) > 0:
-                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=tie_method)/2
-                type_cluster_concordance_eval += scipy.stats.rankdata(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values()), method=tie_method)/2
+                type_cluster_concordance_eval: np.ndarray = scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values())), method=tie_method)/2
+                type_cluster_concordance_eval += scipy.stats.rankdata(np.array(list(self.evaluations["downstream"]["cell type-clustering concordance: ARI"].values())), method=tie_method)/2
                 downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval + type_cluster_concordance_eval)/3
             else:
                 downstream_eval: np.ndarray = (cluster_reconstruction_eval + cluster_concordance_eval)/2
@@ -333,10 +333,10 @@ class Reductions():
                 
         if "concordance" in self.evaluations.keys():
             category_counter += 1
-            concordance_eval: np.ndarray = scipy.stats.rankdata(list(self.evaluations["concordance"]["cluster distance"].values()), method=tie_method)/3
-            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["emd"].values()), method=tie_method)/3
-            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: ARI"].values()), method=tie_method)/6
-            concordance_eval += scipy.stats.rankdata(list(self.evaluations["concordance"]["gating concordance: NMI"].values()), method=tie_method)/6
+            concordance_eval: np.ndarray = scipy.stats.rankdata(-np.array(list(self.evaluations["concordance"]["cluster distance"].values())), method=tie_method)/3
+            concordance_eval += scipy.stats.rankdata(-np.array(list(self.evaluations["concordance"]["emd"].values())), method=tie_method)/3
+            concordance_eval += scipy.stats.rankdata(np.array(list(self.evaluations["concordance"]["gating concordance: ARI"].values())), method=tie_method)/6
+            concordance_eval += scipy.stats.rankdata(np.array(list(self.evaluations["concordance"]["gating concordance: NMI"].values())), method=tie_method)/6
             overall_rank += concordance_eval
             
         overall_rank = overall_rank/category_counter
