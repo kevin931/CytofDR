@@ -364,10 +364,12 @@ class Reductions():
         
         .. note:: Live viewing is not supported by this method.
         """
+        plt.figure()
         sns.set_style(style)
         sns_plot = sns.scatterplot(x=self.reductions[name][:,0], y=self.reductions[name][:,1], hue=hue, **kwargs)
         fig = sns_plot.get_figure()
         fig.savefig(save_path)
+        plt.clf()
     
     
 class LinearMethods():
