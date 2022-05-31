@@ -22,11 +22,6 @@ jobs:
           python -m pip install pytest pytest-mock pytest-cov
           pip install -r requirements.txt
           python setup.py install
-          python -m pip install tensorflow gpflow
-          git clone https://github.com/ManchesterBioinference/GrandPrix
-          cd GrandPrix
-          python setup.py install
-          cd ..
           git clone https://github.com/epierson9/ZIFA
           cd ZIFA
           python setup.py install
