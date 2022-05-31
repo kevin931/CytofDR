@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import warnings
 from typing import Union, Optional, List, Dict, Any
 
-METHODS: Dict[str, bool]  = {"SAUCIE": True, "ZIFA": True, "Grandprix": True}
+METHODS: Dict[str, bool]  = {"SAUCIE": True, "ZIFA": True, "GrandPrix": True}
     
 try:
     import SAUCIE
@@ -539,10 +539,6 @@ class NonLinearMethods():
 
         :return: The low-dimensional embedding.
         """
-        
-        if batch_size > data.shape[0]:
-            batch_size = data.shape[0]
-            warnings.warn(f"Batch size too large: setting to {data.shape[0]}")
         
         saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1], **kwargs)
         train: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=True)

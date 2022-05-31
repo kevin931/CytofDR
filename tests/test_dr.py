@@ -98,7 +98,7 @@ class TestDRMethods():
         
         
     def test_open_tsne_perp_list(self):
-        embedding: np.ndarray = dr.NonLinearMethods.open_tsne(self.expression, perp=[30, 100])
+        embedding: np.ndarray = dr.NonLinearMethods.open_tsne(self.expression, perp=[5, 10])
         assert isinstance(embedding, np.ndarray)
         assert embedding.shape == (20, 2)
         
@@ -108,6 +108,7 @@ class TestDRMethods():
         embedding: np.ndarray = dr.NonLinearMethods.open_tsne(self.expression, init=init)
         assert isinstance(embedding, np.ndarray)
         assert embedding.shape == (20, 2)
+    
     
     @pytest.mark.parametrize("out_dim", [2, 3])
     def test_GrandPrix(self, out_dim: int):
@@ -130,8 +131,6 @@ class TestDRMethods():
         
         methods = ["PCA", "ICA", "UMAP", "sklearn_tsne", "open_tsne", "FA", "Isomap", "MDS", "LLE",
                    "kpca_poly", "kpca_rbf", "PHATE", "NMF", "Spectral"]
-        if METHODS["SAUCIE"]:
-            methods.append("SAUCIE")
         if METHODS["ZIFA"]:
             methods.append("ZIFA")
         if METHODS["GrandPrix"]:
@@ -150,13 +149,12 @@ class TestDRMethods():
         assert isinstance(out, dr.Reductions)
         assert method in list(out.reductions.keys())
     
-
-    @pytest.mark.parametrize("method", ["GrandPrix", "SAUCIE"])      
-    def test_run_dr_method_saucie_grandprix(self, method):
-        if METHODS[method]:
-            out: dr.Reductions = dr.run_dr_methods(data=self.expression, methods=method)
+   
+    def test_run_dr_method_grandprix(self):
+        if METHODS["GrandPrix"]:
+            out: dr.Reductions = dr.run_dr_methods(data=self.expression, methods="GrandPrix")
             assert isinstance(out, dr.Reductions)
-            assert method in list(out.reductions.keys())
+            assert "GrandPrix" in list(out.reductions.keys())
             
             
     @pytest.mark.parametrize("method", ["Isomap", "LLE"])
