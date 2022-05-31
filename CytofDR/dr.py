@@ -19,12 +19,12 @@ import matplotlib.pyplot as plt
 import warnings
 from typing import Union, Optional, List, Dict, Any
 
-METHODS: Dict[str, bool]  = {"saucie": True, "ZIFA": True, "Grandprix": True}
+METHODS: Dict[str, bool]  = {"SAUCIE": True, "ZIFA": True, "Grandprix": True}
     
 try:
     import SAUCIE
 except ImportError:
-    METHODS["saucie"] = False
+    METHODS["SAUCIE"] = False
     print("No 'saucie' implementation.")
     
 try:
@@ -137,7 +137,6 @@ class Reductions():
         :param comparison_classes: Common cell types between embedding and comparison data.
         """
         self.original_data = original_data
-        self.original_data = original_data
         self.original_labels = original_labels
         self.original_cell_types = original_cell_types
         self.embedding_labels = embedding_labels
@@ -210,7 +209,7 @@ class Reductions():
             else:
                 data_distance = scipy.spatial.distance.pdist(self.original_data)
                 for e in self.reductions.keys():
-                    embedding_distance[e] = scipy.spatial.distance.pdist(e, metric="euclidean")
+                    embedding_distance[e] = scipy.spatial.distance.pdist(self.reductions[e], metric="euclidean")
                     
             for e in self.reductions.keys():
                 val: float = EvaluationMetrics.correlation(x=data_distance, y=embedding_distance[e], metric="Spearman")
@@ -263,7 +262,7 @@ class Reductions():
                 else:
                     warnings.warn("")
             
-        if "condordance" in category:
+        if "concordance" in category:
             _verbose("Evaluating concordance...", verbose=verbose)
             assert self.embedding_cell_types is not None
             assert self.comparison_cell_types is not None
@@ -343,11 +342,11 @@ class Reductions():
         return dict(zip(self.reductions.keys(), list(overall_rank)))
     
     
-    def custom_evaluate(self):
+    def _custom_evaluate(self):
         pass
 
 
-    def rank_dr_method_custom(self):
+    def _rank_dr_method_custom(self):
         pass
                 
             
@@ -441,9 +440,9 @@ class LinearMethods():
     
     
     @staticmethod
-    def factor_analysis(data: "np.ndarray",
-                        out_dims: int=2,
-                        **kwargs) -> "np.ndarray":
+    def FA(data: "np.ndarray",
+           out_dims: int=2,
+           **kwargs) -> "np.ndarray":
         """Scikit-Learn Factor Analysis (FA)
 
         This method uses the SKlearn's FA implementation.
@@ -522,7 +521,7 @@ class NonLinearMethods():
     
     
     @staticmethod
-    def saucie(data: "np.ndarray",
+    def SAUCIE(data: "np.ndarray",
                steps: int=1000,
                batch_size: int=256,
                **kwargs
@@ -834,11 +833,11 @@ def run_dr_methods(data: "np.ndarray",
     methods = [each_method.lower() for each_method in methods]
     
     if "all" in methods:
-        methods = ["pca", "ica", "umap", "sklearn_tsne", "open_tsne", "factor_analysis", "isomap", "mds", "lle",
-                   "kernelpca_poly", "kernelpca_rbf", "phate", "nmf", "spectral"]
-        if METHODS["saucie"]:
+        methods = ["pca", "ica", "umap", "sklearn_tsne", "open_tsne", "fa", "isomap", "mds", "lle",
+                   "kpca_poly", "kpca_rbf", "phate", "nmf", "spectral"]
+        if METHODS["SAUCIE"]:
             methods.append("saucie")
-        if METHODS["zifa"]:
+        if METHODS["ZIFA"]:
             methods.append("zifa")
         if METHODS["GrandPrix"]:
             methods.append("grandprix")
@@ -847,122 +846,122 @@ def run_dr_methods(data: "np.ndarray",
     
     if "pca" in methods:
         try:
-            _verbose("Running pca", verbose=verbose)
-            reductions.add_reduction(LinearMethods.PCA(data, out_dims=out_dims), "pca")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running PCA", verbose=verbose)
+            reductions.add_reduction(LinearMethods.PCA(data, out_dims=out_dims), "PCA")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "ica" in methods:
         try:
-            _verbose("Running ica", verbose=verbose)
-            reductions.add_reduction(LinearMethods.ICA(data, out_dims=out_dims), "ica") 
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running ICA", verbose=verbose)
+            reductions.add_reduction(LinearMethods.ICA(data, out_dims=out_dims), "ICA") 
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
         
     if "umap" in methods:
         try:
-            _verbose("Running umap", verbose=verbose)    
-            reductions.add_reduction(NonLinearMethods.UMAP(data, out_dims=out_dims, n_jobs=n_jobs), "umap")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running UMAP", verbose=verbose)    
+            reductions.add_reduction(NonLinearMethods.UMAP(data, out_dims=out_dims, n_jobs=n_jobs), "UMAP")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "saucie" in methods:
         try:
-            _verbose("Running saucie", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.saucie(data), "saucie")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running SAUCIE", verbose=verbose)
+            reductions.add_reduction(NonLinearMethods.SAUCIE(data), "SAUCIE")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
     
     # sklearn BH
     if "sklearn_tsne" in methods:
         try:
             _verbose("Running sklearn_tsne", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.sklearn_tsne(data, out_dims=out_dims, n_jobs=n_jobs), "sklearn_tsne")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
     
     if "open_tsne" in methods:
         try:
             _verbose("Running open_tsne", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.open_tsne(data, out_dims=out_dims, n_jobs=n_jobs), "open_tsne")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "zifa" in methods:
         try:
-            _verbose("Running zifa", verbose=verbose)
-            reductions.add_reduction(LinearMethods.ZIFA(data, out_dims=out_dims), "zifa")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running ZIFA", verbose=verbose)
+            reductions.add_reduction(LinearMethods.ZIFA(data, out_dims=out_dims), "ZIFA")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "fa" in methods:
         try:
-            _verbose("Running fa", verbose=verbose)
-            reductions.add_reduction(LinearMethods.factor_analysis(data, out_dims=out_dims), "fa")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running FA", verbose=verbose)
+            reductions.add_reduction(LinearMethods.FA(data, out_dims=out_dims), "FA")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "isomap" in methods:
         try:
-            _verbose("Running isomap", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.isomap(data, out_dims=out_dims,transform=transform, n_jobs=n_jobs), "isomap")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running Isomap", verbose=verbose)
+            reductions.add_reduction(NonLinearMethods.isomap(data, out_dims=out_dims,transform=transform, n_jobs=n_jobs), "Isomap")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "mds" in methods:
         try:
-            _verbose("Running mds", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.MDS(data, out_dims=out_dims, n_jobs=n_jobs), "mds")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running MDS", verbose=verbose)
+            reductions.add_reduction(NonLinearMethods.MDS(data, out_dims=out_dims, n_jobs=n_jobs), "MDS")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "lle" in methods:
         try:
-            _verbose("Running lle", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.LLE(data, out_dims=out_dims, transform=transform, n_jobs=n_jobs), "lle")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running LLE", verbose=verbose)
+            reductions.add_reduction(NonLinearMethods.LLE(data, out_dims=out_dims, transform=transform, n_jobs=n_jobs), "LLE")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "spectral" in methods:
         try:
-            _verbose("Running spectral", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.spectral(data, out_dims=out_dims, n_jobs=n_jobs), "spectral")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running Spectral", verbose=verbose)
+            reductions.add_reduction(NonLinearMethods.spectral(data, out_dims=out_dims, n_jobs=n_jobs), "Spectral")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
                     
     if "kpca_poly" in methods:
         try:
             _verbose("Running kpca_poly", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel="poly", n_jobs=n_jobs), "kpca_poly")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "kpca_rbf" in methods:
         try:
             _verbose("Running kpca_rbf", verbose=verbose)
             reductions.add_reduction(NonLinearMethods.kernelPCA(data, out_dims=out_dims, kernel="rbf", n_jobs=n_jobs), "kpca_rbf")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "phate" in methods:
         try:
-            _verbose("Running phate", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.phate(data, out_dims=out_dims, n_jobs=n_jobs), "phate")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            _verbose("Running PHATE", verbose=verbose)
+            reductions.add_reduction(NonLinearMethods.phate(data, out_dims=out_dims, n_jobs=n_jobs), "PHATE")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "nmf" in methods:
         try:
             _verbose("Running nmf", verbose=verbose)
-            reductions.add_reduction(LinearMethods.NMF(data, out_dims=out_dims), "nmf")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            reductions.add_reduction(LinearMethods.NMF(data, out_dims=out_dims), "NMF")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     if "grandprix" in methods:
         try:
             _verbose("Running grandprix", verbose=verbose)
-            reductions.add_reduction(NonLinearMethods.grandprix(data, out_dims=out_dims), "grandprix")
-        except Exception as e:
-            _verbose(str(e), verbose=not suppress_error_msg)
+            reductions.add_reduction(NonLinearMethods.grandprix(data, out_dims=out_dims), "GrandPrix")
+        except Exception as method_error:
+            _verbose(str(method_error), verbose=not suppress_error_msg)
             
     return reductions
