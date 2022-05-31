@@ -21,8 +21,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pytest pytest-mock pytest-cov
           pip install -r requirements.txt
-          pip install fcsparser tensorflow==1.15 fcswrite gpflow
           python setup.py install
+          pip install fcsparser tensorflow==1.15 fcswrite gpflow
           git clone https://github.com/KrishnaswamyLab/SAUCIE
           git clone https://github.com/ManchesterBioinference/GrandPrix
           cd GrandPrix
