@@ -4,6 +4,12 @@
 
 ![Logo](/assets/logo.png)
 
+| Branch | Release | CI/CD | Documentation | Code Coverage |
+| --- | --- | --- | --- | --- |
+| dev | ![Badge1](https://img.shields.io/badge/Version-PreRelease-success) |![Tests](https://github.com/kevin931/CytofDR/actions/workflows/ci.yml/badge.svg?branch=dev) | [![Documentation Status](https://readthedocs.org/projects/cytofdr/badge/?version=latest)](https://cytofdr.readthedocs.io/en/latest/?badge=latest) | [![codecov](https://codecov.io/gh/kevin931/CytofDR/branch/dev/graph/badge.svg?token=K9AJQLYU8N)](https://codecov.io/gh/kevin931/CytofDR) |
+
+
+
 ## About
 
 This is a work in progress for CyTOF DR analyses and evaluation.
