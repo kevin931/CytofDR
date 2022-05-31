@@ -1,7 +1,7 @@
-Module: CytofDR.metric
+Module: CytofDR.evaluation
 ======================================
 
-.. automodule:: CytofDR.metric
+.. automodule:: CytofDR.evaluation
     :members: EvaluationMetrics, PointClusterDistance, Annoy
     :undoc-members:
     :show-inheritance:

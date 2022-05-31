@@ -11,7 +11,7 @@ import phate
 
 import scipy.spatial
 import scipy.stats
-from CytofDR.metric import EvaluationMetrics, PointClusterDistance
+from CytofDR.evaluation import EvaluationMetrics, PointClusterDistance
 
 import seaborn as sns
 import matplotlib.pyplot as plt
