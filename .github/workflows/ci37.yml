@@ -22,7 +22,7 @@ jobs:
           python -m pip install pytest pytest-mock pytest-cov
           pip install -r requirements.txt
           python setup.py install
-          python -m pip install fcsparser tensorflow==1.15 fcswrite gpflow
+          python -m pip install fcsparser tensorflow==1.15 fcswrite gpflow protobuf==3.20
           git clone https://github.com/KrishnaswamyLab/SAUCIE
           git clone https://github.com/ManchesterBioinference/GrandPrix
           cd GrandPrix
@@ -35,7 +35,7 @@ jobs:
       - name: Test with pytest
         run: |
           pytest --cov CytofDR --cov-report xml
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v2
-      #   with:
-      #     fail_ci_if_error: true
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
