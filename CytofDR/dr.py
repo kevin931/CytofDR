@@ -540,6 +540,10 @@ class NonLinearMethods():
         :return: The low-dimensional embedding.
         """
         
+        if batch_size > data.shape[0]:
+            batch_size = data.shape[0]
+            warnings.warn(f"Batch size too large: setting to {data.shape[0]}")
+        
         saucie: "SAUCIE.model.SAUCIE" = SAUCIE.SAUCIE(data.shape[1], **kwargs)
         train: "SAUCIE.loader.Loader" = SAUCIE.Loader(data, shuffle=True)
         saucie.train(train, steps=steps, batch_size=batch_size)
