@@ -277,7 +277,7 @@ class TestReductions():
             assert "No reductions to evalate. Add your reductions first." in str(e)
             
                         
-    @pytest.mark.parametrize("original_data, original_labels, embedding_label",
+    @pytest.mark.parametrize("original_data, original_labels, embedding_labels",
                              [(None, np.repeat(np.array([1,2]), 5), {"new_dr": np.repeat(np.array([1,2]), 5)}),
                               (np.random.rand(10, 2), None, {"new_dr": np.repeat(np.array([1,2]), 5)}),
                               (np.random.rand(10, 2), np.repeat(np.array([1,2]), 5), None)])
