@@ -47,6 +47,13 @@ class TestEvaluationMetrics():
     def test_correlation(self, metric: str):
         assert np.isclose(evaluation.EvaluationMetrics.correlation(self.a, self.b, metric), 1)
         
+    
+    def test_correlation_value_error(self):
+        try:
+            evaluation.EvaluationMetrics.correlation(self.a, self.b, "Wrong")
+        except ValueError as e:
+            assert "Unsupported metric: must be 'Pearson' or 'Spearman.'" in str(e)
+        
         
     def test_residual_variance(self):
         assert np.isclose(evaluation.EvaluationMetrics.residual_variance(self.a, self.b), 0)
@@ -58,6 +65,12 @@ class TestEvaluationMetrics():
             evaluation.EvaluationMetrics.residual_variance(r=r)
         except ValueError as e:
             assert "'r' must be between -1 and 1." in str(e)
+            
+            
+    def test_residual_variance_given_r(self):
+        r_var: float = evaluation.EvaluationMetrics.residual_variance(r=0.1)
+        assert np.isclose(r_var, 0.99)
+        
         
     
     @pytest.mark.parametrize("x,y", [(np.array([1, 2, 3]), None),

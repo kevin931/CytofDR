@@ -4,8 +4,10 @@ import numpy as np
 
 import sys
 from io import StringIO
+import os
+import shutil
 import pytest
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Optional
 
 METHODS: Dict[str, bool] = {"SAUCIE": True, "ZIFA": True, "GrandPrix": True}
 
@@ -169,8 +171,9 @@ class TestReductions():
     
     @classmethod
     def setup_class(cls):
-        embedding: np.ndarray = np.random.rand(10, 2)
-        cls.results = dr.Reductions({"test_dr": embedding})
+        cls.embedding: np.ndarray = np.random.rand(10, 2)
+        cls.results = dr.Reductions({"test_dr": cls.embedding})
+        os.mkdir("./tmp_pytest/")
         
     
     def test_get_reduction(self):
@@ -185,6 +188,13 @@ class TestReductions():
         assert "new_dr" in list(self.results.reductions.keys())
         assert self.results.get_reduction("new_dr").shape == (10, 2)
         
+        
+    def test_add_reduction_no_replace_error(self):
+        try:
+            self.results.add_reduction(self.embedding, "test_dr")
+        except ValueError as e:
+            assert "Reduction already exists. Set 'replace' to True if replacement is intended." in str(e)
+            
         
     def test_add_metadata(self):
         
@@ -250,6 +260,57 @@ class TestReductions():
     def test_evaluate_k_neighbors(self):
         self.results.evaluate(category="local", k_neighbors=3)
         assert "local" in self.results.evaluations.keys()
+        
+        
+    def test_evaluate_metric_error(self):
+        try:
+            self.results.evaluate(category="global", pwd_metric="Wrong")
+        except ValueError as e:
+            assert "Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only." in str(e)
+            
+            
+    def test_evaluate_no_reduction_error(self):
+        reduction: dr.Reductions = dr.Reductions()
+        try:
+            reduction.evaluate(category="global")
+        except ValueError as e:
+            assert "No reductions to evalate. Add your reductions first." in str(e)
+            
+                        
+    @pytest.mark.parametrize("original_data, original_labels, embedding_label",
+                             [(None, np.repeat(np.array([1,2]), 5), {"new_dr": np.repeat(np.array([1,2]), 5)}),
+                              (np.random.rand(10, 2), None, {"new_dr": np.repeat(np.array([1,2]), 5)}),
+                              (np.random.rand(10, 2), np.repeat(np.array([1,2]), 5), None)])
+    def test_evaluate_no_metadata(self, original_data: Optional[np.ndarray], original_labels: Optional[np.ndarray], embedding_labels: Optional[dict]):
+        results = dr.Reductions({"new_dr": self.embedding})
+        results.original_data = original_data
+        results.original_labels = original_labels
+        results.embedding_labels = embedding_labels
+        try:
+            results.evaluate(category="global")
+        except ValueError as e:
+            assert "Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes. " in str(e)
+            
+    
+    def test_custom_evaluate(self):
+        self.results._custom_evaluate()
+        assert True
+        
+        
+    def test_rank_dr_custom(self):
+        self.results._rank_dr_method_custom()
+        assert True
+        
+        
+    def test_plot_reduction(self):
+        self.results.plot_reduction("test_dr", "./tmp_pytest/test_plot.png")
+        if not os.path.exists("./tmp_pytest/test_plot.png"):
+            assert False
+        
+        
+    @classmethod
+    def teardown_class(cls):
+        shutil.rmtree("./tmp_pytest/")
 
 
 def test_verbose():

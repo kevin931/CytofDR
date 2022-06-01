@@ -3,3 +3,5 @@ exclude_lines =
     if __name__ == .__main__.:
     except ImportError:
     except Exception as method_error:
+    pragma: no cover
+    warnings.warn

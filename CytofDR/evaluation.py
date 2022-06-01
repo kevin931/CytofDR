@@ -46,7 +46,7 @@ class EvaluationMetrics():
             # Try remove the i-th obs itself
             try:
                 data_neighbors.remove(i)
-            except ValueError:
+            except ValueError: # pragma: no cover
                 data_neighbors = data_neighbors[0:(len(data_neighbors)-1)]
                 
             annoy_data_neighbors[i] = data_neighbors

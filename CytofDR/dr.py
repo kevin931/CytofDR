@@ -260,7 +260,7 @@ class Reductions():
                     self.evaluations["downstream"]["cell type-clustering concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.original_cell_types,
                                                                                                                     y_labels=self.embedding_labels[e])
                 else:
-                    warnings.warn("")
+                    warnings.warn("No 'original_sell_types': Cell type-clustering concordance is not evaluated.")
             
         if "concordance" in category:
             _verbose("Evaluating concordance...", verbose=verbose)
