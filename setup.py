@@ -7,7 +7,7 @@ setuptools.setup(
     version = VERSION,
     description = "Dimension Reduction Methods and Benchmarking Tools for CyTOF",
     packages=["CytofDR"],
-    python_requires=">=3.9",
+    python_requires=">=3.7",
     install_requires=["scikit-learn",
                       "numpy",
                       "scipy",
