@@ -163,7 +163,7 @@ class Reductions():
         :param n_clusters: The number of clusters
         :param cluster_data: Whether to cluster original data, defaults to True
         :param cluster_embedding: Whether to cluster embeddings, defaults to True
-        :param **kwargs: Keyword only arguments passed into ``sklearn.cluster.KMeans``.
+        :param kwargs: Keyword only arguments passed into ``sklearn.cluster.KMeans``.
         """
         
         if cluster_data and self.original_data is None:
