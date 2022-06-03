@@ -111,7 +111,7 @@ class Reductions():
     
     
     def add_evaluation_metadata(self,
-                                original_data: "np.ndarray",
+                                original_data: Optional["np.ndarray"]=None,
                                 original_labels: Optional["np.ndarray"]=None,
                                 original_cell_types: Optional["np.ndarray"]=None,
                                 embedding_labels: Optional[Dict[str, "np.ndarray"]]=None,
@@ -122,9 +122,8 @@ class Reductions():
                                 ):
         """Add supporting metadata for DR evaluation.
 
-        A few more metadata are crucial for evaluation. ``original_data``, ``original_labels``,
-        and ``embedding_labels`` are mendatory. Other metadata are optional, based on the metrics you
-        wish to run.
+        This method allows you to add metadata in the process of DR evaluation. They do not
+        override existing metadata unless actual inputs are specified.
         
         :param original_data: The original space data before DR.
         :param original_labels: Clusterings based on original space data.
@@ -136,14 +135,22 @@ class Reductions():
         :param comparison_cell_types: Cell types based on comparison data.
         :param comparison_classes: Common cell types between embedding and comparison data.
         """
-        self.original_data = original_data
-        self.original_labels = original_labels
-        self.original_cell_types = original_cell_types
-        self.embedding_labels = embedding_labels
-        self.embedding_cell_types = embedding_cell_types
-        self.comparison_data = comparison_data
-        self.comparison_cell_types = comparison_cell_types
-        self.comparison_classes = comparison_classes
+        if original_data is not None:
+            self.original_data = original_data
+        if original_labels is not None:
+            self.original_labels = original_labels
+        if original_cell_types is not None:
+            self.original_cell_types = original_cell_types
+        if embedding_labels is not None:
+            self.embedding_labels = embedding_labels
+        if embedding_cell_types is not None:
+            self.embedding_cell_types = embedding_cell_types
+        if comparison_data is not None:
+            self.comparison_data = comparison_data
+        if comparison_cell_types is not None:
+            self.comparison_cell_types = comparison_cell_types
+        if comparison_classes is not None:
+            self.comparison_classes = comparison_classes
         
     
     def evaluate(self,
@@ -844,6 +851,7 @@ def run_dr_methods(data: "np.ndarray",
             methods.append("grandprix")
             
     reductions: Reductions = Reductions()
+    reductions.add_evaluation_metadata(original_data=data)
     
     if "pca" in methods:
         try:

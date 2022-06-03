@@ -1,4 +1,3 @@
-from statistics import median_high
 from CytofDR import dr
 import numpy as np
 
@@ -215,6 +214,20 @@ class TestReductions():
                                              comparison_data=comparison_data,
                                              comparison_cell_types=comparison_cell_types,
                                              comparison_classes=comparison_classes)
+        
+        assert isinstance(self.results.original_data, np.ndarray)
+        assert isinstance(self.results.original_labels, np.ndarray)
+        assert isinstance(self.results.original_cell_types, np.ndarray)
+        assert isinstance(self.results.embedding_labels, dict)
+        assert isinstance(self.results.embedding_cell_types, dict)
+        assert isinstance(self.results.comparison_data, np.ndarray)
+        assert isinstance(self.results.comparison_classes, list)
+        assert isinstance(self.results.comparison_cell_types, np.ndarray)
+        
+        
+    def test_add_metadata_none(self):
+        
+        self.results.add_evaluation_metadata()
         
         assert isinstance(self.results.original_data, np.ndarray)
         assert isinstance(self.results.original_labels, np.ndarray)

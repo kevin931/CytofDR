@@ -17,6 +17,8 @@ class TestEvaluationMetrics():
     def setup_class(cls):
         cls.data: np.ndarray = np.abs(np.random.rand(100, 10))
         cls.data_labels: np.ndarray = np.repeat(["a", "b"], 50)
+        cls.comparison_data: np.ndarray = np.array(np.random.rand(50, 20))
+        cls.comparison_labels: np.ndarray = np.repeat(["a", "b", "c", "d", "e"], 10)
         cls.embedding: np.ndarray = np.random.rand(100, 2)
         cls.embedding_labels: np.ndarray = np.repeat(["a", "b", "c", "d"], 25)
         cls.a: np.ndarray = np.array([1, 2, 3])
@@ -150,7 +152,7 @@ class TestEvaluationMetrics():
     @pytest.mark.parametrize("method", ["emd", "cluster_distance"])
     def test_embedding_concordance(self, method: str):
         score: Union[float, str] = evaluation.EvaluationMetrics.embedding_concordance(self.embedding, self.embedding_labels,
-                                                                                      self.data, self.data_labels, ["a", "b"],
+                                                                                      self.comparison_data, self.comparison_labels, ["a", "b"],
                                                                                       method=method)
         assert isinstance(score, float)
         assert score >= 0
@@ -158,14 +160,14 @@ class TestEvaluationMetrics():
         
     def test_embedding_concordance_comparison_labels(self):
         score: Union[float, str] = evaluation.EvaluationMetrics.embedding_concordance(self.embedding, self.embedding_labels,
-                                                                                      self.data, self.data_labels)
+                                                                                      self.comparison_data, self.comparison_labels)
         assert isinstance(score, float)
         assert score >= 0
         
         
     def test_embedding_concordance_na(self):
         score: Union[float, str] = evaluation.EvaluationMetrics.embedding_concordance(self.embedding, self.embedding_labels,
-                                                                                      self.data, self.data_labels, ["e"])
+                                                                                      self.comparison_data, self.comparison_labels, ["e"])
         assert isinstance(score, str)
         assert score == "NA"
     
