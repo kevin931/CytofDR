@@ -266,6 +266,7 @@ class Reductions():
             _verbose("Evaluating concordance...", verbose=verbose)
             assert self.embedding_cell_types is not None
             assert self.comparison_cell_types is not None
+            assert self.original_cell_types is not None
             assert self.comparison_data is not None
             self.evaluations["concordance"] = {"cluster distance": {}, "emd": {}, "gating concordance: ARI": {}, "gating concordance: NMI": {}}
             for e in self.reductions.keys():
@@ -282,9 +283,9 @@ class Reductions():
                                                                                                                  self.comparison_classes,
                                                                                                                  "cluster_distance")
                 self.evaluations["concordance"]["gating concordance: ARI"][e] = EvaluationMetrics.ARI(x_labels=self.embedding_cell_types[e],
-                                                                                                      y_labels=self.comparison_cell_types)
+                                                                                                      y_labels=self.original_cell_types)
                 self.evaluations["concordance"]["gating concordance: NMI"][e] = EvaluationMetrics.NMI(x_labels=self.embedding_cell_types[e],
-                                                                                                      y_labels=self.comparison_cell_types)
+                                                                                                      y_labels=self.original_cell_types)
           
 
     def rank_dr_methods(self, tie_method: str="max"):
