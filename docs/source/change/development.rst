@@ -11,15 +11,24 @@ maintenance commitments.
 Project Roadmap and Milestones
 *********************************
 
-Major milestones:
+Our package has hit so many milestones so far! And better yet, we have even more updates
+planned for the future! Here, we would like to 
 
-* Project setup
-* Unit testing
-* Documentation
+Achieved Milestones
+--------------------
 
-If you have a suggestion, please let us know!
+- Framwork for DR methods
+- DR evaluation framework and ranking
+- Documentation and package preparation
 
----------
+Future Milestones
+--------------------
+
+- Add support for custom evaluation framework
+- Add clustering support
+- Add more mapping/transform capabilities beyond LLE and Isomap
+
+---------------------------
 
 *********************************
 Future Support and Maintenance
