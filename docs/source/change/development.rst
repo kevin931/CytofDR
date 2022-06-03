@@ -18,14 +18,13 @@ Achieved Milestones
 --------------------
 
 - Framwork for DR methods
-- DR evaluation framework and ranking
+- DR evaluation framework and ranking with builtin clustering
 - Documentation and package preparation
 
 Future Milestones
 --------------------
 
 - Add support for custom evaluation framework
-- Add clustering support
 - Add more mapping/transform capabilities beyond LLE and Isomap
 
 ---------------------------

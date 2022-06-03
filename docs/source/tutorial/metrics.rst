@@ -3,9 +3,10 @@ Evaluation Metrics
 
 One of the most important aspects of DR benchmarking is choosing a set of evaluation metrics.
 If you are just looking to choose a DR method for your analyses, you can either use our
-`guidelines <>`_ or be more careful and benchmark yourself. As our own experiences went, some
-samples really benefit from careful selection of methods. Here, we will walk you through the
-categories of evaluation metrics and how you can effectively use them in your workflow. 
+`guidelines <https://cytofdr.readthedocs.io/en/latest/tutorial/method_choice.html>`_ or be more
+careful and benchmark yourself. As our own experiences went, some samples really benefit from
+careful selection of methods. Here, we will walk you through the categories of evaluation metrics
+and how you can effectively use them in your workflow. 
 
 In this section, we will again be utilizing the same dataset from the Oetjen cohort, but we will
 need some metadat to work with. 
@@ -73,7 +74,7 @@ In this category, there are two equally weighted metrics: ``COR`` and ``EMD``. Y
 the inputs? Great question! One thought is to use pairwise distance between all cells in the original
 and the embedding space, but the CyTOF sample size makes calculating and storing the matrix impractical.
 To remedy this, we use the Point Cluster Distance, which utilizes pairwise distance but between
-individual cells and cluster centroid (more on this `here <>`_).
+individual cells and cluster centroid (more on this `here <https://cytofdr.readthedocs.io/en/latest/tutorial/optimizations.html>`_).
 
 
 Local Structure Preservation (``local``)
@@ -144,6 +145,12 @@ whether the relationship between cells have changed. Further, we implemented
 of the original space and cell types of the embedding space. This category is mainly a
 validation metric because this who category relies on the idea that the cell typing
 information makes sense.
+
+.. note::
+    
+    The comparison data and the original CyTOF samples do not have to have the same 
+    features or shapes. However, they do have to share a subset common cell types
+    so that relationships can be calculated.
 
 ----------------------------------
 
@@ -219,59 +226,72 @@ Now, you too can benchmark DR like a pro!
 Hands-On: Evaluating and Ranking Your DR
 ******************************************
 
-With all the knowledge, you can evaluate and rank your methods. If you stick with the default pipeline,
-everything will very easy! But before we begin, we will need the following metadata aside from the
-expression matrix: 
+With all the knowledge, you can evaluate and rank your methods. If you stick with the default pipeline
+with the ``auto_cluster`` option, everything will be very easy! Or alternatively, you can provide your
+own clusterings and cell types. In this whole section, we will work with  a ``Reductions`` object
+with DR already performed:
+
+.. code-block:: python
+
+    >>> type(results)
+    <class 'CytofDR.dr.Reductions'>
+
+    >>> results.reductions.keys
+    dict_keys(['PCA', 'ICA', 'UMAP'])
+
+since we will be focusing on evaluation only.
+
+Simple Evaluation with Auto Clustering
+---------------------------------------
+
+If you've read the quickstart guide, this should look very familiar to you:
+
+.. code-block:: python
+
+    >>> results.evaluate(category = ["global", "local", "downstream"], auto_cluster = True, n_clusters = 20)
+    Evaluating global...
+    Evaluating local...
+    Evaluating downstream...
+
+We will not spend too much time on this since this is truly the easiest way to
+get going! However, before we depart, there are a few remarks:
+
+1. You should really be thinking about whether ``KMeans`` is appropriate. This is a stop-gap solution.
+2. Changing ``n_clusters`` is advisable since the default is only a guess at best.
+
+
+Example with Your Own Clusterings and Cell Types
+--------------------------------------------------
+
+Before we start evaluating, let's explore the format of other metadata
+if you will need: 
 
 .. code-block:: python
 
     >>> original_labels
-
     array(['20', '22', '4', ..., '4', '22', '22'], dtype='<U2')
 
     >>> original_cell_types
-
     array(['CD8T', 'CD4T', 'unassigned', ..., 'unassigned', 'CD4T', 'CD4T'], dtype='<U11')
 
     >>> embedding_labels
-
     {'PCA': array(['18', '23', '4', ..., '4', '23', '19'], dtype='<U2'),
      'UMAP': array(['23', '22', '7', ..., '7', '22', '22'], dtype='<U2'),
      'ICA': array(['12', '7', '4', ..., '4', '7', '1'], dtype='<U2')}
 
     >>> embedding_cell_types
-
     {'PCA': array(['CD4T', 'CD4T', 'unassigned', ..., 'unassigned', 'CD4T', 'CD4T'], dtype='<U10'),
      'UMAP': array(['CD8T', 'CD4T', 'unassigned', ..., 'unassigned', 'CD4T', 'CD4T'], dtype='<U11'),
      'ICA': array(['CD4T', 'CD4T', 'NK', ..., 'NK', 'CD4T', 'CD8T'], dtype='<U10')}
 
-You will need the clustering for the original and DR space withe ``original_labels`` and ``embedding_labels``.
-These two are mandatory. Optionally, you can also add original space cell types for **Cell Type-Clustering Concordance**,
-which we will detail later.
+As you can see, data are stored with arrays, but **Notice that ``embedding_labels`` is a
+dictionary** because we need clusterings based on each DR method. Original space cell types
+here are optional because they allow for only **Cell Type-Clustering Concordance**.
 
 .. note:: 
 
-    Notice that ``embedding_labels`` is a dictionary because we need clusterings based on each DR method.
-
-**Caveat**: Of course, we don't have labels of embeddings ahead of the time
-because we are performing DR right here! We will include clustering capabilities in this package
-in the future. For now, you will have to cluster using another package of your choice!
-
-
-Example with Cell Types
--------------------------
-
-Suppose you have a ``Reductions`` object with DR already performed:
-
-.. code-block:: python
-
-    >>> type(results)
-
-    <class 'CytofDR.dr.Reductions'>
-
-    >>> results.reductions.keys
-
-    dict_keys(['PCA', 'ICA', 'UMAP'])
+    Of course, we don't have labels of embeddings ahead of the time because we are performing
+    DR right here! You will have to export the embeddings or call another package to perform it.
 
 Then, you can add your metadat and proceed to evaluate your methods:
 
@@ -282,13 +302,11 @@ Then, you can add your metadat and proceed to evaluate your methods:
     ...                                 original_cell_types = original_cell_types,
     ...                                 embedding_labels = embedding_labels)
     >>> results.evaluate(category = ["global", "local", "downstream"])
-
     Evaluating global...
     Evaluating local...
     Evaluating downstream...
 
     >>> results.rank_dr_methods()
-
     {'PCA': 1.9722222222222223, 'ICA': 1.5277777777777777, 'UMAP': 2.5}
 
 As you can see, the methods are successfully evaluated and ranked! As expected,
@@ -303,11 +321,9 @@ procedure is the same:
 
 .. code-block:: python
 
-    >>> results.add_evaluation_metadata(original_data = expression,
-                                        original_labels = original_labels,
-                                        embedding_labels = embedding_labels)
+    >>> results.add_evaluation_metadata(original_labels = original_labels,
+    ...                                 embedding_labels = embedding_labels)
     >>> results.evaluate(category = ["global", "local", "downstream"])
-
     Evaluating global...
     Evaluating local...
     Evaluating downstream...
@@ -319,7 +335,6 @@ procedure is the same:
     warnings.warn("No 'original_sell_types': Cell type-clustering concordance is not evaluated.")
 
     >>> results.rank_dr_methods()
-
     {'PCA': 2.0416666666666665, 'ICA': 1.4583333333333333, 'UMAP': 2.5}
 
 This runs successfully, but notice that a warning message has been generated! This is
@@ -343,14 +358,11 @@ formats, we have:
 .. code-block:: python
 
     >>> embedding_cell_types
-
     {'PCA': array(['CD4T', 'CD4T', 'unassigned', ..., 'unassigned', 'CD4T', 'CD4T'], dtype='<U10'),
      'UMAP': array(['CD8T', 'CD4T', 'unassigned', ..., 'unassigned', 'CD4T', 'CD4T'], dtype='<U11'),
      'ICA': array(['CD4T', 'CD4T', 'NK', ..., 'NK', 'CD4T', 'CD8T'], dtype='<U10')}
 
-
     >>> comparison_data
-
     array([[0.        , 0.        , 0.        , ..., 7.74983338, 6.49814686, 5.80650478],
            [0.        , 0.        , 5.45412597, ..., 8.22269542, 8.81728217, 6.83720621],
            [0.        , 0.        , 0.        , ..., 7.59089168, 8.28378631, 7.03165459],
@@ -360,7 +372,6 @@ formats, we have:
            [0.        , 0.        , 0.        , ..., 8.24210013, 8.61358196, 6.34647124]])
 
     >>> comparison_cell_types
-
     array(['CD4T', 'CD4T', 'CD4T', ..., 'CD4T', 'CD4T', 'Macrophages'], dtype='<U11')
 
 
@@ -376,14 +387,34 @@ And with these, we can modify our pipelines slightly to run concordance along wi
     ...                                 comparison_data = comparison_data,
     ...                                 comparison_cell_types = comparison_cell_types)
     >>> results.evaluate(category = ["global", "local", "downstream", "concordance"])
-
     Evaluating global...
     Evaluating local...
     Evaluating downstream...
     Evaluating concordance...
 
     >>> results.rank_dr_methods()
-
     {'PCA': 1.8958333333333335, 'ICA': 1.4791666666666665, 'UMAP': 2.625}
 
-And this is how you run concordance!
+And this is how you run concordance! The above example using all common cell types betweem the
+``comparison_cell_types`` and ``embedding_cell_type``. If you wish, you can also specify
+the particular cell types you want to consider:
+
+.. code-block:: python
+
+    >>> results.add_evaluation_metadata(original_data = expression,
+    ...                                 original_labels = original_labels,
+    ...                                 original_cell_types = original_cell_types,
+    ...                                 embedding_labels = embedding_labels,
+    ...                                 embedding_cell_types = embedding_cell_types,
+    ...                                 comparison_data = comparison_data,
+    ...                                 comparison_cell_types = comparison_cell_types,
+    ...                                 comparison_classes = ["CD4T", "CD8T", "NK", "Macrophages"])
+    >>> results.evaluate(category = ["global", "local", "downstream", "concordance"])
+    Evaluating global...
+    Evaluating local...
+    Evaluating downstream...
+    Evaluating concordance...
+
+This is especially handy when there are unassigned cells, and you don't want to include them in 
+your evaluation metrics. Or, if you are interested in only a subset of the cells types, this
+``comparison_classes`` option will be your friend.

@@ -160,70 +160,43 @@ categories of metrics:
 .. note:: The ``concordance`` category is more advanced! We will detail this more in the tutorial section.
 
 
-Add Evaluation Metadata
--------------------------
+Simple Evaluation with Auto Clustering
+---------------------------------------------
 
-Since many of the evaluation methods rely on additional information, we recommend have at least clusterings
-for the original space data (expression matrices) and the embeddings! We will provide an interface to cluster
-them in the future. However, if you already have the cluters ready, you can add them using the following method:
-
-.. code-block:: python
-
-    >>> results.add_evaluation_metadata(original_data = expression,
-                                        original_labels = original_labels,
-                                        embedding_labels = embedding_labels)
-
-
-These are the **bare-minimum** needed! Here, ``original_data`` and ``original_labels`` are ``numpy`` arrays.
-On the other hand, ``embedding_labels`` is a dictionary with name of DR methods as keys and ``numpy`` arrays
-of labels as the values. You can, of course, load these data using the methods demonstrated above!
-
-However, if you also have cell types:
+For DR evaluation, we need clustering labels for both the original data and all the DR embeddings.
+We offer a builtin pipeline with ``KMeans`` clustering for you to evaluate your dimension reduction
+in one simple step!
 
 .. code-block:: python
 
-    >>> results.add_evaluation_metadata(original_data = expression,
-                                        original_labels = original_labels,
-                                        original_cell_types = original_cell_types,
-                                        embedding_labels = embedding_labels,
-                                        embedding_cell_types = embedding_cell_types)
-
-which will allow you to run **Cell Type-Clustering Concordace** metrics as part of the ``downstream`` category. Here,
-``original_cell_types`` is just a ``numpy`` array, whereas ``embedding_cell_types`` is a dictionary.
-
-
-Run Evaluation
-----------------
-
-Once you have all your metadata loaded into the object, you can simply do the following:
-
-.. code-block:: python
-    
-    >>> results.evaluate(category = ["global", "local", "downstream"])
-
+    >>> results.evaluate(category = ["global", "local", "downstream"], auto_cluster = True, n_clusters = 20)
     Evaluating global...
     Evaluating local...
     Evaluating downstream...
 
-Even if you don't have ``embedding_cell_types`` and ``original_cell_types``, the method will adjust accordingly.
-You can access the metrics all at once:
+.. note::
+    
+    We do recommend you change ``n_clusters`` according your knowledge of your dataset. If you have a rough
+    idea of the types of cells present, it is a good idea to use that to your advantage.
+
+With this, you have obtained your first DR evaluation! To check the results, simply access the ``evaluations``
+attribute, which is a dictionary:
 
 .. code-block:: python
 
     >>> results.evaluations
 
-    {'global': {'spearman': {'PCA': 0.4895579809742763, 'UMAP': 0.1350164421924906, 'open_tsne': 0.39192577549108076},
-    'emd': {'PCA': 2.2530293870587297, 'UMAP': 3.239140089959797, 'open_tsne': 25.696447153678164}},
-    'local': {'knn': {'PCA': 0.0005857277667501871, 'UMAP': 0.002525137483323029, 'open_tsne': 0.004472682307767401},
-    'npe': {'PCA': 1105.9800000000002, 'UMAP': 675.9279999999999, 'open_tsne': 716.3840000000001}},
-    'downstream': {'cluster reconstruction: silhouette': {'PCA': 0.028794289043266457, 'UMAP': 0.31541705, 'open_tsne': 0.1715173434882497},
-    'cluster reconstruction: DBI': {'PCA': 6.088182130120897, 'UMAP': 2.682592524176189, 'open_tsne': 2.1286075869918295},
-    'cluster reconstruction: CHI': {'PCA': 51150.88086144542, 'UMAP': 146647.8329712303, 'open_tsne': 48843.649928793435},
-    'cluster reconstruction: RF': {'PCA': 0.6565512141008258, 'UMAP': 0.922223591766301, 'open_tsne': 0.9340811044003451},
-    'cluster concordance: ARI': {'PCA': 0.42098863850027674, 'UMAP': 0.687537599275774, 'open_tsne': 0.46566317172488875},
-    'cluster concordance: NMI': {'PCA': 0.5708888916428192, 'UMAP': 0.7700788594536911, 'open_tsne': 0.6756652682496738},
-    'cell type-clustering concordance: ARI': {'PCA': 0.20987452324575112, 'UMAP': 0.3269339854687899, 'open_tsne': 0.1472176998953652},
-    'cell type-clustering concordance: NMI': {'PCA': 0.30133272742067724, 'UMAP': 0.44913037545258316, 'open_tsne': 0.35246029727387274}}}
+    {'global': {'spearman': {'PCA': 0.5525689817179995, 'UMAP': 0.2008244633670485, 'open_tsne': 0.39277360696372215},
+     'emd': {'PCA': 2.2033917947258224, 'UMAP': 3.112385214988549, 'open_tsne': 27.49076176658772}},
+     'local': {'knn': {'PCA': 0.0005694575510071263, 'UMAP': 0.0023624353258924215, 'open_tsne': 0.0044678012430444825},
+     'npe': {'PCA': 1488.405, 'UMAP': 997.0799999999999, 'open_tsne': 1180.4850000000001}},
+     'downstream': {'cluster reconstruction: silhouette': {'PCA': 0.06870182580853562, 'UMAP': 0.30413094, 'open_tsne': 0.25822831903485394},
+     'cluster reconstruction: DBI': {'PCA': 2.790046489762818, 'UMAP': 1.8574548809614353, 'open_tsne': 1.3668004451334124},
+     'cluster reconstruction: CHI': {'PCA': 90455.42338884463, 'UMAP': 138076.51781759382, 'open_tsne': 68364.87227338477},
+     'cluster reconstruction: RF': {'PCA': 0.5735979292493529, 'UMAP': 0.888894367065204, 'open_tsne': 0.8947121903118452},
+     'cluster concordance: ARI': {'PCA': 0.36516898619341764, 'UMAP': 0.6103950568737259, 'open_tsne': 0.5267480266406396},
+     'cluster concordance: NMI': {'PCA': 0.6099045072502076, 'UMAP': 0.7625670100165506, 'open_tsne': 0.7245013680103589},
+     'cell type-clustering concordance: ARI': {}, 'cell type-clustering concordance: NMI': {}}}
 
 This is a nested dictionary with the following levels:
 
@@ -237,20 +210,67 @@ This can be a little confusing, but you can access the sub-levels individually:
 
     >>> results.evaluations["global"]
 
-    {'spearman': {'PCA': 0.4895579809742763, 'UMAP': 0.1350164421924906, 'open_tsne': 0.39192577549108076},
-    'emd': {'PCA': 2.2530293870587297, 'UMAP': 3.239140089959797, 'open_tsne': 25.696447153678164}}
+    {'spearman': {'PCA': 0.5525689817179995, 'UMAP': 0.2008244633670485, 'open_tsne': 0.39277360696372215},
+     'emd': {'PCA': 2.2033917947258224, 'UMAP': 3.112385214988549, 'open_tsne': 27.49076176658772}}
 
 
 or you can look at individual metrics:
 
 .. code-block:: python
     
-    >>> results.evaluatios["global"]["emd"]
+    >>> results.evaluations["global"]["emd"]
 
-    {'PCA': 2.2530293870587297, 'UMAP': 3.239140089959797, 'open_tsne': 25.696447153678164}
+    {'PCA': 2.2033917947258224, 'UMAP': 3.112385214988549, 'open_tsne': 27.49076176658772}
 
 If you are so inclined, you can utilize these results directly. However, if you would like us to do the work for you,
 read on!
+
+
+.. note::
+    
+    Notice that there are no values for ``cell type-clustering concordance: ARI`` and ``cell type-clustering concordance: NMI``.
+    This is because we don't have a builtin pipeline for cell typing. You must provide these information on your own, which is
+    covered in the next section.
+
+
+Use Your Own Labels
+-------------------------
+
+If you are a more advanced user, you may be aware that ``KMeans`` may not be the ideal solution for CyTOF.
+You may wish to cluster using ``FlowSOM`` in R or your own custom toolchain. If you have these data, you
+can easily add them to the object and them perform evaluations as usual:
+
+.. code-block:: python
+
+    >>> results.add_evaluation_metadata(original_labels = original_labels,
+    ...                                 embedding_labels = embedding_labels)
+
+
+These are the **bare-minimum** needed! Here, ``original_labels`` is a ``numpy`` array. On the other hand,
+``embedding_labels`` is a dictionary with name of DR methods as keys and ``numpy`` arrays
+of labels as the values. You can, of course, load these data using the methods demonstrated above!
+
+However, if you also have cell types:
+
+.. code-block:: python
+
+    >>> results.add_evaluation_metadata(original_labels = original_labels,
+    ...                                 original_cell_types = original_cell_types,
+    ...                                 embedding_labels = embedding_labels,
+    ...                                 embedding_cell_types = embedding_cell_types)
+
+which will allow you to run **Cell Type-Clustering Concordace** metrics as part of the ``downstream`` category. Here,
+``original_cell_types`` is just a ``numpy`` array, whereas ``embedding_cell_types`` is a dictionary.
+
+Afterwards, you can run your DR evaluation as usual using the "Simple" method. All the downstream toolchains
+remain the same, except that the ``auto_cluster`` and ``n_clusters`` parameters no longer play a role: 
+
+.. code-block:: python
+
+    >>> results.evaluate(category = ["global", "local", "downstream"])
+    Evaluating global...
+    Evaluating local...
+    Evaluating downstream...
 
 
 Rank DR Methods
@@ -262,12 +282,12 @@ Now, you can finally rank your methods! This will be fairly easy:
 
     >>> results.rank_dr_methods()
 
-    {'PCA': 1.8055555555555556, 'UMAP': 2.277777777777778, 'open_tsne': 1.9166666666666667}
+    {'PCA': 1.7083333333333333, 'UMAP': 2.25, 'open_tsne': 2.0416666666666665}
 
 As you can see, this returns a dictonary with method names the methods as keys and their scores
 as values. If you see decimals, don't panic! at your computer! We rank each metric
 individually and the final results are appropriately weighted! Here, larger score is
-better! Obviously, if you have read `our paper <https://www.biorxiv.org/content/10.1101/2022.04.26.489549v1.abstract>`_,
+better! Obviously, if you have read `our paper <https://doi.org/10.1101/2022.04.26.489549>`_,
 you know that UMAP is pretty good at what it does when compared to PCA and tSNE! 
 
 
@@ -282,16 +302,22 @@ Putting everything together, we will have a pipeline like this:
 .. code-block:: python
 
     >>> from CytofDR import dr
-
     >>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
-    >>> results.add_evaluation_metadata(original_data = expression,
-    ...                                 original_labels = original_labels,
+    >>> results.evaluate(category = ["global", "local", "downstream"])
+    >>> results.rank_dr_methods()
+
+Or alternatively with your own clusters and cell types: 
+
+.. code-block:: python
+
+    >>> from CytofDR import dr
+    >>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
+    >>> results.add_evaluation_metadata(original_labels = original_labels,
     ...                                 original_cell_types = original_cell_types,
     ...                                 embedding_labels = embedding_labels,
     ...                                 embedding_cell_types = embedding_cell_types)
     >>> results.evaluate(category = ["global", "local", "downstream"])
     >>> results.rank_dr_methods()
-
 
 Congratulations! You've made it through the quickstart guide! Give yourself a high five
 and start performing DR! For more detailed documentations, look around on this website!

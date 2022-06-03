@@ -48,7 +48,7 @@ Whether your workflow calls for multiple DR techniques or you are planning on be
    :hidden:
 
    references
-   Our Paper <https://www.biorxiv.org/content/10.1101/2022.04.26.489549v1>
+   Our Paper <https://doi.org/10.1101/2022.04.26.489549>
    Dr. Xinlei (Shery) Wang <https://people.smu.edu/swang/>
    Dr. Tao Wang <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>
    DBAI <https://dbai.biohpc.swmed.edu/>
@@ -60,7 +60,7 @@ Resources
 
 For more resources on our labs, collaborators, and related projects, please visit the following:
 
-   * `Our paper <https://www.biorxiv.org/content/10.1101/2022.04.26.489549v1>`_
+   * `Our paper <https://doi.org/10.1101/2022.04.26.489549>`_
    * `Dr. Xinlei (Shery) Wang faculty page <https://people.smu.edu/swang/>`_
    * `Dr. Tao Wang Lab <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>`_
    * `Database for Actionable Immunology (DBAI) for more computational immunology-related tools <https://dbai.biohpc.swmed.edu/>`_

@@ -16,7 +16,6 @@ this tutorial, we will use the following expression matrix:
 .. code-block:: python
 
     >>> expression
-
     array([[1.73462413, 2.44479204, 0.        , ..., 0.22536523, 1.02089248, 0.1500314 ],
            [0.56619612, 1.52259608, 0.        , ..., 0.31847633, 0.        , 0.        ],
            [0.54875404, 0.        , 0.        , ..., 0.17807296, 0.46455456, 3.55193468],
@@ -30,7 +29,6 @@ with the following dimensions:
 .. code-block:: python
 
     >>> expression.shape 
-
     (122924, 34)
 
 ----------------------------
@@ -70,7 +68,7 @@ method to run these methods, and likewise, these are the names stored in the
 ``reductions`` dictionary of the returned object.
 
 For a comprehensive list of references and links, look at the 
-`References <>`_ page.
+`References <https://cytofdr.readthedocs.io/en/latest/references.html>`_ page.
 
 .. note::
     
@@ -92,7 +90,6 @@ all your DR methods with just one simple line of code:
 .. code-block:: python
 
     >>> results = dr.run_dr_methods(expression, methods=["UMAP", "PCA"])
-
     Running PCA
     Runnign UMAP
 
@@ -115,7 +112,6 @@ dimensions, you can certainly do so:
 
     >>> results = dr.run_dr_methods(expression, methods="PCA", out_dims = 3)
     >>> results.reductions["PCA"]
-
     Running PCA
     array([[ 3.95384698e+00, -5.18932314e-03,  1.99425436e+00],
            [ 4.67605078e+00, -1.34965157e+00, -2.68634708e+00],
@@ -146,7 +142,6 @@ first observations to train and embedding the entire dataset with ``transform``:
     >>> train = expression[1:1000,:]
     >>> results = dr.run_dr_methods(train, methods="LLE", out_dims = 2, transform=expression)
     >>> results.reductions["LLE"]
-
     array([[ 0.0016272 , -0.08276973],
            [ 0.05160762,  0.00221715],
            [ 0.01881232, -0.00114671],
@@ -160,7 +155,6 @@ And to check the dimensions:
 .. code-block:: python
 
     >>> results.reductions["LLE"].shape
-
     (122924, 2)
 
 Indeed, it had embedded the entire dataset, and this will be fast! Of course, it may not
@@ -181,7 +175,6 @@ their evaluations in one place. As a starter, you may notice that the return typ
 
     >>> results = dr.LinearMethods.PCA(data = expression, out_dims=2)
     >>> type(results)
-
     <class 'CytofDR.dr.Reductions'>
 
 If you have read the `Quick Start Guide <https://cytofdr.readthedocs.io/en/latest/quickstart.html>`_,
@@ -219,11 +212,51 @@ methods:
     >>> results.add_reduction(reduction = embedding1, name = "your_dr")
     >>> results.add_reduction(reduction = embedding2, name = "your_dr2")
     >>> results.reductions.keys()
-
     dict_keys(["your_dr", "your_dr2"])
 
 This is a great way to integrate this framework into anywhere of your workflow. At the same time,
 we allow you to use other DR methods along with our builtin methods to achieve maximum flexibility.
+
+
+Add Metadata
+---------------
+
+When you use the ``run_dr_methods()`` wrapper, it automatically adds the expression
+matrix to the resulting ``Reductions`` object even if you didn't notice it in the
+first place:
+
+.. code-block:: python
+
+    >>> results = dr.run_dr_methods(expression, methods="PCA", out_dims = 3)
+    >>> results.original_data
+    array([[1.73462413, 2.44479204, 0.        , ..., 0.22536523, 1.02089248, 0.1500314 ],
+           [0.56619612, 1.52259608, 0.        , ..., 0.31847633, 0.        , 0.        ],
+           [0.54875404, 0.        , 0.        , ..., 0.17807296, 0.46455456, 3.55193468],
+           ...,
+           [0.1630427 , 0.32121831, 0.        , ..., 0.61940005, 0.        , 3.50253287],
+           [0.30990439, 2.59020988, 0.11689489, ..., 0.94090453, 0.1383413 , 0.        ],
+           [0.71138557, 1.72764796, 0.        , ..., 0.        , 0.        , 0.        ]])
+           
+which is exactly the expression matrix we showed at the beginning of this tutorial. However,
+when you create your own ``Reductions`` object, this won't be done for you. But don't worry,
+you can easily add it:
+
+.. code-block:: python
+
+    >>> results = dr.Reductions()
+    >>> results.add_evaluation_metadata(original_data = expression)
+    >>> results.original_data
+    array([[1.73462413, 2.44479204, 0.        , ..., 0.22536523, 1.02089248, 0.1500314 ],
+           [0.56619612, 1.52259608, 0.        , ..., 0.31847633, 0.        , 0.        ],
+           [0.54875404, 0.        , 0.        , ..., 0.17807296, 0.46455456, 3.55193468],
+           ...,
+           [0.1630427 , 0.32121831, 0.        , ..., 0.61940005, 0.        , 3.50253287],
+           [0.30990439, 2.59020988, 0.11689489, ..., 0.94090453, 0.1383413 , 0.        ],
+           [0.71138557, 1.72764796, 0.        , ..., 0.        , 0.        , 0.        ]])
+
+And voila, that's how you do it! Also, remember this method because if you want to do evaluations,
+you may need this again to add your own clusterings and cell types as detailed in our
+`Evaluation Metrics tutorial <https://cytofdr.readthedocs.io/en/latest/tutorial/metrics.html>`_.
 
 ----------------------------------
 
@@ -259,7 +292,6 @@ To run a method, you can simply run:
 .. code-block:: python
 
     >>> dr.LinearMethods.PCA(data = expression, out_dims=2)
-
     array([[ 3.95384698e+00, -5.18934256e-03],
            [ 4.67605078e+00, -1.34965157e+00],
            [-2.04514713e+00, -1.26489972e+00],
@@ -282,7 +314,6 @@ implementation methods. For example, you can change a few key parameters for UMA
 .. code-block:: python
 
     >>> dr.NonLinearMethods.UMAP(data = expression, out_dims=2, n_neighbors = 30, min_dist = 0)
-
     array([[-1.9451777, 10.632807 ],
            [-1.659229 , -3.771215 ],
            [ 8.913493 , -4.3567996],

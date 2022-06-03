@@ -3,7 +3,7 @@ Choosing a DR Method
 
 Since there are 16 unique methods with even more options right in this package,
 you may ask the question of which one you should choose. The answer can be long 
-or short. In `our paper <https://www.biorxiv.org/content/10.1101/2022.04.26.489549v1.abstract>`_,
+or short. In `our paper <https://doi.org/10.1101/2022.04.26.489549>`_,
 we detailed the various performance aspects of these DR methods, and if you need
 all the details, you should definitely head over there and give it a quick read.
 This tutorial gives you some high-level recommendations and some heuristics for you
@@ -25,8 +25,8 @@ accuracy metrics in DR:
 
 While the first three are universally applicable, the last speaks to
 the increasing trend of integrative analysis. To read more about these
-evaluation criteria, head to the `Evaluation Metrics <>`_ section for
-details.
+evaluation criteria, head to the `Evaluation Metrics <https://cytofdr.readthedocs.io/en/latest/tutorial/metrics.html>`_
+section for details.
 
 However, accuracy is not all. Since CyTOF has uniquely large sample size,
 we want to ensure that each method is scalable and usable. Luckily, the
