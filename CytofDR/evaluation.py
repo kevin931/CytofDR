@@ -530,7 +530,7 @@ class EvaluationMetrics():
         
         """Embedding concordance EMD.
         
-        This is a private that computes the concordance EMD as described in the ``embedding_concordance`` method.
+        This is a private method that computes the concordance EMD as described in the ``embedding_concordance`` method.
         
         :param embedding: The first (main) embedding.
         :param labels_embedding: Labels for all obervations in the embedding.
@@ -570,7 +570,7 @@ class EvaluationMetrics():
                                       common_types: "np.ndarray") -> float:
         """Embedding concordance Cluster Distance.
         
-        This is a private that computes the concordance Ckuster Distance metric as described in the
+        This is a private method that computes the concordance Ckuster Distance metric as described in the
         ``embedding_concordance`` method.
         
         :param embedding: The first (main) embedding.
