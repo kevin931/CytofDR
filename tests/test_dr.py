@@ -289,21 +289,69 @@ class TestReductions():
         except ValueError as e:
             assert "No reductions to evalate. Add your reductions first." in str(e)
             
-                        
-    @pytest.mark.parametrize("original_data, original_labels, embedding_labels",
-                             [(None, np.repeat(np.array([1,2]), 5), {"new_dr": np.repeat(np.array([1,2]), 5)}),
-                              (np.random.rand(10, 2), None, {"new_dr": np.repeat(np.array([1,2]), 5)}),
-                              (np.random.rand(10, 2), np.repeat(np.array([1,2]), 5), None)])
-    def test_evaluate_no_metadata(self, original_data: Optional[np.ndarray], original_labels: Optional[np.ndarray], embedding_labels: Optional[dict]):
+            
+    def test_cluster(self):
+        self.results.original_labels = None
+        self.results.embedding_labels = None
+        assert self.results.original_labels is None
+        assert self.results.embedding_labels is None
+        
+        self.results.cluster(n_clusters=3)
+        assert isinstance(self.results.original_labels, np.ndarray)
+        assert isinstance(self.results.embedding_labels, dict)
+        assert np.unique(self.results.original_labels).shape[0] == 3
+        assert np.unique(self.results.embedding_labels["test_dr"]).shape[0] == 3
+        
+        
+    def test_cluster_data_error(self):
         results = dr.Reductions({"new_dr": self.embedding})
-        results.original_data = original_data
+        results.original_labels = np.repeat(np.array([1,2]), 5)
+        try:
+            self.results.cluster(n_clusters=3)
+        except ValueError as e:
+            assert "'original_data' is missing: cannot cluster." in str(e)   
+            
+
+    def test_cluster_embedding_error(self):
+        results = dr.Reductions({"new_dr": self.embedding})
+        results.embedding_labels = {"new_dr": np.repeat(np.array([1,2]), 5)}
+        try:
+            self.results.cluster(n_clusters=3)
+        except ValueError as e:
+            assert "'reductions' is missing: cannot cluster." in str(e)   
+            
+                        
+    @pytest.mark.parametrize("original_labels, embedding_labels",
+                             [(None, {"new_dr": np.repeat(np.array([1,2]), 5)}),
+                              (np.repeat(np.array([1,2]), 5), None)])
+    def test_evaluate_no_labels(self, original_labels: Optional[np.ndarray], embedding_labels: Optional[dict]):
+        results = dr.Reductions({"new_dr": self.embedding})
+        results.original_data = np.random.rand(10, 2)
         results.original_labels = original_labels
         results.embedding_labels = embedding_labels
         try:
-            results.evaluate(category="global")
+            results.evaluate(category="global", auto_cluster=False)
         except ValueError as e:
-            assert "Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes. " in str(e)
+            assert "Evaluation needs 'original_labels', and 'embedding_labels' attributes. " in str(e)
             
+         
+    def test_evaluate_no_original_data(self):
+        results = dr.Reductions({"new_dr": self.embedding})
+        results.original_data = None
+        results.original_labels = np.repeat(np.array([1,2]), 5)
+        results.embedding_labels = {"new_dr": np.repeat(np.array([1,2]), 5)}
+        try:
+            results.evaluate(category="global", auto_cluster=True)
+        except ValueError as e:
+            assert "Evaluation needs 'original_data'. Please add it with the 'add_evaluation_metadata()' method." in str(e)   
+            
+
+    def test_evaluate_auto_cluster(self):
+        results = dr.Reductions({"new_dr": self.embedding})
+        results.original_data = np.random.rand(10, 2)
+        results.evaluate(category=["global", "local", "downstream"], n_clusters=2)
+        assert self.results.evaluations is not None
+        
     
     def test_custom_evaluate(self):
         self.results._custom_evaluate()

@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 from sklearn.decomposition import FastICA, PCA, FactorAnalysis, KernelPCA, NMF
 from sklearn.manifold import Isomap, MDS, LocallyLinearEmbedding, SpectralEmbedding, TSNE
+from sklearn.cluster import KMeans
 
 import umap
 from openTSNE import TSNEEmbedding
@@ -151,6 +152,33 @@ class Reductions():
             self.comparison_cell_types = comparison_cell_types
         if comparison_classes is not None:
             self.comparison_classes = comparison_classes
+            
+            
+    def cluster(self, n_clusters: int, cluster_data: bool = True, cluster_embedding: bool = True, **kwargs):
+        """Cluster original_data and reductions.
+
+        This provides a convenient method to cluster `original_data` and embeddings using the
+        ``KMeans`` method. The number of clusters must be manually specified.
+
+        :param n_clusters: The number of clusters
+        :param cluster_data: Whether to cluster original data, defaults to True
+        :param cluster_embedding: Whether to cluster embeddings, defaults to True
+        :param **kwargs: Keyword only arguments passed into ``sklearn.cluster.KMeans``.
+        """
+        
+        if cluster_data and self.original_data is None:
+            raise ValueError("'original_data' is missing: cannot cluster.")
+        
+        if cluster_embedding and len(self.reductions) == 0:
+            raise ValueError("'reductions' is missing: cannot cluster.")
+        
+        if cluster_data:
+            self.original_labels = KMeans(n_clusters=n_clusters, **kwargs).fit(self.original_data).labels_
+        
+        if cluster_embedding:
+            self.embedding_labels = {}
+            for e in self.reductions.keys():
+                self.embedding_labels[e] = KMeans(n_clusters=n_clusters, **kwargs).fit(self.reductions[e]).labels_
         
     
     def evaluate(self,
@@ -158,6 +186,8 @@ class Reductions():
                  pwd_metric: str="PCD",
                  k_neighbors: int=5,
                  annoy_original_data_path: Optional[str]=None,
+                 auto_cluster: bool=True,
+                 n_clusters: int=20,
                  verbose: bool=True):     
         """Evaluate DR Methods Using Default DR Evaluation Scheme.
 
@@ -195,11 +225,19 @@ class Reductions():
             category = [c.lower() for c in category]
         else:
             category = [category.lower()]
-                    
-        if self.original_data is None or self.original_labels is None or self.embedding_labels is None:
-            message: str = "Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes. "
-            message += "Run 'add_evaluation_metadata()' methods first."
+            
+        if self.original_labels is None and auto_cluster:
+            self.cluster(n_clusters=n_clusters, cluster_embedding=False)
+        if self.embedding_labels is None and auto_cluster:
+            self.cluster(n_clusters=n_clusters, cluster_data=False)
+                                
+        if self.original_labels is None or self.embedding_labels is None:
+            message: str = "Evaluation needs 'original_labels', and 'embedding_labels' attributes. "
+            message += "Use the 'auto_cluster' option or add your own lables with the 'add_evaluation_metadata()' method."
             raise ValueError(message)
+        
+        if self.original_data is None:
+            raise ValueError("Evaluation needs 'original_data'. Please add it with the 'add_evaluation_metadata()' method.")
         
         e: str
         if "global" in category:
