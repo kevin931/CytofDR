@@ -55,6 +55,8 @@ class TestEvaluationMetrics():
             evaluation.EvaluationMetrics.correlation(self.a, self.b, "Wrong")
         except ValueError as e:
             assert "Unsupported metric: must be 'Pearson' or 'Spearman.'" in str(e)
+        else:
+            assert False
         
         
     def test_residual_variance(self):

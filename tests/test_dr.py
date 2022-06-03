@@ -193,6 +193,8 @@ class TestReductions():
             self.results.add_reduction(self.embedding, "test_dr")
         except ValueError as e:
             assert "Reduction already exists. Set 'replace' to True if replacement is intended." in str(e)
+        else:
+            assert False
             
         
     def test_add_metadata(self):
@@ -280,6 +282,8 @@ class TestReductions():
             self.results.evaluate(category="global", pwd_metric="Wrong")
         except ValueError as e:
             assert "Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only." in str(e)
+        else:
+            assert False
             
             
     def test_evaluate_no_reduction_error(self):
@@ -288,6 +292,8 @@ class TestReductions():
             reduction.evaluate(category="global")
         except ValueError as e:
             assert "No reductions to evalate. Add your reductions first." in str(e)
+        else:
+            assert False
             
             
     def test_cluster(self):
@@ -307,18 +313,21 @@ class TestReductions():
         results = dr.Reductions({"new_dr": self.embedding})
         results.original_labels = np.repeat(np.array([1,2]), 5)
         try:
-            self.results.cluster(n_clusters=3)
+            results.cluster(n_clusters=3)
         except ValueError as e:
-            assert "'original_data' is missing: cannot cluster." in str(e)   
+            assert "'original_data' is missing: cannot cluster." in str(e)
+        else:
+            assert False
             
 
     def test_cluster_embedding_error(self):
-        results = dr.Reductions({"new_dr": self.embedding})
-        results.embedding_labels = {"new_dr": np.repeat(np.array([1,2]), 5)}
+        results = dr.Reductions()
         try:
-            self.results.cluster(n_clusters=3)
+            results.cluster(n_clusters=3, cluster_data=False)
         except ValueError as e:
-            assert "'reductions' is missing: cannot cluster." in str(e)   
+            assert "'reductions' is missing: cannot cluster." in str(e)
+        else:
+            assert False
             
                         
     @pytest.mark.parametrize("original_labels, embedding_labels",
@@ -333,6 +342,8 @@ class TestReductions():
             results.evaluate(category="global", auto_cluster=False)
         except ValueError as e:
             assert "Evaluation needs 'original_labels', and 'embedding_labels' attributes. " in str(e)
+        else:
+            assert False
             
          
     def test_evaluate_no_original_data(self):
@@ -343,7 +354,9 @@ class TestReductions():
         try:
             results.evaluate(category="global", auto_cluster=True)
         except ValueError as e:
-            assert "Evaluation needs 'original_data'. Please add it with the 'add_evaluation_metadata()' method." in str(e)   
+            assert "Evaluation needs 'original_data'. Please add it with the 'add_evaluation_metadata()' method." in str(e)
+        else:
+            assert False   
             
 
     def test_evaluate_auto_cluster(self):
