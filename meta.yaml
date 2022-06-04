@@ -1,0 +1,54 @@
+{% set name = "CytofDR" %}
+{% set version = "0.0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: 124bdeefc1a041c28e26f5ace29483b7d3ce21b7ff97ce0fa50499dedbb80bfe
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --force-reinstall --no-deps -vv "
+
+requirements:
+  build:
+    - python
+    - setuptools
+  host:
+    - python
+  run:
+    - python >=3.7
+    - scikit-learn
+    - numpy <=1.21
+    - scipy
+    - umap-learn
+    - openTSNE
+    - phate
+    - python-annoy
+    - matplotlib
+    - seaborn
+
+test:
+  requires:
+    - pytest
+    - pytest-cov
+    - coverage
+    - pytest-mock
+  imports:
+    - CytofDR
+    
+
+about:
+  home: https://github.com/kevin931/CytofDR
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.txt
+  summary: CyTOF Dimension Reduction Framework.
+
+extra:
+  recipe-maintainers:
+    - kevin931

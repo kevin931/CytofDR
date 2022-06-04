@@ -7,6 +7,9 @@
 
 # Pyton Build Files and Directory
 *.egg-info
+/build
+/dist
+/dist_conda
 
 # CI: Testing and coverage
 *.coverage
