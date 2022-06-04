@@ -11,16 +11,29 @@ a one-stop solution. Follow the guide here to get started!
 Conda
 ***********
 
-We plan on releasing this package on ``conda``. Stay tuned!
+We are officially on ``conda``!! This is actually our recommended way of installing and running
+``CytofDR``. To install, simply run the following:
 
+.. code-block:: shell
 
----------
+    conda install -c kevin931 cytofdr -c conda-forge -c bioconda
+
+If you need to learn more about how to create and manage conda environments, you can take a look
+at their `documentation <https://docs.anaconda.com/anaconda/install/>`_.
+
+-----------------
 
 ***********
 PyPI
 ***********
 
-We plan on releasing this package on ``PyPI``. Stay tuned!
+Our package is also on ``PyPI``, which you can easily install with the following command:
+
+.. code-block:: shell
+
+    pip install CytofDR
+
+And voila, that's it!
 
 ---------
 

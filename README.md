@@ -12,7 +12,8 @@
 
 ## About
 
-This is a work in progress for CyTOF DR analyses and evaluation.
+CytofDR is a framework of dimension reduction (DR) and its evaluation for both Cytometry by Time-of-Flight (CyTOF) and general-purpose usages. It allows you to
+conveniently run many different DRs at one place and then evaluate them to pick your embedding using our extensive evaluation framework! We aim to provide you with a reliable, extensible, and convenient interface for all your DR needs for both data analyses and future research!
 
 ## Installation
 
@@ -32,7 +33,7 @@ I personally recommend using ``conda`` to install everything since it's so easy 
 To install the package with ``conda``:
 
 ```shell
-    conda install -c kevin931 cytofdr -c conda-forge -c bioconda
+conda install -c kevin931 cytofdr -c conda-forge -c bioconda
 ```
 The core dependencies should automatically install! 
 
