@@ -2,8 +2,8 @@
 Development and Roadmap
 #########################
 
-We commit to supporting this package on a long term. Here, you will find our roadmap and our
-maintenance commitments.
+We commit to supporting this package on a long term: we want you to feel supported and want to
+hear your experiences. Here, you will find our roadmap and our maintenance commitments.
 
 -------
 
@@ -32,6 +32,12 @@ Future Milestones
 *********************************
 Future Support and Maintenance
 *********************************
+
+Pre-release (e.g. 0.0.x)
+
+    * **We are currently on pre-release!**
+    * Pre-releases do not follow the regular maintenance schedule
+    * **Support period**: The next release supersedes the previous.
 
 Patches (e.g. x.x.1):
 

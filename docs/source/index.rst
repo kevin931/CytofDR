@@ -1,12 +1,24 @@
 .. image:: ../../assets/logo.png
    :alt: Logo
 
-CytofDR: Your Solution for CyTOF Dimension Reduction and Benchmarking
+CytofDR: CyTOF Dimension Reduction Framework
 =======================================================================
 
-CytofDR is a package that groups together a number of useful dimension reduction (DR)
-methods and evaluation metrics commonly used for Cytometry by Time-of-Flight (CyTOF).
-Whether your workflow calls for multiple DR techniques or you are planning on benchmarking
+CytofDR is a framework of dimension reduction (DR) and its evaluation for both
+Cytometry by Time-of-Flight (CyTOF) and general-purpose usages. It allows you to
+conveniently run many different DRs at one place and then evaluate them to pick
+your embedding using our extensive evaluation framework!
+
+Why wait? Try this example below and start your DR journey:
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> from CytofDR import dr
+    >>> expression = np.loadtxt(fname="PATH_To_Expression_Matrix", dtype=float, skiprows=1, delimiter=",")
+    >>> results = dr.run_dr_methods(methods = ["UMAP", "open_tsne"])
+    >>> results.evaluate(category = ["global", "local", "downstream"])
+    >>> results.rank_dr_methods()
 
 
 .. toctree::

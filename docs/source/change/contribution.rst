@@ -26,7 +26,7 @@ Feature Request
 *******************
 
 Everyone can have great ideas, and this is a great opportunity to let us know how you would
-like to improve cytomulate. Again, on our `GitHub Issues Page <https://github.com/kevin931/CytofDR/issues>`_
+like to improve **CytofDR**. Again, on our `GitHub Issues Page <https://github.com/kevin931/CytofDR/issues>`_
 has a template for **Feature Request** that you can use to talk about your ideas! However,
 another great place to talk about ideas or just to get the conversations started is our
 new `Discussion Page <https://github.com/kevin931/CytofDR/discussions>`_.
@@ -44,7 +44,7 @@ Here, you can find a few guidelines to get a better idea to better facilitate th
 1. Submit a Issue here or comment on a previous issue to let us know that you're contributing!
 2. Follow the standard workflow! You can find many guides, such as `this one <https://gist.github.com/Chaser324/ce0505fbed06b947d962>`_.
 3. Make sure all current tests pass! And add new tests or modify existing ones accordingly.
-   We srtive to achieve 100% test coverage.
+   We srtive to achieve (almost) 100% test coverage.
 4. Submit a Pull Request.
 5. Make sure that all CI workflow is successful.
 6. We will review the changes and keep you updated. If all is well, we will merge and update!

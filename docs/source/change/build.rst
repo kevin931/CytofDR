@@ -42,9 +42,9 @@ If you don't want to do the installation, you can run the following:
 
 .. code-block:: shell 
 
-    pytest -m pytest --cov CytofDR
+    python -m pytest --cov CytofDR
 
----------
+-------------------
 
 
 ***************
@@ -62,7 +62,6 @@ You will need the following packages:
 * sphinx
 * sphinx-rtd-theme
 * sphinx-git
-* sphinxcontrib-autoprogram
 * sphinx-autodoc-typehints
 
 .. note::

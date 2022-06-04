@@ -2,7 +2,7 @@ Recent Changes
 ===============
 
 Here we document the most recent changes to the project. To view all history and the full project,
-please visit our GitHub.
+please visit `our GitHub <https://github.com/kevin931/CytofDR>`_.
 
 .. Note:: 
     

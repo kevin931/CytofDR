@@ -16,83 +16,82 @@ This is a work in progress for CyTOF DR analyses and evaluation.
 
 ## Installation
 
-Note: All installation instructions are PENDING!
+You can install our CytofDR package, which is currentl on ``PyPI``:
 
-**Python (3.6, 3.7, 3.8) and pip (or conda)** are required. This is not yet a python package. So, ``git pull`` or manual downloading is required to get this working. But before you do that, make sure that you have all the dependencies installed.
+```shell
+pip install CytofDR
+```
 
-### Required Dependencies
+Python (>=3.7) is **required**. All dependencies should be automatically installed. For a list of optional dependencies, please visit our documentation page's detailed [Installation Guide](https://cytofdr.readthedocs.io/en/latest/installation.html).
 
-    - numpy
-    - scikit-learn
-    - openTSNE
-    - umap-learn
-    - scipy
-    - phate
-    - annoy
-    - matplotlib
-    - seaborn
-
-### Optional Dependencies
-See below for notes on how to get these installed.
-
-    - fit-SNE
-    - BH t-SNE
-    - SAUCIE
-    - GrandPrix
-    - ZIFA
 
 ### Conda Installation
 
-I personally recommend using ``conda`` to install everything because virtual environment is very important for different parts of this project. If you need help on how to get ``conda`` installed in the first place, take a look [here](https://docs.anaconda.com/anaconda/install/).
+I personally recommend using ``conda`` to install everything since it's so easy to work with virtual environments. If you need help on how to get ``conda`` installed in the first place, take a look [here](https://docs.anaconda.com/anaconda/install/).
 
-To install all the required dependencies, run the following commands:
-
-
-```shell
-    conda create --name cytof
-    conda activate cytof
-
-    conda install python=3.8 numpy scikit-learn
-    conda install -c conda-forge openTSNE umap-learn
-
-```
-
-## Usage
-This project supports dimension reduction (DR), DR evaluation, and clustering. All these components are separate at this time. See examples for tutorials. 
-
-
-## Optional Installations
-
-A few methods cannot be easily installed as conda or pip packages. Therefore, more care is needed if usgae is required. Given that not all users are expected to have these packages installed, it is therefore safe to use ``-m all`` as it checks for import errors. 
-
-### ZIFA
-
-[Zero-inflated Factor Analysis](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-015-0805-z) is implemented by the authors [here](https://github.com/epierson9/ZIFA). Its installation is relatively easy given most of its major dependencies should already be satisfied. To install, 
+To install the package with ``conda``:
 
 ```shell
-    git clone https://github.com/epierson9/ZIFA
-    cd ZIFA
-    python setup.py install
+    conda install -c kevin931 cytofdr -c conda-forge -c bioconda
+```
+The core dependencies should automatically install! 
+
+## Quick Tutorial
+
+``CytofDR`` makes it easy to run many DR methods while also evaluating them for your CyTOF samples. We have a greatly simplified pipeline for your needs. To get started, follow this example:
+
+```python
+>>> import numpy as np
+>>> from CytofDR import dr
+# Load Dataset
+>>> expression = np.loadtxt(fname="PATH_To_file", dtype=float, skiprows=1, delimiter=",")
+# Run DR and evaluate
+>>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
+>>> results.evaluate(category = ["global", "local", "downstream"])
+>>> results.rank_dr_methods()
+```
+We strive to make our pipeline as simple as possible with natural langauge-like method names.
+
+### Documentation
+
+Of course, there are many more customizations and ways you can use ``CytofDR``. So, for detailed tutorials and other guides, we suggest that you vists our [Official Documentation](https://cytofdr.readthedocs.io/en/latest/index.html).
+
+There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
+
+## Latest Release
+
+Our lastest release is ``v0.0.1`` with the following the following release notes:
+
+- This is the first offical pre-release of ``CytofDR``.
+- Most of the pipeline is complete, including DR, evaluation, ranking, and plotting.
+- Extensive documentation and tutorial complete.
+- This release aims to aid the completion of our development and tool chain.
+- We are on  ``conda`` and ``PyPI``!
+
+For more release and development information, look around on our GitHub or look through our [changelog](https://cytofdr.readthedocs.io/en/latest/change/index.html). 
+
+## Issues and Contributions
+
+If you run into issues or have questions, feel free to open an issue [here](https://github.com/kevin931/CytofDR/issues). I'd love to help you out! We also welcome any contributions, but you may want to also look our [contribution guide](https://cytofdr.readthedocs.io/en/latest/change/contribution.html). Even if you just have an idea, that'll be great!
+
+## References
+
+Our preprint "Comparative Analysis of Dimension Reductions Methods for Cytometry by Time-of-Flight Data" is on bioRxiv and can be accessed [right here](https://doi.org/10.1101/2022.04.26.489549). If you use our package in your research or deployment, a citation of our paper is highly appreciated:
+
+```
+@article {Wang2022.04.26.489549,
+	author = {Wang, Kaiwen and Yang, Yuqiu and Wu, Fangjiang and Song, Bing and Wang, Xinlei and Wang, Tao},
+	title = {Comparative Analysis of Dimension Reduction Methods for Cytometry by Time-of-Flight Data},
+	elocation-id = {2022.04.26.489549},
+	year = {2022},
+	doi = {10.1101/2022.04.26.489549},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {While experimental and informatic techniques around single cell sequencing (scRNA-seq) are much more advanced, research around mass cytometry (CyTOF) data analysis has severely lagged behind. However, CyTOF profiles the proteomics makeup of single cells and is much more relevant for investigation of disease phenotypes than scRNA-seq. CyTOF data are also dramatically different from scRNA-seq data in many aspects. This calls for the evaluation and development of statistical and computational methods specific for analyses of CyTOF data. Dimension reduction (DR) is one of the most critical first steps of single cell data analysis. Here, we benchmark 20 DR methods on 110 real and 425 synthetic CyTOF datasets, including 10 Imaging CyTOF datasets, for accuracy, scalability, stability, and usability. In particular, we checked the concordance of DR for CyTOF data against scRNA-seq data that were generated from the same samples. Surprisingly, we found that a less well-known method called SAUCIE is the overall best performer, followed by MDS, UMAP and scvis. Nevertheless, there is a high level of complementarity between these tools, so the choice of method should depend on the underlying data structure and the analytical needs (e.g. global vs local preservation). Based on these results, we develop a set of freely available web resources to help users select the best DR method for their dataset, and to aid in the development of improved DR algorithms tailored to the increasingly popular CyTOF technique.Competing Interest StatementThe authors have declared no competing interest.},
+	URL = {https://www.biorxiv.org/content/early/2022/06/02/2022.04.26.489549},
+	eprint = {https://www.biorxiv.org/content/early/2022/06/02/2022.04.26.489549.full.pdf},
+	journal = {bioRxiv}
+}
 ```
 
-### FIt-SNE
+For a list of references of the methods, metrics, etc. used in the package, please visit our [References](https://cytofdr.readthedocs.io/en/latest/references.html) and bibliography of our paper.
 
-The original implementation of FIt-SNE can be found [here](https://github.com/KlugerLab/FIt-SNE), which is written in C++ with a python wrapper. For ease of use, I personally recommend openTSNE, which is a Python implementation of FIt-SNE, unless every bit performance is critical. From internal benchmark and benchmark published [here](https://opentsne.readthedocs.io/en/latest/benchmarks.html), openTSNE is only slighly slower thaFIt-SNE while vastly outperforming other traditional implementations.
-
-To install FIt-SNE, ``git clone`` the FIt-SNE repository, and place it as a subfolder called "fitsne" inside this project directory. Compile the program according to instructions of FIt-SNE.  ``FFTW`` is a required dependency for FIt-SNE; therefore, it needs to be installed for the respective operating system. For Linux users, see [this issue](https://github.com/KlugerLab/FIt-SNE/issues/35) if you do not have root access.
-
-### SAUCIE
-
-SAUCIE does not have an official python package. Thus, we will need to pull the [GitHub repo](https://github.com/KrishnaswamyLab/SAUCIE). Place the pulled repo in a sub-directory called "saucie" inside this project directory.
-
-Note: Only tensoflow 1.x is supported. This may cause issues with other dependencies in the future.
-
-### BH t-SNE
-
-The project already supports two implementations of BH t-SNE: sklearn and openTSNE. Both the former can be called with the flag ``-m sklearn_tsne_bh`` and the latter can be used with the combination of ``-m open_tsne --open_tsne_method bh``. Both, especially open_tsne, offer more flexibility and ease of use.
-
-However, if you would like to use the original implementation from [here](https://github.com/lvdmaaten/bhtsne), pull the GitHub repositopry and place it as a subdirectory of this project and call it "bhtsne". Compuile the C++ file as described in the README.
-
-
-## Future Directions
-This is quite complex! More documentation will be added, inclusing docstrings, examples, etc. More methods will also be considered. Contributions are welcomed!
