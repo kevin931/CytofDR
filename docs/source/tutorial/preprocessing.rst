@@ -174,12 +174,41 @@ will keep using the object created in the tutorials above):
     Running UMAP
     >>> type(exprs.reductions)
     <class 'CytofDR.dr.Reductions'>
+
+This will already be familiar to you if you are familiar to ``CytofDR``. Now,
+this function automatically adds the expression matrix and cell types to
+the object (if the latter is not all ``None``):
+
+.. code-block:: python
+
+    >>> exprs.expression_matrix
+    array([[ 5.75381927e+01,  1.21189880e+01,  2.75074673e+00, ...,
+             2.60543274e+02,  1.54974432e+01,  8.29685116e+00],
+           [ 8.16322708e+01,  2.34020500e+01,  1.57276118e+00, ...,
+             1.75833466e+02,  2.17522359e+00,  3.34277302e-01],
+           [ 2.10737019e+01,  4.41922474e+00, -5.81668496e-01, ...,
+             2.27592499e+02,  6.24691308e-01, -1.94343376e+01],
+            ...,
+           [ 1.59633112e+01,  9.53633595e+00,  4.49561157e+01, ...,
+             3.46169220e+02,  2.27766180e+00,  4.33450623e+01],
+           [ 2.25081215e+01,  8.42314911e+00,  8.56426620e+01, ...,
+             6.43495300e+02,  5.97545290e+00,  8.84256649e+00],
+           [ 2.82463398e+01,  7.47339916e+00,  5.64270020e+01, ...,
+             6.65499023e+02, -7.26899445e-01,  7.11599884e+01]])
+    >>> exprs.reductions.cell_types
+    array(['CD11b- Monocyte', 'CD11b- Monocyte', 'CD11b- Monocyte', ...,
+           'Pre-B I', 'Pre-B I', 'Pre-B I'], dtype='<U17')
+
+Now, you can proceed with what you will need to do with the ``Reductions`` object:
+ 
+.. code-block:: python
+
     >>> exprs.reductions.evaluate(category=["Global"])
     Evaluating global...
     >>> exprs.rank_dr_methods()
     {'PCA': 1.5, 'ICA': 2.0, 'UMAP': 2.5}
 
-This, really, is just a wrapper for the ``CytofDR`` version to allow you to
+As you can see, this, really, is just a wrapper for the ``CytofDR`` version to allow you to
 run DR directly. Further, the ``reductions`` attribute stores a ``Reductions``
 object, meaning that once you've run your DR, you can use any ``Reductions``
 object features and workflows as usual.
@@ -207,9 +236,5 @@ store your own ``Reductions`` object in the ``PyCytoData`` object:
     >>> exprs.reductions = results
 
 This effectively combines two objects into one! Now, you can proceed as you wish!
-
-
-
-
 
 
