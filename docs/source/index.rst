@@ -32,6 +32,7 @@ Why wait? Try this example below and start your DR journey:
    :maxdepth: 1
    :caption: Tutorial
 
+   tutorial/preprocessing
    tutorial/methods
    tutorial/method_choice
    tutorial/metrics

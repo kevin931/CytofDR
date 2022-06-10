@@ -32,7 +32,6 @@ Voila, you have an expression matrix in an array! You can view the array by simp
 .. code-block:: python
 
     >>> expression
-
     array([[1.73462413, 2.44479204, 0.        , ..., 0.22536523, 1.02089248, 0.1500314 ],
            [0.56619612, 1.52259608, 0.        , ..., 0.31847633, 0.        , 0.        ],
            [0.54875404, 0.        , 0.        , ..., 0.17807296, 0.46455456, 3.55193468],
@@ -43,6 +42,38 @@ Voila, you have an expression matrix in an array! You can view the array by simp
 
 .. note:: CytofDR does not support working with fcs files directly!
 .. note:: For outputs, we will use the example of the Oejen cohort Sample U.
+
+
+Using ``PyCytoData``
+----------------------------
+
+``PyCytoData`` is our sister package that specifically handles CyTOF data IO as well as preprocessing.
+This allows us to have a consistent interface across multiple different packages, much like the
+same engine but with different accessories. Here, we will should you how to load a dataset
+with ``PyCytoData``:
+
+.. code-block:: python
+
+    >>> from PyCytoData import FileIO
+
+    >>> dataset = FileIO.load_delim(files="/path", 
+    ...                             col_names=True,
+    ...                             delim="\t") 
+    >>> dataset.expression_matrix
+    array([[1.73462413, 2.44479204, 0.        , ..., 0.22536523, 1.02089248, 0.1500314 ],
+           [0.56619612, 1.52259608, 0.        , ..., 0.31847633, 0.        , 0.        ],
+           [0.54875404, 0.        , 0.        , ..., 0.17807296, 0.46455456, 3.55193468],
+           ...,
+           [0.1630427 , 0.32121831, 0.        , ..., 0.61940005, 0.        , 3.50253287],
+           [0.30990439, 2.59020988, 0.11689489, ..., 0.94090453, 0.1383413 , 0.        ],
+           [0.71138557, 1.72764796, 0.        , ..., 0.        , 0.        , 0.        ]])
+
+
+Well, this look very similar to the ``numpy`` interface. Indeed, you can access the array
+just as usual. You can extract the array if you wish, but you can also use this object as
+we document in the `Working with PyCytoData <https://cytofdr.readthedocs.io/en/latest/tutorial/preprocessing.html>`_
+section. In fact, ``PyCytoData`` is much more interesting than simply just a wrapper for the numpy method.
+
 
 ----------------------
 
