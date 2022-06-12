@@ -88,7 +88,6 @@ and PCA--three of the most popular methods. You can simply do the following:
 
     >>> from CytofDR import dr
     >>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
-
     Running PCA
     Runnign UMAP
     Running open_tsne
@@ -123,7 +122,6 @@ dictionary and use the method names as keys.
 .. code-block:: python
 
     >>> results.reductions["UMAP"] 
-
     array([[-1.1084751 , 10.174761  ],
            [ 0.7808647 , -2.341636  ],
            [12.979893  , -5.1433287 ],
@@ -137,7 +135,6 @@ To know the names of your embeddings, you can simply run:
 .. code-block:: python
 
     >>> results.reductions.keys() 
-
     dict_keys(['PCA', 'UMAP', 'open_tsne'])
 
 Plotting Results
@@ -216,7 +213,6 @@ attribute, which is a dictionary:
 .. code-block:: python
 
     >>> results.evaluations
-
     {'global': {'spearman': {'PCA': 0.5525689817179995, 'UMAP': 0.2008244633670485, 'open_tsne': 0.39277360696372215},
      'emd': {'PCA': 2.2033917947258224, 'UMAP': 3.112385214988549, 'open_tsne': 27.49076176658772}},
      'local': {'knn': {'PCA': 0.0005694575510071263, 'UMAP': 0.0023624353258924215, 'open_tsne': 0.0044678012430444825},
@@ -240,7 +236,6 @@ This can be a little confusing, but you can access the sub-levels individually:
 .. code-block:: python
 
     >>> results.evaluations["global"]
-
     {'spearman': {'PCA': 0.5525689817179995, 'UMAP': 0.2008244633670485, 'open_tsne': 0.39277360696372215},
      'emd': {'PCA': 2.2033917947258224, 'UMAP': 3.112385214988549, 'open_tsne': 27.49076176658772}}
 
@@ -250,7 +245,6 @@ or you can look at individual metrics:
 .. code-block:: python
     
     >>> results.evaluations["global"]["emd"]
-
     {'PCA': 2.2033917947258224, 'UMAP': 3.112385214988549, 'open_tsne': 27.49076176658772}
 
 If you are so inclined, you can utilize these results directly. However, if you would like us to do the work for you,
@@ -312,7 +306,6 @@ Now, you can finally rank your methods! This will be fairly easy:
 .. code-block:: python
 
     >>> results.rank_dr_methods()
-
     {'PCA': 1.7083333333333333, 'UMAP': 2.25, 'open_tsne': 2.0416666666666665}
 
 As you can see, this returns a dictonary with method names the methods as keys and their scores
@@ -358,4 +351,9 @@ and start performing DR! For more detailed documentations, look around on this w
 What Next?
 **********************
 
+For further reading, head to the Tutorial section. Here are a few tips:
 
+- If you're interested in preprocessing and further IO options, visit `IO and Preprocessing with PyCytoData <https://cytofdr.readthedocs.io/en/latest/tutorial/preprocessing.html>`_.
+- Go look at `DR Metrhods and Usage <https://cytofdr.readthedocs.io/en/latest/tutorial/methods.html>`_ and find out how you can customize your DR methods.
+- Read up on our `Evaluation Metrics <https://cytofdr.readthedocs.io/en/latest/tutorial/metrics.html>`_ to know more about our framework!
+- Be sure to check out the `References <https://cytofdr.readthedocs.io/en/latest/references.html>`_ as well as `Our Paper <https://doi.org/10.1101/2022.04.26.489549>`_! 

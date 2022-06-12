@@ -68,6 +68,8 @@ Samusik         samusik
 Currently, they have mostly been preprocessed, except for ``Acrsinh`` transformation,
 which we will detail below.
 
+---------------------------------
+
 *************************
 Loading Your Own Dataset
 *************************
@@ -90,8 +92,9 @@ this is a ``PyCytoData`` object, and you can access its ``expression_matrix`` fo
 
 -------------------------
 
+******************
 Preprocessing
---------------
+******************
 
 Once you have a ``PyCytoData`` object such as the ones we've created above, preprocessing is
 really just one line of code away. We offer the following preprocessing steps:
