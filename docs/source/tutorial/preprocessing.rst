@@ -78,7 +78,7 @@ own dataset:
 .. code-block:: python
 
     >>> from PyCytoData import FileIO
-    >>> exprs = FileIO.load_delim(dataset = "PATH_TO_EXPRS", col_names=True, delim="\t")
+    >>> exprs = FileIO.load_expression(dataset = "PATH_TO_EXPRS", col_names=True, delim="\t")
     >>> type(exprs)
     <class 'PyCytoData.data.PyCytoData'>
 

@@ -56,9 +56,9 @@ with ``PyCytoData``:
 
     >>> from PyCytoData import FileIO
 
-    >>> dataset = FileIO.load_delim(files="/path", 
-    ...                             col_names=True,
-    ...                             delim="\t") 
+    >>> dataset = FileIO.load_expression(files="/path", 
+    ...                                  col_names=True,
+    ...                                  delim="\t") 
     >>> dataset.expression_matrix
     array([[1.73462413, 2.44479204, 0.        , ..., 0.22536523, 1.02089248, 0.1500314 ],
            [0.56619612, 1.52259608, 0.        , ..., 0.31847633, 0.        , 0.        ],
