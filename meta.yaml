@@ -23,7 +23,7 @@ requirements:
   run:
     - python >=3.7
     - scikit-learn
-    - numpy <=1.21
+    - numpy
     - scipy
     - umap-learn
     - openTSNE
