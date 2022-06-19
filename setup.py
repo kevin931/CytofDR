@@ -71,5 +71,8 @@ setuptools.setup(
     classifiers = [
         "Programming Language :: Python :: 3 :: Only",
         "Natural Language :: English"
-    ]
+    ],
+    cmdclass = {"pypi": PypiCommand,
+                "conda": CondaCommand
+                }
 )
