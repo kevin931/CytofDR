@@ -317,6 +317,35 @@ you know that UMAP is pretty good at what it does when compared to PCA and tSNE!
 
 ----------------
 
+*******************
+Save Your Results
+*******************
+
+After running your DR and evaluations, you will likely want to save your results
+since you don't necessarily want to run these methods again, especially if they're
+trivially fast to run. We offer a few methods to quickly save your results.
+
+To save your embeddings, you can simply run:
+
+.. code-block:: python
+
+    >>> results.save_all_reductions(save_dir="YOUR_DIR_PATH", delimiter=",")
+
+This automatically save all your embeddings into your specified directory in plain
+text files. And of course, you can customize it a little by changing the delimiter,
+whether to overwrite existing files, etc. To save your evaluation results, you can
+call a simple method as well:
+
+.. code-block:: python
+
+    >>> results.save_evaluations(path="YOUR_FILE_PATH")
+
+Note, here the path is the full path, not the directory. The results will be saved
+as a ``csv`` file.
+
+
+-------------------
+
 **********************
 Pipeline At a Glance
 **********************

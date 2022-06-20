@@ -17,6 +17,9 @@ from CytofDR.evaluation import EvaluationMetrics, PointClusterDistance
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import _csv
+import csv
+import os
 import warnings
 from typing import Union, Optional, List, Dict, Any
 
@@ -415,6 +418,74 @@ class Reductions():
         fig = sns_plot.get_figure()
         fig.savefig(save_path)
         plt.clf()
+        
+        
+    def save_reduction(self, name: str, path: str, overwrite: bool=False, delimiter: str="\t", **kwargs):
+        """Save a DR embeddings to disk.
+
+        This method saves a specific reduction to a disk. The file is presumed
+        to be a plain text file. All additional arguments are passed to ``np.savetxt``.
+
+        :param name: The name of the embedding to be saved as the key stored in the ``reductions`` dictionary.
+        :type name: str
+        :param path: The path to save the 
+        :type path:
+        :param overwrite: Whether to overwrite existing files, defaults to False
+        :type overwrite: bool, optional
+        :param delimiter: The delimiter used, defaults to "\t"
+        :type delimiter: str, optional
+        """
+        if not overwrite and os.path.exists(path):
+            raise FileExistsError()
+        np.savetxt(path, self.reductions[name], delimiter=delimiter, **kwargs)
+        
+        
+    def save_all_reductions(self, save_dir: str, overwrite: bool=False, delimiter: str="\t", **kwargs):
+        """Save all DR embeddings to a specified directory.
+
+        This method saves all reductions to a specified directory. All files
+        are plain text files with their embedding names as their names. All
+        additional arguments are passed to ``np.savetxt``.
+
+        :param save_dir: The directory path to save all the embeddings.
+        :type save_dir: str
+        :param overwrite: Whether to overwrite existing files, defaults to False
+        :type overwrite: bool, optional
+        :param delimiter: The delimiter used, defaults to "\t"
+        :type delimiter: str, optional
+        """
+        for method in self.reductions.keys():
+            path = save_dir + method + ".txt"
+            self.save_reduction(method, path, overwrite, delimiter, **kwargs)
+            
+            
+    def save_evaluations(self, path: str, overwrite: bool=False):
+        """Save DR evaluation results.
+
+        This method saves all the results of DR evaluation in a
+        csv.
+
+        :param path: The path to the file.
+        :type path: str
+        :param overwrite: Whether to overwrite existing file, defaults to False
+        :type overwrite: bool, optional
+        :raises AttributeError: There is no ``evaluations`` attribute. Need to run ``evaluate`` first.
+        :raises FileExistsError: The file already exists and ``overwrite`` is set to false.
+        """
+        if len(self.evaluations) == 0:
+            raise AttributeError("No 'evaluations' values found. Run the 'evaluate()' method first.")
+        if os.path.exists(path) and not overwrite:
+            raise FileExistsError()
+        
+        with open(path, "w") as f:
+            w: "_csv._writer" = csv.writer(f)
+            w.writerow(["Category", "Metric", "Method", "Value"])
+                    
+            category: str
+            for category in self.evaluations.keys():
+                for metric in self.evaluations[category].keys():
+                    for method in self.evaluations[category][metric].keys():
+                        w.writerow([category, metric, method, self.evaluations[category][metric][method]])
     
     
 class LinearMethods():

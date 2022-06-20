@@ -378,7 +378,50 @@ class TestReductions():
         
     def test_plot_reduction(self):
         self.results.plot_reduction("test_dr", "./tmp_pytest/test_plot.png")
-        if not os.path.exists("./tmp_pytest/test_plot.png"):
+        assert os.path.exists("./tmp_pytest/test_plot.png")
+            
+            
+    def test_save_all_reductions(self):
+        self.results.save_all_reductions("./tmp_pytest/")
+        assert os.path.exists("./tmp_pytest/test_dr.txt")
+        assert os.path.exists("./tmp_pytest/new_dr.txt")
+        
+        
+    def test_save_reduction_file_exists_error(self):
+        try:
+            self.results.save_reduction("new_dr", "./tmp_pytest/new_dr.txt")
+        except FileExistsError:
+            assert True
+        else:
+            assert False
+            
+            
+    def test_save_reduction_new_name(self):
+        self.results.save_reduction("new_dr", "./tmp_pytest/new_dr2.txt")
+        assert os.path.exists("./tmp_pytest/new_dr2.txt")
+        
+        
+    def test_save_evaluations(self):
+        self.results.save_evaluations("./tmp_pytest/evaluations.txt")
+        assert os.path.exists("./tmp_pytest/new_dr2.txt")
+        
+        
+    def test_save_evaluations_file_exists(self):
+        try:
+            self.results.save_evaluations("./tmp_pytest/evaluations.txt")
+        except FileExistsError:
+            assert True
+        else:
+            assert False
+            
+            
+    def test_save_evaluations_no_evaluations(self):
+        self.results.evaluations = {}
+        try:
+            self.results.save_evaluations("./tmp_pytest/evaluations2.txt")
+        except AttributeError as e:
+            assert "No 'evaluations' values found. Run the 'evaluate()' method first." in str(e)
+        else:
             assert False
         
         

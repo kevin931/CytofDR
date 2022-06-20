@@ -50,6 +50,9 @@ The core dependencies should automatically install!
 >>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
 >>> results.evaluate(category = ["global", "local", "downstream"])
 >>> results.rank_dr_methods()
+# Save Results
+>>> results.save_all_reductions(save_dir="PATH_to_DIR", delimiter=",")
+>>> results.save_evaluations(path="PATH_to_FILE")
 ```
 We strive to make our pipeline as simple as possible with natural langauge-like method names.
 
