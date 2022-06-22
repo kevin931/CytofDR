@@ -367,15 +367,55 @@ class TestReductions():
         
     
     def test_custom_evaluate(self):
-        self.results._custom_evaluate()
-        assert True
+        self.results.add_custom_evaluation_result("m1", "test_dr", 0.5)
+        self.results.add_custom_evaluation_result("m1", "new_dr", 0.2)
+        self.results.add_custom_evaluation_result("m2", "test_dr", 0.3)
+        self.results.add_custom_evaluation_result("m2", "new_dr", 0.1)
+        self.results.add_custom_evaluation_result("m3", "test_dr", 0.3, reverse_ranking=True)
+        self.results.add_custom_evaluation_result("m3", "new_dr", 0.1, reverse_ranking=True)
+        assert len(self.results.custom_evaluations["custom"]) == 3
+        assert np.isclose(self.results.custom_evaluations["custom"]["m1"]["new_dr"], 0.2)
         
         
     def test_rank_dr_custom(self):
-        self.results._rank_dr_method_custom()
-        assert True
+        ranking: Dict[str, float] = self.results.rank_dr_methods_custom()
+        assert isinstance(ranking, dict)
+        assert np.isclose(ranking["test_dr"], 5/3)
+        assert np.isclose(ranking["new_dr"], 4/3)
+        
+    
+    def test_custom_evaluate_weights(self):
+        self.results.custom_evaluations = {"custom": {}}
+        self.results.custom_evaluation_reverse_ranking = {}
+        self.results.add_custom_evaluation_result("m1", "test_dr", 0.5, 0.8)
+        self.results.add_custom_evaluation_result("m1", "new_dr", 0.2, 0.8)
+        self.results.add_custom_evaluation_result("m2", "test_dr", 0.3, 0.2, reverse_ranking=True)
+        self.results.add_custom_evaluation_result("m2", "new_dr", 0.1, 0.2, reverse_ranking=True)
+        assert np.isclose(self.results.custom_evaluation_weights["m1"], 0.8)
+        assert np.isclose(self.results.custom_evaluation_weights["m2"], 0.2)
         
         
+    def test_rank_dr_custom_weights(self):
+        ranking: Dict[str, float] = self.results.rank_dr_methods_custom()
+        assert np.isclose(ranking["test_dr"], 1.8)
+        assert np.isclose(ranking["new_dr"], 1.2)
+        
+        
+    def test_custom_rank_missing_method(self):
+        self.results.custom_evaluations = {"custom": {}}
+        self.results.custom_evaluation_reverse_ranking = {}
+        self.results.add_custom_evaluation_result("m1", "test_dr", 0.5, 0.8)
+        self.results.add_custom_evaluation_result("m1", "new_dr", 0.2, 0.8)
+        self.results.add_custom_evaluation_result("m2", "test_dr", 0.3, 0.2)
+        
+        try:
+            self.results.rank_dr_methods_custom()
+        except RuntimeError as e:
+            assert "Missing metrics for the following methods:" in str(e)
+        else:
+            assert False
+
+
     def test_plot_reduction(self):
         self.results.plot_reduction("test_dr", "./tmp_pytest/test_plot.png")
         assert os.path.exists("./tmp_pytest/test_plot.png")

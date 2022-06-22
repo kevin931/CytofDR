@@ -314,6 +314,9 @@ individually and the final results are appropriately weighted! Here, larger scor
 better! Obviously, if you have read `our paper <https://doi.org/10.1101/2022.04.26.489549>`_,
 you know that UMAP is pretty good at what it does when compared to PCA and tSNE! 
 
+If you desire to use your own metrics and use our ranking methods, be sure
+to read `Custom DR Evaluations <https://cytofdr.readthedocs.io/en/latest/tutorial/custom.html>`_
+tutorial for details on how you can do so.
 
 ----------------
 
