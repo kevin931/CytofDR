@@ -72,10 +72,14 @@ class Reductions():
     - **custom_evaluation_reverse_ranking**: Whether each metric in the ``custom_evaluations`` should be reverse ranked (i.e. smaller is better).
     """
     
-    def __init__(self, reductions: Dict[str, "np.ndarray"]={}):
+    def __init__(self, reductions: Optional[Dict[str, "np.ndarray"]]=None):
         """Constructor method for Reductions.
         """
-        self.reductions: Dict[str, "np.ndarray"] = reductions            
+        self.reductions: Dict[str, "np.ndarray"]
+        if reductions is None:
+            self.reductions = {}
+        else:
+            self.reductions = reductions
         self.original_data: Optional["np.ndarray"] = None
         self.original_labels: Optional["np.ndarray"] = None
         self.original_cell_types: Optional["np.ndarray"] = None

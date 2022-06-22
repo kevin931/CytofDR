@@ -37,15 +37,10 @@ class TestDRMethods():
         
         
     @pytest.mark.parametrize("method,out_dim", [("PCA", 2),
-                                                ("PCA", 3),
                                                 ("ICA", 2),
-                                                ("ICA", 3),
                                                 ("FA", 2),
-                                                ("FA", 3),
                                                 ("NMF", 2),
-                                                ("NMF", 3),
-                                                ("ZIFA", 2),
-                                                ("ZIFA", 3)])
+                                                ("ZIFA", 2)])
     def test_linear_methods(self, method: str, out_dim: int):
         embedding: np.ndarray = getattr(dr.LinearMethods, method)(self.expression, out_dim)
         assert isinstance(embedding, np.ndarray)
@@ -53,22 +48,14 @@ class TestDRMethods():
     
     
     @pytest.mark.parametrize("method,out_dim", [("MDS", 2),
-                                                ("MDS", 3),
                                                 ("UMAP", 2),
-                                                ("UMAP", 3),
                                                 ("isomap", 2),
-                                                ("isomap", 3),
                                                 ("LLE", 2),
-                                                ("LLE", 3),
                                                 ("spectral", 2),
-                                                ("spectral", 3),
                                                 ("sklearn_tsne", 2),
-                                                ("sklearn_tsne", 3),
                                                 ("open_tsne", 2),
                                                 ("phate", 2),
-                                                ("phate", 3),
-                                                ("spectral", 2),
-                                                ("spectral", 3)])
+                                                ("spectral", 2)])
     def test_non_linear_methods(self, method: str, out_dim: int):
         embedding: np.ndarray = getattr(dr.NonLinearMethods, method)(self.expression, out_dim)
         assert isinstance(embedding, np.ndarray)
@@ -76,15 +63,10 @@ class TestDRMethods():
         
     
     @pytest.mark.parametrize("kernel,out_dim", [("poly", 2),
-                                                ("poly", 3),
                                                 ("linear", 2),
-                                                ("linear", 3),
                                                 ("rbf", 2),
-                                                ("rbf", 3),
                                                 ("cosine", 2),
-                                                ("cosine", 3),
-                                                ("sigmoid", 2),
-                                                ("sigmoid", 3)])
+                                                ("sigmoid", 2)])
     def test_kernelPCA(self, kernel: str, out_dim: int):
         embedding: np.ndarray = getattr(dr.NonLinearMethods, "kernelPCA")(self.expression, out_dim, kernel)
         assert isinstance(embedding, np.ndarray)
