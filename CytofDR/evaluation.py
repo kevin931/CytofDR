@@ -429,6 +429,7 @@ class EvaluationMetrics():
     def davies_bouldin(embedding: "np.ndarray",
                        labels: "np.ndarray") -> float:
         '''Davies-Bouldin Index
+        
         This metric computes the Davies-Bouldin index of clusters in the embedding space. Ideally,
         clusters should be coherent, and using labels obtained from the original space can
         evaluate the effectiveness of the embedding technique.
@@ -437,7 +438,6 @@ class EvaluationMetrics():
         :param labels: The class labels of each observation.
 
         :return: Davies-Bouldin Index.
-        
         '''
         
         return sklearn.metrics.davies_bouldin_score(embedding, labels)
