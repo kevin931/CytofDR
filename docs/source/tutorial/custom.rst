@@ -52,8 +52,8 @@ evaluate the metrics:
 
 .. code-block:: python
 
-    >>> for reduction in results.reductions.keys():
-    ...     embedding_neighbors = EM.build_annoy(results.reductions[reduction])
+    >>> for reduction in results.names:
+    ...     embedding_neighbors = EM.build_annoy(results[reduction])
     ...     agreement.append(EM.neighborhood_agreement(original_neighbors, embedding_neighbors))
     >>> agreement
     [-0.0003080110625877093, -0.00031328229128209546]
@@ -77,8 +77,8 @@ more methods by including everything in the for loop:
 
 .. code-block:: python
 
-    >>> for reduction in results.reductions.keys():
-    ...     embedding_neighbors = EM.build_annoy(results.reductions[reduction])
+    >>> for reduction in results.names:
+    ...     embedding_neighbors = EM.build_annoy(results[reduction])
     ...     agreement = EM.neighborhood_agreement(original_neighbors, embedding_neighbors)
     ...     results.add_custom_evaluation_result(metric_name = "Neighborhood Agreement", reduction_name = reduction, value = agreement)
 
@@ -102,8 +102,8 @@ and you want to weight ``NPE`` to consist of 50% of the weight, which makes sens
 
 .. code-block:: python
 
-    >>> for reduction in results.reductions.keys():
-    ...     embedding_neighbors = EM.build_annoy(results.reductions[reduction])
+    >>> for reduction in results.names:
+    ...     embedding_neighbors = EM.build_annoy(results[reduction])
     ...     agreement = EM.neighborhood_agreement(original_neighbors, embedding_neighbors)
     ...     knn = EM.KNN(original_neighbors, embedding_neighbors)
     ...     npe = EM.knn(original_neighbors, embedding_neighbors)

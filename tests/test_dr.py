@@ -157,10 +157,33 @@ class TestReductions():
         os.mkdir("./tmp_pytest/")
         
     
+    def test_names_attributes(self):
+        assert isinstance(self.results.names, set)
+        assert "test_dr" in self.results.names
+        
+        
+    def test_get_item(self):
+        reduction = self.results["test_dr"]
+        assert isinstance(reduction, np.ndarray)
+        assert reduction.shape == (10, 2)
+        
+    
     def test_get_reduction(self):
         reduction = self.results.get_reduction("test_dr")
         assert isinstance(reduction, np.ndarray)
         assert reduction.shape == (10, 2)
+        
+        
+    def test_add_item(self):
+        self.results["new_dr"] = np.random.rand(10, 2)
+        assert "new_dr" in self.results.names
+        assert self.results.get_reduction("new_dr").shape == (10, 2)
+        
+        
+    def test_del_item(self):
+        del self.results["new_dr"]
+        assert len(self.results.reductions) == 1
+        assert "new_dr" not in self.results.names
         
         
     def test_add_reduction(self):
@@ -445,6 +468,11 @@ class TestReductions():
             assert "No 'evaluations' values found. Run the 'evaluate()' method first." in str(e)
         else:
             assert False
+            
+            
+    def test_str(self):
+        out_str: str = str(self.results)
+        assert out_str == f"A 'Reductions' object with {', '.join(self.results.names)}."
         
         
     @classmethod

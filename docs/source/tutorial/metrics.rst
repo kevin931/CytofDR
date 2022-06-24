@@ -236,8 +236,8 @@ with DR already performed:
     >>> type(results)
     <class 'CytofDR.dr.Reductions'>
 
-    >>> results.reductions.keys
-    dict_keys(['PCA', 'ICA', 'UMAP'])
+    >>> results.names
+    ['PCA', 'ICA', 'UMAP']
 
 since we will be focusing on evaluation only.
 

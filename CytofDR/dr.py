@@ -21,7 +21,7 @@ import _csv
 import csv
 import os
 import warnings
-from typing import Union, Optional, List, Dict, Any
+from typing import Union, Optional, List, Dict, Any, Set
 
 METHODS: Dict[str, bool]  = {"SAUCIE": True, "ZIFA": True, "GrandPrix": True}
     
@@ -57,6 +57,8 @@ class Reductions():
     :param reductions: A dictionary of reductions as indexed by their names.
     
     :Attributes:
+    - **reductions**: A dictionary of reductions as indexed by names.
+    - **names**: The names of the reductions.
     - **original_data**: The original space data before DR.
     - **original_labels**: Clusterings based on original space data.
     - **original_cell_types**: Cell types based on original space data. 
@@ -75,11 +77,14 @@ class Reductions():
     def __init__(self, reductions: Optional[Dict[str, "np.ndarray"]]=None):
         """Constructor method for Reductions.
         """
-        self.reductions: Dict[str, "np.ndarray"]
+        self._reductions: Dict[str, "np.ndarray"]
+        self.names: Set[str]
         if reductions is None:
-            self.reductions = {}
+            self._reductions = {}
+            self.names = set()
         else:
-            self.reductions = reductions
+            self._reductions = reductions
+            self.names = set(self._reductions.keys())
         self.original_data: Optional["np.ndarray"] = None
         self.original_labels: Optional["np.ndarray"] = None
         self.original_cell_types: Optional["np.ndarray"] = None
@@ -106,9 +111,10 @@ class Reductions():
         
         :raises ValueError: Reduction already exists but users choose not to replace the original.
         """
-        if name in list(self.reductions.keys()) and not replace:
+        if name in self.names and not replace:
             raise ValueError("Reduction already exists. Set 'replace' to True if replacement is intended.")
         self.reductions[name] = reduction
+        self.names.add(name)
         
         
     def get_reduction(self, name: str):
@@ -450,7 +456,7 @@ class Reductions():
         """
         
         custom_evaluations: Dict[str, Any] = {}
-        all_dr_methods: np.ndarray = np.array(list(self.reductions.keys()))
+        all_dr_methods: np.ndarray = np.array(list(self.names))
         for metric in self.custom_evaluations["custom"].keys():
             method_check: np.ndarray = np.isin(all_dr_methods, np.array(list(self.custom_evaluations["custom"][metric].keys())))
             if not np.all(method_check):
@@ -521,7 +527,7 @@ class Reductions():
         :param delimiter: The delimiter used, defaults to "\t"
         :type delimiter: str, optional
         """
-        for method in self.reductions.keys():
+        for method in self.names:
             path = save_dir + method + ".txt"
             self.save_reduction(method, path, overwrite, delimiter, **kwargs)
             
@@ -553,6 +559,58 @@ class Reductions():
                 for metric in self.evaluations[category].keys():
                     for method in self.evaluations[category][metric].keys():
                         w.writerow([category, metric, method, self.evaluations[category][metric][method]])
+                        
+                        
+    def __str__(self) -> str:
+        return f"A 'Reductions' object with {', '.join(self.names)}."
+    
+    
+    def __getitem__(self,  name: str) -> np.ndarray:
+        """Get a specific embedding from the ``Reductions`` object.
+
+        This method implements the bracket notation to access reductions. This is
+        equivalent to ``get_reduction()``.
+
+        :param name: The name of the reduction.
+        :type name: str
+        :return: A numpy array of the reduction.
+        :rtype: np.ndarray
+        """
+        return self.reductions[name]
+    
+    
+    def __setitem__(self, name: str, reduction: "np.ndarray"):
+        """To set reductions to the ``Reductions`` object.
+
+        This method implements the bracket notation to add reductions
+        to the object. This is largely the same as the ``add_reduction()``
+        method. The difference is that here there is no overwrite
+        protection, but the ``add_reduction()`` method defaults to
+        raise an error instead of replacing existing embeddings.
+
+        :param name: The name of the reduction.
+        :type name: str
+        :param reduction: A numpy array of the reduction.
+        :type reduction: np.ndarray
+        """
+        self.add_reduction(reduction, name, replace=True)
+        
+        
+    def __delitem__(self, name: str):
+        del self.reductions[name]
+        self.names = set(self.reductions.keys())
+        
+        
+    @property
+    def reductions(self) -> Dict[str, "np.ndarray"]:
+        return self._reductions
+    
+        
+    @reductions.setter
+    def reductions(self, reductions: Dict[str, "np.ndarray"]):
+        self._reductions = reductions
+        self.names = set(reductions.keys())
+        
     
     
 class LinearMethods():

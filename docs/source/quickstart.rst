@@ -130,12 +130,14 @@ dictionary and use the method names as keys.
            [ 0.9842613 , -2.8788142 ],
            [ 1.6086756 , -0.92493653]], dtype=float32)
 
-To know the names of your embeddings, you can simply run:
+To know the names of your embeddings, you can simply run
 
 .. code-block:: python
 
-    >>> results.reductions.keys() 
-    dict_keys(['PCA', 'UMAP', 'open_tsne'])
+    >>> results.names
+    {'PCA', 'UMAP', 'open_tsne'}
+
+which returns a set.
 
 Plotting Results
 -----------------

@@ -211,8 +211,8 @@ methods:
     >>> results = dr.Reductions()
     >>> results.add_reduction(reduction = embedding1, name = "your_dr")
     >>> results.add_reduction(reduction = embedding2, name = "your_dr2")
-    >>> results.reductions.keys()
-    dict_keys(["your_dr", "your_dr2"])
+    >>> results.names
+    ["your_dr", "your_dr2"]
 
 This is a great way to integrate this framework into anywhere of your workflow. At the same time,
 we allow you to use other DR methods along with our builtin methods to achieve maximum flexibility.
