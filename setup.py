@@ -52,6 +52,10 @@ setuptools.setup(
     name = "CytofDR",
     version = VERSION,
     description = "CyTOF Dimension Reduction Framework",
+    author="Kevin Wang",
+    url="https://github.com/kevin931/CytofDR",
+    long_description_content_type = "text/markdown",
+    long_description = open("README.md").read(),
     packages=["CytofDR"],
     python_requires=">=3.7",
     install_requires=["scikit-learn",
@@ -69,6 +73,7 @@ setuptools.setup(
                    "coverage"],
     license="MIT",
     classifiers = [
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3 :: Only",
         "Natural Language :: English"
     ],
