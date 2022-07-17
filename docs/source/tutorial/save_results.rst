@@ -82,7 +82,7 @@ local       knn          PCA      0.126
 local       knn          ICA      0.126
 local       npe          PCA      0.76
 local       npe          ICA      0.76
-========== =========== ======== =======================
+========== =========== ======== ======================
 
 You can easily run any downstream analyses using ``pandas`` or even ``R``
 if you prefer.
