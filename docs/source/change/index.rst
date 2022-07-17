@@ -6,17 +6,13 @@ Here are the most recent releases and changes of cytomulate. Currently, we're st
 Therefore, we don't have any official releases. However, check out our git history to see what we're
 doing!
 
+------------------------
+
 ************************
 Latest Release: v0.1.0
 ************************
 
 This is the first official release of ``CytofDR`` with LTS.
-
-Bug Fixes
------------
-
-- Remove ``numpy`` version restriction
-
 
 Changes and New Features
 --------------------------

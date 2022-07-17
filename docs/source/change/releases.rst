@@ -12,11 +12,6 @@ v0.1.0
 
 This is the first official release of ``CytofDR`` with LTS.
 
-Bug Fixes
------------
-
-- Remove ``numpy`` version restriction
-
 
 Changes and New Features
 --------------------------
