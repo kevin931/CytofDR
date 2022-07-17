@@ -62,17 +62,21 @@ Of course, there are many more customizations and ways you can use ``CytofDR``. 
 
 There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
 
-## Latest Release
+## Latest Release: v0.1.0
 
-Our lastest release is ``v0.0.1`` with the following the following release notes:
+This is the first official release of ``CytofDR`` with LTS.
 
-- This is the first offical pre-release of ``CytofDR``.
-- Most of the pipeline is complete, including DR, evaluation, ranking, and plotting.
-- Extensive documentation and tutorial complete.
-- This release aims to aid the completion of our development and tool chain.
-- We are on  ``conda`` and ``PyPI``!
+### Bug Fixes
 
-For more release and development information, look around on our GitHub or look through our [changelog](https://cytofdr.readthedocs.io/en/latest/change/index.html). 
+- Remove ``numpy`` version restriction
+
+### Changes and New Features
+
+- Support for magic methods: ``print`` and ``[]`` for ``Reductions`` class
+- Add ``names`` attributes to ``Reductions`` class
+- Add custom DR evaluation
+- Add functions to save DR embeddings and evaluations
+- Improve documentation and docstrings
 
 ## Issues and Contributions
 

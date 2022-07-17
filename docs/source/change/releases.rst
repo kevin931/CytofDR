@@ -1,6 +1,35 @@
+##########
 Releases
-==========
+##########
 
+Here we include our release notes for past releases in sequential order.
+
+--------------------
+
+********
+v0.1.0
+********
+
+This is the first official release of ``CytofDR`` with LTS.
+
+Bug Fixes
+-----------
+
+- Remove ``numpy`` version restriction
+
+
+Changes and New Features
+--------------------------
+
+- Support for magic methods: ``print`` and ``[]`` for ``Reductions`` class
+- Add ``names`` attributes to ``Reductions`` class
+- Add custom DR evaluation
+- Add functions to save DR embeddings and evaluations
+- Improve documentation and docstrings
+
+
+
+********
 v0.0.1
 ********
 
