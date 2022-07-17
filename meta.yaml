@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 124bdeefc1a041c28e26f5ace29483b7d3ce21b7ff97ce0fa50499dedbb80bfe
+  sha256: 7880f5b23d8b6554732f7ead73c07642d7e2eae080434e18953829603aee9bd3
 
 build:
   noarch: python
@@ -23,7 +23,7 @@ requirements:
   run:
     - python >=3.7
     - scikit-learn
-    - numpy
+    - numpy <=1.21
     - scipy
     - umap-learn
     - openTSNE
