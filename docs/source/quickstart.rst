@@ -89,7 +89,7 @@ and PCA--three of the most popular methods. You can simply do the following:
     >>> from CytofDR import dr
     >>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
     Running PCA
-    Runnign UMAP
+    Running UMAP
     Running open_tsne
     ===> Finding 90 nearest neighbors using Annoy approximate search using euclidean distance...
     --> Time elapsed: 81.40 seconds
