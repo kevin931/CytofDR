@@ -9,7 +9,6 @@
 | dev | ![Badge1](https://img.shields.io/badge/Version-0.1.0-success) |![Tests](https://github.com/kevin931/CytofDR/actions/workflows/ci.yml/badge.svg?branch=dev) | [![Documentation Status](https://readthedocs.org/projects/cytofdr/badge/?version=latest)](https://cytofdr.readthedocs.io/en/latest/?badge=latest) | [![codecov](https://codecov.io/gh/kevin931/CytofDR/branch/dev/graph/badge.svg?token=K9AJQLYU8N)](https://codecov.io/gh/kevin931/CytofDR) |
 
 
-
 ## About
 
 CytofDR is a framework of dimension reduction (DR) and its evaluation for both Cytometry by Time-of-Flight (CyTOF) and general-purpose usages. It allows you to
@@ -23,8 +22,9 @@ You can install our CytofDR package, which is currentl on ``PyPI``:
 pip install CytofDR
 ```
 
-Python (>=3.7) is **required**. All dependencies should be automatically installed. For a list of optional dependencies, please visit our documentation page's detailed [Installation Guide](https://cytofdr.readthedocs.io/en/latest/installation.html).
+Python (>=3.7) is **required**. This pacackage is architecture agnostic: it should run where PyPI or conda is available. All dependencies should be automatically installed. For a list of optional dependencies, please visit our documentation page's detailed [Installation Guide](https://cytofdr.readthedocs.io/en/latest/installation.html).
 
+Intallation should take less than a few minutes for most computers with reasonable network connections.
 
 ### Conda Installation
 
@@ -37,6 +37,34 @@ conda install -c kevin931 cytofdr -c conda-forge -c bioconda
 ```
 The core dependencies should automatically install! 
 
+### Dependencies
+
+Our dependencies are broken down core dependencies and optional dependencies. Below is a list of core dependencies:
+
+- scikit-learn
+- numpy (<=1.21)
+- scipy
+- umap-learn
+- openTSNE
+- phate
+- annoy
+- matplotlib
+- seaborn
+
+The most current compatible versions will work with ``CytofDR``, except for ``numpy``. New versions of ``numpy`` can cause issues with ``conda``. If you wish to use ``PyCytoData``, you need to install ``numpy`` version 1.20 or 1.21.
+
+We also have some optional dependencies which are much trickier to install and manage. Refer to our [Installation Guide](https://cytofdr.readthedocs.io/en/latest/installation.html) for more details.
+
+## PyCytoData Integration
+
+``CytofDR`` is a member of the **PyCytoData Alliance Plus**, meaning that we're compatible with the ``PyCytoData`` package. The ``PyCytoData`` package is used mainly for loading datasets and managing every step of the CyTOF workflow. By creating and maintaining this ecosystem, we hope to create a robust workflow as a one-stop solution for CyTOF practioners using Python. To install ``PyCytoData``, you can simply use the following command:
+
+```shell
+pip install PyCytoData
+```
+
+To view how you can perform DR using ``PyCYtoData``, [this tutorial](https://pycytodata.readthedocs.io/en/latest/tutorial/dr.html) walks through every ste
+
 ## Quick Tutorial
 
 ``CytofDR`` makes it easy to run many DR methods while also evaluating them for your CyTOF samples. We have a greatly simplified pipeline for your needs. To get started, follow this example:
@@ -47,14 +75,51 @@ The core dependencies should automatically install!
 # Load Dataset
 >>> expression = np.loadtxt(fname="PATH_To_file", dtype=float, skiprows=1, delimiter=",")
 # Run DR and evaluate
->>> results = dr.run_dr_methods(expression, methods=["umap", "open_tsne", "pca"])
+>>> results = dr.run_dr_methods(expression, methods=["umap", "pca"])
+Running PCA
+Running UMAP
 >>> results.evaluate(category = ["global", "local", "downstream"])
+Evaluating global...
+Evaluating local...
+Evaluating downstream...
 >>> results.rank_dr_methods()
+{'PCA': 1.0, 'UMAP': 2.0}
 # Save Results
 >>> results.save_all_reductions(save_dir="PATH_to_DIR", delimiter=",")
 >>> results.save_evaluations(path="PATH_to_FILE")
 ```
-We strive to make our pipeline as simple as possible with natural langauge-like method names.
+We strive to make our pipeline as simple as possible with natural langauge-like method names. Depending on your dataset size, the above example's runtime may vary. PCA is extremely fast, whereas can take upwards of 10 minutes if the dataset is much larger than 100,000 cells. For the `evaluate` command, the downstream command's silhouette score and clustering step can take some time, but for a small dataset, it can accomplish evaluation within a few minutes.
+
+For large dataset, we recommend using efficient DR methods and providing your own clustering algorithm if possible.
+
+### Examples using PyCytoData
+
+You can use ``PyCytoData`` to load your dataset:
+
+```python
+>>> from CytofDR import dr
+>>> from PyCytoData import FileIO
+# Load Dataset
+>>> dataset = FileIO.load_expression("PATH_To_file", col_names = True)
+# Run DR and evaluate
+>>> results = dr.run_dr_methods(dataset.expression_matrix, methods=["umap", "pca"])
+Running PCA
+Running UMAP
+```
+Or with a benchmark dataset:
+
+```python
+>>> from CytofDR import dr
+>>> from PyCytoData import DataLoader
+# Load Dataset
+>>> dataset = DataLoader.load_dataset(dataset = "levine13")
+# Run DR and evaluate
+>>> results = dr.run_dr_methods(dataset.expression_matrix, methods=["umap", "pca"])
+Running PCA
+Running UMAP
+```
+
+All subsequent workflows remain the same.
 
 ### Documentation
 
@@ -90,7 +155,6 @@ Our preprint "Comparative Analysis of Dimension Reductions Methods for Cytometry
 	year = {2022},
 	doi = {10.1101/2022.04.26.489549},
 	publisher = {Cold Spring Harbor Laboratory},
-	abstract = {While experimental and informatic techniques around single cell sequencing (scRNA-seq) are much more advanced, research around mass cytometry (CyTOF) data analysis has severely lagged behind. However, CyTOF profiles the proteomics makeup of single cells and is much more relevant for investigation of disease phenotypes than scRNA-seq. CyTOF data are also dramatically different from scRNA-seq data in many aspects. This calls for the evaluation and development of statistical and computational methods specific for analyses of CyTOF data. Dimension reduction (DR) is one of the most critical first steps of single cell data analysis. Here, we benchmark 20 DR methods on 110 real and 425 synthetic CyTOF datasets, including 10 Imaging CyTOF datasets, for accuracy, scalability, stability, and usability. In particular, we checked the concordance of DR for CyTOF data against scRNA-seq data that were generated from the same samples. Surprisingly, we found that a less well-known method called SAUCIE is the overall best performer, followed by MDS, UMAP and scvis. Nevertheless, there is a high level of complementarity between these tools, so the choice of method should depend on the underlying data structure and the analytical needs (e.g. global vs local preservation). Based on these results, we develop a set of freely available web resources to help users select the best DR method for their dataset, and to aid in the development of improved DR algorithms tailored to the increasingly popular CyTOF technique.Competing Interest StatementThe authors have declared no competing interest.},
 	URL = {https://www.biorxiv.org/content/early/2022/06/02/2022.04.26.489549},
 	eprint = {https://www.biorxiv.org/content/early/2022/06/02/2022.04.26.489549.full.pdf},
 	journal = {bioRxiv}
