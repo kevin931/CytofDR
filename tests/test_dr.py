@@ -30,7 +30,7 @@ class TestDRMethods():
     
     @classmethod
     def setup_class(cls):
-        cls.expression: np.ndarray = np.abs(np.random.normal(2, 1, (20, 10)))
+        cls.expression: np.ndarray = np.abs(np.random.normal(2, 1, (35, 10)))
         cls.expression[[0, 0]] = 0
         cls.transform: np.ndarray = np.abs(np.random.normal(2, 1, (10, 10)))
         cls.expression[[0, 0]] = 0
@@ -44,7 +44,7 @@ class TestDRMethods():
     def test_linear_methods(self, method: str, out_dim: int):
         embedding: np.ndarray = getattr(dr.LinearMethods, method)(self.expression, out_dim)
         assert isinstance(embedding, np.ndarray)
-        assert embedding.shape == (20, out_dim)
+        assert embedding.shape == (35, out_dim)
     
     
     @pytest.mark.parametrize("method,out_dim", [("MDS", 2),
@@ -52,14 +52,14 @@ class TestDRMethods():
                                                 ("isomap", 2),
                                                 ("LLE", 2),
                                                 ("spectral", 2),
-                                                ("sklearn_tsne", 2),
                                                 ("open_tsne", 2),
+                                                ("sklearn_tsne", 2),
                                                 ("phate", 2),
                                                 ("spectral", 2)])
     def test_non_linear_methods(self, method: str, out_dim: int):
         embedding: np.ndarray = getattr(dr.NonLinearMethods, method)(self.expression, out_dim)
         assert isinstance(embedding, np.ndarray)
-        assert embedding.shape == (20, out_dim)
+        assert embedding.shape == (35, out_dim)
         
     
     @pytest.mark.parametrize("kernel,out_dim", [("poly", 2),
@@ -70,7 +70,7 @@ class TestDRMethods():
     def test_kernelPCA(self, kernel: str, out_dim: int):
         embedding: np.ndarray = getattr(dr.NonLinearMethods, "kernelPCA")(self.expression, out_dim, kernel)
         assert isinstance(embedding, np.ndarray)
-        assert embedding.shape == (20, out_dim)
+        assert embedding.shape == (35, out_dim)
         
         
     @pytest.mark.parametrize("method", ["isomap", "LLE"])
@@ -83,14 +83,14 @@ class TestDRMethods():
     def test_open_tsne_perp_list(self):
         embedding: np.ndarray = dr.NonLinearMethods.open_tsne(self.expression, perp=[5, 10])
         assert isinstance(embedding, np.ndarray)
-        assert embedding.shape == (20, 2)
+        assert embedding.shape == (35, 2)
         
     
-    @pytest.mark.parametrize("init", ["spectral", "random", np.random.normal(size=(20, 2))])
+    @pytest.mark.parametrize("init", ["spectral", "random", np.random.normal(size=(35, 2))])
     def test_open_tsne_init(self, init: Union[str, np.ndarray]): 
         embedding: np.ndarray = dr.NonLinearMethods.open_tsne(self.expression, init=init)
         assert isinstance(embedding, np.ndarray)
-        assert embedding.shape == (20, 2)
+        assert embedding.shape == (35, 2)
     
     
     @pytest.mark.parametrize("out_dim", [2, 3])
@@ -98,14 +98,14 @@ class TestDRMethods():
         if METHODS["GrandPrix"]:
             embedding: np.ndarray = dr.NonLinearMethods.grandprix(self.expression, out_dims=out_dim)
             assert isinstance(embedding, np.ndarray)
-            assert embedding.shape == (20, out_dim)
+            assert embedding.shape == (35, out_dim)
             
     
     def test_SAUCIE(self):
         if METHODS["SAUCIE"]:
             embedding: np.ndarray = dr.NonLinearMethods.SAUCIE(self.expression)
             assert isinstance(embedding, np.ndarray)
-            assert embedding.shape == (20, 2)
+            assert embedding.shape == (35, 2)
             
             
     def test_run_dr_methods_all(self):
@@ -127,7 +127,7 @@ class TestDRMethods():
     @pytest.mark.parametrize("method", ["PCA", "ICA", "ZIFA", "NMF", "FA",
                                         "MDS", "UMAP", "open_tsne", "sklearn_tsne",
                                         "PHATE", "Spectral", "Isomap", "LLE"])  
-    def test_run_dr_method_linear(self, method):
+    def test_run_dr_method(self, method):
         out: dr.Reductions = dr.run_dr_methods(data=self.expression, methods=method)
         assert isinstance(out, dr.Reductions)
         assert method in list(out.reductions.keys())
