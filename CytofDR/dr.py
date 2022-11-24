@@ -215,16 +215,20 @@ class Reductions():
             PCD refers to Point Cluster Distance as implemented in this package; pairwise 
             is the traditional pairwise distance. For large datasets, PCD is recommended. Defaults to "PCD".
         :param k_neighbors: The number of neighbors to use for ``local`` metrics. Defaults to 5.
-        :param annoy_original_data_path: The file path to an ANNOY object for original data.
+        :param annoy_original_data_path: The file path to an ANNOY object for original data. Optional.
+        :param auto_cluster: Whether to automatically perform clustering for evaluation purposes.
+            This option has no effect when the `original_labels` and `embedding_labels` are previously added
+            with the `add_evaluation_metadata` method. Defaults to `True`.
+        :param n_clusters: The number of clusters for the `auto_cluster` option. Defaults to 20.
+        :param verbose: Whether to print out progress. Defaults to `True`.
         
         :raises ValueError: No reductions to evalate.
         :raises ValueError: Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only.
         :raises ValueError: Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes.
         
-
         .. note::
         
-            This method required ``add_evaluation_metadata`` to run first. ``original_cell_types`` and
+            This method requires ``add_evaluation_metadata`` to run first. ``original_cell_types`` and
             ``embedding_cell_types`` are optional for the downstream category. For ``concordance``, if
             you wish to use clustering results for embedding and comparison files, set the appropriate
             clusterings to ``embedding_cell_types`` and ``comparison_cell_types``. 
@@ -526,6 +530,7 @@ class Reductions():
         :type overwrite: bool, optional
         :param delimiter: The delimiter used, defaults to "\t"
         :type delimiter: str, optional
+        :param kwargs: Keyword-only arguments passed to the `np.savetxt` method.
         """
         for method in self.names:
             path = save_dir + method + ".txt"
@@ -597,6 +602,16 @@ class Reductions():
         
         
     def __delitem__(self, name: str):
+        """Delete a DR embedding from the object.
+
+        This method implements the `del` keyword and deletes the specified DR embedding.
+        The `names` attribute will be reset as well.
+        
+        .. note:: For now, any downstream rankings and analyses will **not** be reset with this operation.
+
+        :param name: The name of the embedding.
+        :type name: str
+        """
         del self.reductions[name]
         self.names = set(self.reductions.keys())
         
