@@ -6,7 +6,7 @@
 
 | Branch | Release | CI/CD | Documentation | Code Coverage |
 | --- | --- | --- | --- | --- |
-| dev | ![Badge1](https://img.shields.io/badge/Version-0.1.0-success) |![Tests](https://github.com/kevin931/CytofDR/actions/workflows/ci.yml/badge.svg?branch=dev) | [![Documentation Status](https://readthedocs.org/projects/cytofdr/badge/?version=latest)](https://cytofdr.readthedocs.io/en/latest/?badge=latest) | [![codecov](https://codecov.io/gh/kevin931/CytofDR/branch/dev/graph/badge.svg?token=K9AJQLYU8N)](https://codecov.io/gh/kevin931/CytofDR) |
+| dev | ![Badge1](https://img.shields.io/badge/Version-0.2.0-success) |![Tests](https://github.com/kevin931/CytofDR/actions/workflows/ci.yml/badge.svg?branch=dev) | [![Documentation Status](https://readthedocs.org/projects/cytofdr/badge/?version=latest)](https://cytofdr.readthedocs.io/en/latest/?badge=latest) | [![codecov](https://codecov.io/gh/kevin931/CytofDR/branch/dev/graph/badge.svg?token=K9AJQLYU8N)](https://codecov.io/gh/kevin931/CytofDR) |
 
 
 ## About
@@ -42,7 +42,7 @@ The core dependencies should automatically install!
 Our dependencies are broken down core dependencies and optional dependencies. Below is a list of core dependencies:
 
 - scikit-learn
-- numpy (<=1.21)
+- numpy
 - scipy
 - umap-learn
 - openTSNE
@@ -131,17 +131,21 @@ Of course, there are many more customizations and ways you can use ``CytofDR``. 
 
 There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
 
-## Latest Release: v0.1.0
+## Latest Release: v0.2.0
 
-This is the first official release of ``CytofDR`` with LTS.
+This releases adds some new features along with some minor improvements and fixes.
+
 
 ### Changes and New Features
 
-- Support for magic methods: ``print`` and ``[]`` for ``Reductions`` class
-- Add ``names`` attributes to ``Reductions`` class
-- Add custom DR evaluation
-- Add functions to save DR embeddings and evaluations
-- Improve documentation and docstrings
+- Add `pairwise_downsample` option for pairwise distance optimization in `Reductions.evaluate` method.
+- Add example datasets for the GitHub repo.
+- Improve docstrings for documentations.
+- Improve unit tests for coverage.
+
+### Deprecations
+
+- The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
 
 ## Issues and Contributions
 

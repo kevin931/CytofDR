@@ -1,5 +1,5 @@
 {% set name = "CytofDR" %}
-{% set version = "0.1.0" %}
+{% set version = "0.2.0" %}
 
 package:
   name: "{{ name|lower }}"
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 7880f5b23d8b6554732f7ead73c07642d7e2eae080434e18953829603aee9bd3
+  sha256: 437a892d497aebdb166b0962aad612daec026072c506bb86a7c0d02a6800f5bc
 
 build:
   noarch: python
@@ -23,7 +23,7 @@ requirements:
   run:
     - python >=3.7
     - scikit-learn
-    - numpy <=1.21
+    - numpy
     - scipy
     - umap-learn
     - openTSNE

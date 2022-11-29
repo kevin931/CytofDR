@@ -9,19 +9,24 @@ doing!
 ------------------------
 
 ************************
-Latest Release: v0.1.0
+Latest Release: v0.2.0
 ************************
 
-This is the first official release of ``CytofDR`` with LTS.
+This releases adds some new features along with some minor improvements and fixes.
+
 
 Changes and New Features
 --------------------------
 
-- Support for magic methods: ``print`` and ``[]`` for ``Reductions`` class
-- Add ``names`` attributes to ``Reductions`` class
-- Add custom DR evaluation
-- Add functions to save DR embeddings and evaluations
-- Improve documentation and docstrings
+- Add `pairwise_downsample` option for pairwise distance optimization in `Reductions.evaluate` method.
+- Add example datasets for the GitHub repo.
+- Improve docstrings for documentations.
+- Improve unit tests for coverage.
+
+Deprecations
+----------------
+
+- The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
 
 
 .. toctree::

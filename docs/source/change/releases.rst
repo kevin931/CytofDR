@@ -7,6 +7,27 @@ Here we include our release notes for past releases in sequential order.
 --------------------
 
 ********
+v0.2.0
+********
+
+This releases adds some new features along with some minor improvements and fixes.
+
+
+Changes and New Features
+--------------------------
+
+- Add `pairwise_downsample` option for pairwise distance optimization in `Reductions.evaluate` method.
+- Add example datasets for the GitHub repo.
+- Improve docstrings for documentations.
+- Improve unit tests for coverage.
+
+Deprecations
+----------------
+
+- The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
+
+
+********
 v0.1.0
 ********
 
