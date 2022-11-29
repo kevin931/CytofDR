@@ -239,7 +239,12 @@ class Reductions():
             This method requires ``add_evaluation_metadata`` to run first. ``original_cell_types`` and
             ``embedding_cell_types`` are optional for the downstream category. For ``concordance``, if
             you wish to use clustering results for embedding and comparison files, set the appropriate
-            clusterings to ``embedding_cell_types`` and ``comparison_cell_types``. 
+            clusterings to ``embedding_cell_types`` and ``comparison_cell_types``.
+            
+        .. versionadded:: 0.2.0 
+        
+            The `pairwise_downsample` option for `pwd_metric`; the `pairwise_downsample_size` parameter for when
+            `pairwise_downbsample` is chosen.
         """
         
         if len(self.reductions) == 0:

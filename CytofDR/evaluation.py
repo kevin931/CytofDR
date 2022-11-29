@@ -479,7 +479,10 @@ class EvaluationMetrics():
         :return: The score or "NA"
             
         .. Note:: When there is no overlapping labels, "NA" is automatically returned as ``str``.
-        .. Deprecation Notice:: Passing in `str` for the `comparison_classes` parameter is deprecated
+        
+        .. deprecated:: 0.2.0
+        
+            Passing in `str` for the `comparison_classes` parameter is deprecated
             and will be removed in futrue versions.
         """
         
