@@ -174,6 +174,11 @@ class TestReductions():
         assert reduction.shape == (10, 2)
         
         
+    def test_reduction_setter(self):
+        reduction  = self.results.get_reduction("test_dr")
+        self.results.reductions = {"test_dr": reduction}
+        
+        
     def test_add_item(self):
         self.results["new_dr"] = np.random.rand(10, 2)
         assert "new_dr" in self.results.names
@@ -270,6 +275,18 @@ class TestReductions():
             assert m in results.keys()
             assert isinstance(results[m], float)
             assert results[m] <= 2 and results[m] >= 1
+            
+            
+    def test_rank_dr_methods_no_type_cluster(self):
+        self.results.original_cell_types = None
+        self.results.evaluate(category=["downstream"])
+        results: Dict[str, float] = self.results.rank_dr_methods()
+        for m in ["new_dr", "test_dr"]: 
+            assert m in results.keys()
+            assert isinstance(results[m], float)
+            assert results[m] <= 2 and results[m] >= 1
+        
+        self.results.original_cell_types = np.repeat(np.array(["a","b"]), 5)
             
             
     def test_evaluate_pairwise(self):
