@@ -277,6 +277,16 @@ class TestReductions():
         assert "global" in self.results.evaluations.keys()
         
         
+    def test_evaluate_pairwise_downsample(self):
+        self.results.evaluate(category="global", pwd_metric="pairwise_downsample", pairwise_downsample_size=5)
+        assert "global" in self.results.evaluations.keys()
+        
+        
+    def test_evaluate_pairwise_downsample_default(self):
+        self.results.evaluate(category="global", pwd_metric="pairwise_downsample")
+        assert "global" in self.results.evaluations.keys()
+        
+        
     def test_evaluate_k_neighbors(self):
         self.results.evaluate(category="local", k_neighbors=3)
         assert "local" in self.results.evaluations.keys()
@@ -286,7 +296,7 @@ class TestReductions():
         try:
             self.results.evaluate(category="global", pwd_metric="Wrong")
         except ValueError as e:
-            assert "Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only." in str(e)
+            assert "Unsupported 'pwd_metric': 'PCD', 'Pairwise', or 'pairwise_downsample' only." in str(e)
         else:
             assert False
             

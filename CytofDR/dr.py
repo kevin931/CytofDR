@@ -204,16 +204,19 @@ class Reductions():
                  annoy_original_data_path: Optional[str]=None,
                  auto_cluster: bool=True,
                  n_clusters: int=20,
-                 verbose: bool=True):     
+                 verbose: bool=True,
+                 pairwise_downsample_size: int=10000):     
         """Evaluate DR Methods Using Default DR Evaluation Scheme.
 
         This method ranks the DR methods based on any of the four default categories:
         ``global``, ``local``, ``downstream``, or ``concordance``. 
         
         :param category: The major evaluation category: ``global``, ``local``, ``downstream``, or ``concordance``.
-        :param pwd_metric: The pairwise distance metric. Two options are "PCD" or "pairwise".
+        :param pwd_metric: The pairwise distance metric. Three options are "PCD", "pairwise_downsample", or "pairwise".
             PCD refers to Point Cluster Distance as implemented in this package; pairwise 
-            is the traditional pairwise distance. For large datasets, PCD is recommended. Defaults to "PCD".
+            is the traditional pairwise distance; pairwise_downsample is pairwise distance with downsampling
+            for both data and embedding. For large datasets, PCD and pairwise_downsample are recommended and
+            practically with equivalent performances. Defaults to "PCD".
         :param k_neighbors: The number of neighbors to use for ``local`` metrics. Defaults to 5.
         :param annoy_original_data_path: The file path to an ANNOY object for original data. Optional.
         :param auto_cluster: Whether to automatically perform clustering for evaluation purposes.
@@ -221,9 +224,14 @@ class Reductions():
             with the `add_evaluation_metadata` method. Defaults to `True`.
         :param n_clusters: The number of clusters for the `auto_cluster` option. Defaults to 20.
         :param verbose: Whether to print out progress. Defaults to `True`.
+        :param pairwise_downsample_size: The downsample size if the `pairwise_downsample` is chosen for the
+            `pwd_metric`. If this is larger than the sample size of the original dataset, this methods falls
+            back to the `pairwise` option for `pwd_metric`. On a typical machine, it is not recommended to 
+            go beyond the default, and for datasets smaller than 10,000, no downsample is strictly necessary.
+            Defaults to 10,000.
         
         :raises ValueError: No reductions to evalate.
-        :raises ValueError: Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only.
+        :raises ValueError: Unsupported 'pwd_metric': 'PCD', 'Pairwise', or 'pairwise_downsample' only.
         :raises ValueError: Evaluation needs 'original_data', 'original_labels', and 'embedding_labels' attributes.
         
         .. note::
@@ -236,8 +244,8 @@ class Reductions():
         
         if len(self.reductions) == 0:
             raise ValueError("No reductions to evalate. Add your reductions first.")
-        if pwd_metric.lower() not in  ["pcd", "pairwise"]:
-            raise ValueError("Unsupported 'pwd_metric': 'PCD' or 'Pairwise' only.")
+        if pwd_metric.lower() not in  ["pcd", "pairwise", "pairwise_downsample"]:
+            raise ValueError("Unsupported 'pwd_metric': 'PCD', 'Pairwise', or 'pairwise_downsample' only.")
         
         self.evaluations = {}
                 
@@ -270,6 +278,16 @@ class Reductions():
                 data_distance = PointClusterDistance(self.original_data, self.original_labels).fit(flatten=True)
                 for e in self.reductions.keys():
                     embedding_distance[e] = PointClusterDistance(self.reductions[e], self.original_labels).fit(flatten=True)
+                    
+            elif pwd_metric.lower() == "pairwise_downsample":
+                downsample_index: np.ndarray
+                if pairwise_downsample_size >= self.original_data.shape[0]:
+                    downsample_index = np.arange(self.original_data.shape[0])
+                else:
+                    downsample_index = np.random.choice(np.arange(self.original_data.shape[0]), size=pairwise_downsample_size, replace=False)
+                data_distance = scipy.spatial.distance.pdist(self.original_data[downsample_index])
+                for e in self.reductions.keys():
+                    embedding_distance[e] = scipy.spatial.distance.pdist(self.reductions[e][downsample_index], metric="euclidean")
                 
             else:
                 data_distance = scipy.spatial.distance.pdist(self.original_data)

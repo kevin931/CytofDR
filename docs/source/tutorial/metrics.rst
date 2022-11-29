@@ -204,8 +204,8 @@ and sub categories. The following table is a summary of all the metrics and thei
  Downstream                   Cluster Reconstruction             RF             0.0208        1/4/3/4
  Downstream                   Clsuter Concordance                ARI            0.0417        1/4/3/2
  Downstream                   Clsuter Concordance                NMI            0.0417        1/4/3/2
- Downstream                   Cell Type-Clustering Concordance    ARI            0.0417        1/4/3/2
- Downstream                   Cell Type-Clustering Concordance    NMI            0.0417        1/4/3/2
+ Downstream                   Cell Type-Clustering Concordance   ARI            0.0417        1/4/3/2
+ Downstream                   Cell Type-Clustering Concordance   NMI            0.0417        1/4/3/2
  Concordance                  Cluster-Distance                   CCD            0.0833        1/4/3
  Concordance                  EMD                                EMD            0.0833        1/4/3
  Concordance                  Gating Concordance                 ARI            0.0417        1/4/3/2

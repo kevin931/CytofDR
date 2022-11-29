@@ -216,3 +216,52 @@ or simply the vector, so that you can run other metrics:
     array([0.13338769, 0.11425074, 0.57807929, 0.57630871, 0.35672805,
        0.35369442, 0.27244763, 0.25324668, 0.6125959 , 0.63173534,
        ..., 0.55249102, 0.56914471, 0.57123187, 0.45559932, 0.4623146 ])
+
+
+Using PCD for DR Evaluation
+-----------------------------
+
+PCD is the default for evaluation when labels are available or when `auto_cluster` is set
+to `True` in the `evaluate` method. Suppose we have a `Reductions` object named `results`,
+the simplest case will be
+
+.. code-block:: python
+
+    >>> results.evaluate(category = ["global"], auto_cluster = True, n_clusters = 20)
+    Evaluating global...
+
+Or, if you prefer your own clustering results or labels, you can add them as well:
+
+.. code-block:: python
+
+    >>> results.add_evaluation_metadata(original_labels = original_labels, embedding_labels = embedding_labels)
+    >>> results.evaluate(category = ["global"], n_clusters = 20)
+    Evaluating global...
+
+where we assume you already have `original_labels` and `embedding_labels` as arrays. In
+this latter case, you no longer need `auto_cluster`.
+
+
+-----------------------------
+
+*************************************
+PCD Alternative: Pairwise Downsample
+*************************************
+
+If you don't have clustering information to perform PCD or prefer downsampling-based
+methods, you can use the `pairwise_downsample` method to tackle the sample size issue.
+Namely, we randomly downsample both the original dataset and the embedding and then
+we find the pairwise distance. In practice, we found that PCD and pairwise downsample
+are very similar in terms of evaluation performance of DR methods.
+
+This metric can only be used for evaluation. To use it, you can just specify it while
+calling the `evaluate` method on your `Reductions` object:
+
+.. code-block:: python
+
+    >>> results.evaluate(category = ["global"], pwd_metric = "pairwise_downsample", pairwise_downsample_size = 10000) 
+    Evaluating global...
+
+This will downsample to 10,000 cells as with default. Of course, you can choose a
+different value, but for reasonable memory size, we won't recommend anything much
+larger.
