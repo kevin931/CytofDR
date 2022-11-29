@@ -10,6 +10,7 @@ import sklearn.metrics
 from annoy import AnnoyIndex
 import itertools
 from typing import Optional, Any, Union, List, Tuple, Callable
+import warnings
 
 
 class EvaluationMetrics():
@@ -448,7 +449,7 @@ class EvaluationMetrics():
                               labels_embedding: "np.ndarray",
                               comparison_file: Union["np.ndarray", List["np.ndarray"]],
                               comparison_labels: Union["np.ndarray", List["np.ndarray"]],
-                              comparison_classes: Optional[Union[str, List[str]]]=None,
+                              comparison_classes: Optional[List[str]]=None,
                               method: str = "emd"
                               ) -> Union[float, str]:
         """Concordance between two embeddings.
@@ -470,12 +471,16 @@ class EvaluationMetrics():
         :param labels_embedding: Labels for all obervations in the embedding.
         :param comparison_file: The second embedding.
         :param comparison_labels: The labels for all observations in the comparison embedding.
-        :param comparison_classes: Which classes in labels to compare. If ``None``, all overlapping labels used, optional
+        :param comparison_classes: Which classes in labels to compare. At least two classes need
+            to be provided for this to work; otherwise, `NA` will be returned. If ``None``, all
+            overlapping labels used, optional
         :param method: "emd" or "cluster_distance", defaults to "emd"
             
         :return: The score or "NA"
             
         .. Note:: When there is no overlapping labels, "NA" is automatically returned as ``str``.
+        .. Deprecation Notice:: Passing in `str` for the `comparison_classes` parameter is deprecated
+            and will be removed in futrue versions.
         """
         
         if not isinstance(comparison_file, list):
@@ -484,6 +489,7 @@ class EvaluationMetrics():
             comparison_labels = [comparison_labels]
         if not isinstance(comparison_classes, list) and comparison_classes is not None:
             comparison_classes = [comparison_classes]
+            warnings.warn("Passing in a non-list parameter is deprecated. Use a list instead.", DeprecationWarning, stacklevel=2)
             
         method = method.lower()
             

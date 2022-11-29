@@ -167,6 +167,15 @@ class TestEvaluationMetrics():
         assert score >= 0
         
         
+    def test_embedding_concordance_comparison_classes_type(self):
+        with pytest.warns(DeprecationWarning):
+            score: Union[float, str] = evaluation.EvaluationMetrics.embedding_concordance(self.embedding, self.embedding_labels,
+                                                                                        self.comparison_data, self.comparison_labels, "a",
+                                                                                        method="emd")
+        assert isinstance(score, str)
+        assert score == "NA"
+        
+        
     def test_embedding_concordance_na(self):
         score: Union[float, str] = evaluation.EvaluationMetrics.embedding_concordance(self.embedding, self.embedding_labels,
                                                                                       self.comparison_data, self.comparison_labels, ["e"])
