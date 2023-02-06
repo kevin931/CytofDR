@@ -110,7 +110,8 @@ class EvaluationMetrics():
         
     @staticmethod
     def EMD(x: "np.ndarray",
-            y: "np.ndarray") -> float:
+            y: "np.ndarray",
+            normalization: Optional[str] = None) -> float:
         '''Earth Mover's Distance (EMD)
         
         This metric computes the EMD between the pairwise distance of between points in the
@@ -119,9 +120,24 @@ class EvaluationMetrics():
         
         :param x: The first distribution x as a 1D array.
         :param y: The second distribution y as a 1D array.
-
+        :param minmax_normalization: Whether to perfrom minmax normalization on `x` and `y`. The acceptable
+            value is `minmax`, which performs min-max normalization. If `None`, no normalization is performed.
+            
+        :raises ValueError: Unsupported normalization method.
         :return: Earth mover's distance.
+        
+        .. versionadded:: 0.3.0
+        
+            The `normalization` parameter. It was added to allow for nromalization of `x` and `y` with
+            min-max normalization using `minmax`. This is useful when `x` and `y` are empirical observations
+            that are on different scales, and the scale itself is not of interest.
         '''
+        if normalization is not None:
+            if normalization.lower() == "minmax":
+                x = (x-np.min(x))/(np.max(x)-np.min(x))
+                y = (y-np.min(y))/(np.max(y)-np.min(y))
+            else:
+                raise ValueError("Unsupported normalization method. Use 'minmax' or `None`.")
         return scipy.stats.wasserstein_distance(x, y)
 
     

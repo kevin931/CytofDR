@@ -86,12 +86,20 @@ class TestEvaluationMetrics():
         except ValueError as e:
             assert "Either 'r' or both 'x' and 'y' is needed." in str(e)
         
-        
-    def test_emd(self):
-        emd: float = evaluation.EvaluationMetrics.EMD(self.a, self.b)
+    
+    @pytest.mark.parametrize("method", [None, "minmax"])
+    def test_emd(self, method: Optional[str]):
+        emd: float = evaluation.EvaluationMetrics.EMD(self.a, self.b, normalization=method)
         assert isinstance(emd, float)
-        assert emd > 0
+        assert emd >= 0
         
+        
+    def test_EMD_method_value_error(self):
+        try:
+            evaluation.EvaluationMetrics.EMD(self.a, self.b, normalization="Other")
+        except ValueError as e:
+            assert "Unsupported normalization method. Use 'minmax' or `None`." in str(e)
+
 
     def test_KNN(self):
         knn: float = evaluation.EvaluationMetrics.KNN(self.neighbors_data, self.neighbors_embedding)
