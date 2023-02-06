@@ -64,7 +64,7 @@ class TestEvaluationMetrics():
         
     
     @pytest.mark.parametrize("r", [1.1, -1.1])
-    def test_residual_variance_r_value_error(self, r: float):        
+    def test_residual_variance_r_value_error(self, r: float):
         try:
             evaluation.EvaluationMetrics.residual_variance(r=r)
         except ValueError as e:
@@ -98,8 +98,10 @@ class TestEvaluationMetrics():
         assert isinstance(knn, float)
         assert knn >= 0 and knn <=1
     
-    def test_NPE(self):
-        npe: float = evaluation.EvaluationMetrics.NPE(self.neighbors_data, self.neighbors_embedding, self.data_labels)
+    
+    @pytest.mark.parametrize("method", ["L1", "l1", "TVD", "tvd"])
+    def test_NPE(self, method: str):
+        npe: float = evaluation.EvaluationMetrics.NPE(self.neighbors_data, self.neighbors_embedding, self.data_labels, method=method)
         assert isinstance(npe, float)
         assert npe >= 0
     

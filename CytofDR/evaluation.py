@@ -152,18 +152,45 @@ class EvaluationMetrics():
     @staticmethod
     def NPE(data_neighbors: "np.ndarray",
             embedding_neighbors: "np.ndarray",
-            labels: "np.ndarray") -> float:
+            labels: "np.ndarray",
+            method: "str" = "L1") -> float:
         '''Neighborhood Proportion Error (NPE)
         
         The NPE metric is proposed by Konstorum et al. (2019). It measures the total variation distance between
         the proportion of nearest points belonging to the same class of each point in the HD and LD space. The
         lower the NPE, the more similar the embedding and the original data are.
         
+        To further elaborate on the difference between L1 norm and TVD, the NPE metric involves the following calculation
+        :math:`\\delta (P, Q)`, where :math:`\\delta` is a distance measureon :math:`P` and :math:`Q`. The "L1" optioc
+        computes
+        
+        .. math::
+        
+            \\sum_i |P_i-Q_i|
+            
+        whereas the TVD computes
+        
+        .. math::
+        
+            \\sup_{a\\in [0,1]} |P(a) - Q(a)| \\, .
+            
+        There is questionably some debate on the implementation used to calculate NPE, but TVD should align
+        more with the original authors' implementation.
+        
         :param data_neighbors: A nearest-neighbor array of the original data.
         :param embedding_neighbors: A nearest-neighbor array of the embedding.
         :param labels: The class labels of each observation.
+        :param method: The distance measure used for computing the distance between the neighborhood-proportion
+            vector. "L1" for L1-norm or "tvd" for Total Variation Distance. The latter is likely the intended
+            implementation by Konstorum et al.
 
+        :raises ValueError: Unsupported `method` provided. We only support "L1" or "tvd".
         :return: Neighborhood proportion error.
+
+        .. versionadded:: 0.3.0
+        
+            The `method` parameter. It was added to allow for alternative implementations. Originally, "L1" was implemented
+            and it is stil the default. In this new version, now "tvd" is also an option.
         '''
         
         classes: "np.ndarray"
@@ -183,12 +210,28 @@ class EvaluationMetrics():
             same_class_data[i] = np.count_nonzero(classes_index[i_neighbors_data]==i_index)/k
             same_class_embedding[i] = np.count_nonzero(classes_index[i_neighbors_embedding]==i_index)/k
         
-        distance: float=0.0
-        c: Any
-        for c in classes:
-            P: "np.ndarray" = same_class_data[labels==c]
-            Q: "np.ndarray" = same_class_embedding[labels==c]
-            distance += np.sum(np.absolute(P-Q))/2
+        distance: float = 0.0
+        c: str
+        if method.lower() == "l1":
+            for c in classes:
+                P: "np.ndarray" = same_class_data[labels==c]
+                Q: "np.ndarray" = same_class_embedding[labels==c]
+                distance += np.sum(np.absolute(P-Q))/2
+        elif method.lower() == "tvd":
+            for c in classes:
+                P: "np.ndarray" = same_class_data[labels==c]
+                Q: "np.ndarray" = same_class_embedding[labels==c]
+                if P.shape[0] < 2 or Q.shape[0] < 2:
+                    continue
+                try:
+                    P_density: "np.ndarray" = scipy.stats.gaussian_kde(P).evaluate(P)
+                    Q_density: "np.ndarray" = scipy.stats.gaussian_kde(Q).evaluate(Q)
+                except np.linalg.LinAlgError:
+                    continue
+                else:
+                    distance += np.max(np.absolute(P_density-Q_density))
+        else:
+            raise ValueError("Method unsupported.")
             
         return distance/classes.size
     
