@@ -114,8 +114,8 @@ class TestEvaluationMetrics():
             
             
     def test_NPE_method_singular_cell_type(self):
-        data_labels: np.ndarray = np.repeat(["a", "b"], 50)
-        data_labels[0] = "c"
+        data_labels: np.ndarray = np.repeat(["c", "b"], 50)
+        data_labels[0] = "a"
         npe: float = evaluation.EvaluationMetrics.NPE(self.neighbors_data, self.neighbors_embedding, data_labels, method="tvd")
         assert isinstance(npe, float)
         assert npe >= 0
