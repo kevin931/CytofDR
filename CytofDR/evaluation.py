@@ -226,12 +226,13 @@ class EvaluationMetrics():
                 try:
                     P_density: "np.ndarray" = scipy.stats.gaussian_kde(P).evaluate(P)
                     Q_density: "np.ndarray" = scipy.stats.gaussian_kde(Q).evaluate(Q)
-                except np.linalg.LinAlgError:
+                except np.linalg.LinAlgError: # pragma: no cover
+                    # This is a rare situation of point mass with P or Q
                     continue
                 else:
                     distance += np.max(np.absolute(P_density-Q_density))
         else:
-            raise ValueError("Method unsupported.")
+            raise ValueError("Method unsupported: Use 'L1' or 'tvd' instead.")
             
         return distance/classes.size
     

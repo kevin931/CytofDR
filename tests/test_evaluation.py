@@ -104,7 +104,22 @@ class TestEvaluationMetrics():
         npe: float = evaluation.EvaluationMetrics.NPE(self.neighbors_data, self.neighbors_embedding, self.data_labels, method=method)
         assert isinstance(npe, float)
         assert npe >= 0
-    
+        
+        
+    def test_NPE_method_value_error(self):
+        try:
+            evaluation.EvaluationMetrics.NPE(self.neighbors_data, self.neighbors_embedding, self.data_labels, method="Other")
+        except ValueError as e:
+            assert "Method unsupported: Use 'L1' or 'tvd' instead." in str(e)
+            
+            
+    def test_NPE_method_singular_cell_type(self):
+        data_labels: np.ndarray = np.repeat(["a", "b"], 50)
+        data_labels[0] = "c"
+        npe: float = evaluation.EvaluationMetrics.NPE(self.neighbors_data, self.neighbors_embedding, data_labels, method="tvd")
+        assert isinstance(npe, float)
+        assert npe >= 0
+        
     
     def test_neighborhood_agreement(self):
         agreement: float = evaluation.EvaluationMetrics.neighborhood_agreement(self.neighbors_data, self.neighbors_embedding)
