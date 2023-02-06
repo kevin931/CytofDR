@@ -562,6 +562,12 @@ class Reductions():
                         
                         
     def __str__(self) -> str:
+        """Implementation of `print()`.
+
+        This implementation reductions a description of the object with the names of the embeddings.
+
+        :return: The output string of the `print()` method.
+        """
         return f"A 'Reductions' object with {', '.join(self.names)}."
     
     
@@ -603,6 +609,14 @@ class Reductions():
         
     @property
     def reductions(self) -> Dict[str, "np.ndarray"]:
+        """Getter for the `reductions` dictionary.
+
+        This method returns the dictionary storing all the reductions in this class.
+        The dictionary keys are names of the embeddings, and its values are the arrays
+        of reductions.
+
+        :return: A dictionary of reductions.
+        """
         return self._reductions
     
         
