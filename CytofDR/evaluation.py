@@ -695,11 +695,10 @@ class PointClusterDistance():
     :param dist_metric: The distance metric to use. This supports "euclidean", "manhattan", or "cosine", defaults to "euclidean"
         
     :Attributes:
-    
-    - **X**: The input data array.
-    - **labels**: Labels for the data array.
-    - **dist_metric**: The distance metric to use. This supports "euclidean", "manhattan", or "cosine", defaults to "euclidean"
-    - **dist**: The calculated distance array. The first axis corresponds to each observation in the original array and the second axis is all the cluster centroids, optional.
+        - **X**: The input data array.
+        - **labels**: Labels for the data array.
+        - **dist_metric**: The distance metric to use. This supports "euclidean", "manhattan", or "cosine", defaults to "euclidean"
+        - **dist**: The calculated distance array. The first axis corresponds to each observation in the original array and the second axis is all the cluster centroids, optional.
     """
     
     def __init__(self, X: "np.ndarray", labels: "np.ndarray", dist_metric: str="euclidean"):
