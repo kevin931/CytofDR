@@ -120,7 +120,7 @@ class EvaluationMetrics():
         
         :param x: The first distribution x as a 1D array.
         :param y: The second distribution y as a 1D array.
-        :param minmax_normalization: Whether to perfrom minmax normalization on `x` and `y`. The acceptable
+        :param normalization: Whether to perfrom minmax normalization on `x` and `y`. The acceptable
             value is `minmax`, which performs min-max normalization. If `None`, no normalization is performed.
             
         :raises ValueError: Unsupported normalization method.
