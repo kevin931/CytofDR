@@ -122,6 +122,7 @@ class EvaluationMetrics():
         :param y: The second distribution y as a 1D array.
         :param normalization: Whether to perfrom minmax normalization on `x` and `y`. The acceptable
             value is `minmax`, which performs min-max normalization. If `None`, no normalization is performed.
+            Defaults to `None`.
             
         :raises ValueError: Unsupported normalization method.
         :return: Earth mover's distance.
@@ -198,7 +199,7 @@ class EvaluationMetrics():
         :param labels: The class labels of each observation.
         :param method: The distance measure used for computing the distance between the neighborhood-proportion
             vector. "L1" for L1-norm or "tvd" for Total Variation Distance. The latter is likely the intended
-            implementation by Konstorum et al.
+            implementation by Konstorum et al. Defaults to "L1".
 
         :raises ValueError: Unsupported `method` provided. We only support "L1" or "tvd".
         :return: Neighborhood proportion error.

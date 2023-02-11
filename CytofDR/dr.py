@@ -205,7 +205,9 @@ class Reductions():
                  auto_cluster: bool=True,
                  n_clusters: int=20,
                  verbose: bool=True,
-                 pairwise_downsample_size: int=10000):     
+                 pairwise_downsample_size: int=10000,
+                 normalize_pwd: Optional[str]=None,
+                 NPE_method: str="L1"):     
         """Evaluate DR Methods Using Default DR Evaluation Scheme.
 
         This method ranks the DR methods based on any of the four default categories:
@@ -229,6 +231,11 @@ class Reductions():
             back to the `pairwise` option for `pwd_metric`. On a typical machine, it is not recommended to 
             go beyond the default, and for datasets smaller than 10,000, no downsample is strictly necessary.
             Defaults to 10,000.
+        :param normalize_pwd: Whether to perform minmax normalize on the pwd metric for EMD. If needed, enter
+            "minmax". If ``None``, then the raw distances are used. For more details, see ``EvaluationMetrics.EMD``.
+            This only matters when ``Global`` is chosen in the ``category`` parameter. Defaults to None.
+        :param NPE_method: The distance measure used for the NPE metric as part of the ``Local`` categorty.
+            "L1" for L1-norm or "tvd" for Total Variation Distance. Defaults to "L1". 
         
         :raises ValueError: No reductions to evalate.
         :raises ValueError: Unsupported 'pwd_metric': 'PCD', 'Pairwise', or 'pairwise_downsample' only.
@@ -245,6 +252,18 @@ class Reductions():
         
             The `pairwise_downsample` option for `pwd_metric`; the `pairwise_downsample_size` parameter for when
             `pairwise_downbsample` is chosen.
+            
+        .. versionadded:: 0.3.0
+        
+            The `normalize_pwd` parameter. It was added to allow for nromalization in the EMD metric for ``Global``.
+            This should be used in cases that there are scale differences in different DR embeddings. For this
+            specific update, only "minmax" is supported.
+            
+        .. versionadded:: 0.3.0
+        
+            The `NPE_method` parameter. It was added to allow for alternative implementations of NPE's distance measure.
+            Originally, "L1" was implemented and it is stil the default. In this new version, now "tvd" is also an option.
+            Defaults to "L1".
         """
         
         if len(self.reductions) == 0:
@@ -303,7 +322,7 @@ class Reductions():
                 val: float = EvaluationMetrics.correlation(x=data_distance, y=embedding_distance[e], metric="Spearman")
                 self.evaluations["global"]["spearman"][e] = val
                 
-                val: float = EvaluationMetrics.EMD(x=data_distance, y=embedding_distance[e])
+                val: float = EvaluationMetrics.EMD(x=data_distance, y=embedding_distance[e], normalization=normalize_pwd)
                 self.evaluations["global"]["emd"][e] = val
                    
         if "local" in category:
@@ -314,7 +333,7 @@ class Reductions():
             data_neighbors: "np.ndarray" = EvaluationMetrics.build_annoy(self.original_data, annoy_original_data_path, k_neighbors)
             for e in self.reductions.keys():
                 embedding_neighbors: "np.ndarray" = EvaluationMetrics.build_annoy(self.reductions[e], None, k_neighbors)
-                self.evaluations["local"]["npe"][e] = EvaluationMetrics.NPE(labels = self.original_labels, data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
+                self.evaluations["local"]["npe"][e] = EvaluationMetrics.NPE(labels = self.original_labels, data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors, method=NPE_method)
                 self.evaluations["local"]["knn"][e] = EvaluationMetrics.KNN(data_neighbors=data_neighbors, embedding_neighbors=embedding_neighbors)
                              
         if "downstream" in category:

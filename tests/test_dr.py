@@ -294,6 +294,16 @@ class TestReductions():
         assert "global" in self.results.evaluations.keys()
         
         
+    def test_evaluate_npe_method(self):
+        self.results.evaluate(category="global", NPE_method="tvd")
+        assert "global" in self.results.evaluations.keys()
+        
+        
+    def test_evaluate_normalize_pwd(self):
+        self.results.evaluate(category="global", normalize_pwd="minmax")
+        assert "global" in self.results.evaluations.keys()
+        
+        
     def test_evaluate_pairwise_downsample(self):
         self.results.evaluate(category="global", pwd_metric="pairwise_downsample", pairwise_downsample_size=5)
         assert "global" in self.results.evaluations.keys()
