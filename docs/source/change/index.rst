@@ -9,24 +9,25 @@ doing!
 ------------------------
 
 ************************
-Latest Release: v0.2.0
+Latest Release: v0.2.1
 ************************
 
-This releases adds some new features along with some minor improvements and fixes.
-
+This is a minor maintenance update of v0.2.x with a few improvements on documentation and docstrings.
 
 Changes and New Features
 --------------------------
 
-- Add `pairwise_downsample` option for pairwise distance optimization in `Reductions.evaluate` method.
-- Add example datasets for the GitHub repo.
-- Improve docstrings for documentations.
-- Improve unit tests for coverage.
+- Update licensing information
+
+Improvements
+---------------
+
+- Improve documentation and docstrings
 
 Deprecations
 ----------------
 
-- The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
+- (Since 0.2.0) The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
 
 
 .. toctree::
