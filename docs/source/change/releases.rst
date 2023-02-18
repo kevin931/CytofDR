@@ -31,6 +31,28 @@ Deprecations
 - (Since v0.2.0) The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
 
 ********
+v0.2.1
+********
+
+This is a minor maintenance update of v0.2.x with a few improvements on documentation and docstrings.
+
+Changes and New Features
+--------------------------
+
+- Update licensing information
+
+Improvements
+---------------
+
+- Improve documentation and docstrings
+
+Deprecations
+----------------
+
+- (Since v0.2.0) The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
+
+
+********
 v0.2.0
 ********
 
