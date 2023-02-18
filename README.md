@@ -142,8 +142,7 @@ which is compatible with v0.1.x.
 
 - Update licensing information
 
-Improvements
----------------
+### Improvements
 
 - Improve documentation and docstrings
 
