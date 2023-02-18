@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright 2022 CytofDR Developers
+Copyright 2022-2023 CytofDR Developers
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),

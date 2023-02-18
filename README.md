@@ -152,16 +152,13 @@ If you run into issues or have questions, feel free to open an issue [here](http
 Our preprint "Comparative Analysis of Dimension Reductions Methods for Cytometry by Time-of-Flight Data" is on bioRxiv and can be accessed [right here](https://doi.org/10.1101/2022.04.26.489549). If you use our package in your research or deployment, a citation of our paper is highly appreciated:
 
 ```
-@article {Wang2022.04.26.489549,
-	author = {Wang, Kaiwen and Yang, Yuqiu and Wu, Fangjiang and Song, Bing and Wang, Xinlei and Wang, Tao},
-	title = {Comparative Analysis of Dimension Reduction Methods for Cytometry by Time-of-Flight Data},
-	elocation-id = {2022.04.26.489549},
-	year = {2022},
-	doi = {10.1101/2022.04.26.489549},
-	publisher = {Cold Spring Harbor Laboratory},
-	URL = {https://www.biorxiv.org/content/early/2022/06/02/2022.04.26.489549},
-	eprint = {https://www.biorxiv.org/content/early/2022/06/02/2022.04.26.489549.full.pdf},
-	journal = {bioRxiv}
+@article{wang2022comparison,
+  title={A Comparison of Dimension Reduction Methods for Cytometry by Time-of-Flight Data},
+  author={Wang, Kaiwen and Yang, Yuqiu and Wu, Fangjiang and Song, Bing and Wang, Xinlei and Wang, Tao},
+  journal={BioRxiv},
+  pages={2022--04},
+  year={2022},
+  publisher={Cold Spring Harbor Laboratory}
 }
 ```
 
