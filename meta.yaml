@@ -1,5 +1,5 @@
 {% set name = "CytofDR" %}
-{% set version = "0.1.0" %}
+{% set version = "0.1.1" %}
 
 package:
   name: "{{ name|lower }}"
@@ -23,7 +23,7 @@ requirements:
   run:
     - python >=3.7
     - scikit-learn
-    - numpy <=1.21
+    - numpy
     - scipy
     - umap-learn
     - openTSNE

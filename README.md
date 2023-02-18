@@ -42,7 +42,7 @@ The core dependencies should automatically install!
 Our dependencies are broken down core dependencies and optional dependencies. Below is a list of core dependencies:
 
 - scikit-learn
-- numpy (<=1.21)
+- numpy
 - scipy
 - umap-learn
 - openTSNE
@@ -131,16 +131,20 @@ Of course, there are many more customizations and ways you can use ``CytofDR``. 
 
 There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
 
-## Latest Release: v0.1.0
+## Latest Release: v0.1.1 (EOL)
 
-This is the first official release of ``CytofDR`` with LTS.
+This is a minor update of v0.1.x with a few improvements on documentation and docstrings. Given the
+release of v0.3.0, this version is the End-of-Life (EOL) release for v0.1.x. This version will no
+longer be maintained going forward. For new features and future fixes, migrate to v0.2.0 or higher,
+which is compatible with v0.1.x.
 
 ### Changes and New Features
 
-- Support for magic methods: ``print`` and ``[]`` for ``Reductions`` class
-- Add ``names`` attributes to ``Reductions`` class
-- Add custom DR evaluation
-- Add functions to save DR embeddings and evaluations
+- Update licensing information
+
+Improvements
+---------------
+
 - Improve documentation and docstrings
 
 ## Issues and Contributions
