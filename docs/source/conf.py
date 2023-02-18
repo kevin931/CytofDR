@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'CytofDR'
-copyright = '2022, Kevin Wang'
+copyright = '2022-2023, CytofDR Developers'
 author = 'Kevin Wang'
 release = '0.3.0'
 

@@ -12,8 +12,7 @@ doing!
 Latest Release: v0.3.0
 ****************************
 
-This releases adds some new features along with some minor improvements and fixes.
-
+This is a minor maintenance update of v0.2.x with a few improvements on documentation and docstrings.
 
 Changes and New Features
 --------------------------
