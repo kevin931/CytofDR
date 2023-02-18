@@ -7,6 +7,31 @@ Here we include our release notes for past releases in sequential order.
 --------------------
 
 ********
+v0.3.0
+********
+
+This releases adds some new features along with some minor improvements and fixes.
+
+
+Changes and New Features
+--------------------------
+
+- Add `minmax` normalization option for the `evaluation.EvaluationMetric.EMD` method
+- Add alternative implementation of `evaluation.EvaluationMetric.NPE` with total variation distance (TVD)
+- Allow both min-max EMD and and TVD NPE for automatic evaluation of DR methods
+
+Improvements
+--------------
+
+- Docstrings and documentations reformatted for clarity
+
+Deprecations
+----------------
+
+- (Since v0.2.0) The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
+
+
+********
 v0.2.0
 ********
 

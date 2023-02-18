@@ -131,21 +131,23 @@ Of course, there are many more customizations and ways you can use ``CytofDR``. 
 
 There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
 
-## Latest Release: v0.2.0
+## Latest Release: v0.3.0
 
 This releases adds some new features along with some minor improvements and fixes.
 
-
 ### Changes and New Features
 
-- Add `pairwise_downsample` option for pairwise distance optimization in `Reductions.evaluate` method.
-- Add example datasets for the GitHub repo.
-- Improve docstrings for documentations.
-- Improve unit tests for coverage.
+- Add `minmax` normalization option for the `evaluation.EvaluationMetric.EMD` method
+- Add alternative implementation of `evaluation.EvaluationMetric.NPE` with total variation distance (TVD)
+- Allow both min-max EMD and and TVD NPE for automatic evaluation of DR methods
+
+### Improvements
+
+- Docstrings and documentations reformatted for clarity
 
 ### Deprecations
 
-- The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
+- (Since v0.2.0) The `comparison_classes` parameter of the `EvaluationMetrics.embedding_concordance` method will no longer accept `str` input.
 
 ## Issues and Contributions
 

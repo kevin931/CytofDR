@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 project = 'CytofDR'
 copyright = '2022, Kevin Wang'
 author = 'Kevin Wang'
-release = '0.2.0'
+release = '0.3.0'
 
 extensions = [
     "sphinx_rtd_theme",
