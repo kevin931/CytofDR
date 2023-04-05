@@ -14,6 +14,12 @@
 CytofDR is a framework of dimension reduction (DR) and its evaluation for both Cytometry by Time-of-Flight (CyTOF) and general-purpose usages. It allows you to
 conveniently run many different DRs at one place and then evaluate them to pick your embedding using our extensive evaluation framework! We aim to provide you with a reliable, extensible, and convenient interface for all your DR needs for both data analyses and future research!
 
+### Key Resources
+
+- For **detailed benchmarks and methodology explanations**, please check out [our paper](https://doi.org/10.1038/s41467-023-37478-w) in *Nature Communications*!
+- For an online version of **interactive results**, please checkout [CytofDR Playground](https://dbai.biohpc.swmed.edu/cytof-dr-playground/).
+- For **documentation**, please visit our free and detailed [documentation page](https://cytofdr.readthedocs.io/en/stable/index.html).
+
 ## Installation
 
 You can install our CytofDR package, which is currentl on ``PyPI``:
@@ -63,7 +69,7 @@ We also have some optional dependencies which are much trickier to install and m
 pip install PyCytoData
 ```
 
-To view how you can perform DR using ``PyCYtoData``, [this tutorial](https://pycytodata.readthedocs.io/en/latest/tutorial/dr.html) walks through every ste
+To view how you can perform DR using ``PyCYtoData``, [this tutorial](https://pycytodata.readthedocs.io/en/latest/tutorial/dr.html) walks through every step.
 
 ## Quick Tutorial
 
