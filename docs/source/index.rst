@@ -63,8 +63,10 @@ Why wait? Try this example below and start your DR journey:
    :hidden:
 
    references
-   Our Paper <https://doi.org/10.1101/2022.04.26.489549>
-   Dr. Xinlei (Shery) Wang <https://people.smu.edu/swang/>
+   Our Paper <https://doi.org/10.1038/s41467-023-37478-w>
+   CytofDR Playground <https://dbai.biohpc.swmed.edu/cytof-dr-playground/>
+   Cytomulate <https://doi.org/10.1101/2022.06.14.496200>
+   Dr. Xinlei (Shery) Wang <https://www.uta.edu/academics/faculty/profile?username=wangx9>
    Dr. Tao Wang <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>
    DBAI <https://dbai.biohpc.swmed.edu/>
    GitHub <https://github.com/kevin931/CytofDR/>
@@ -75,8 +77,8 @@ Resources
 
 For more resources on our labs, collaborators, and related projects, please visit the following:
 
-   * `Our paper <https://doi.org/10.1101/2022.04.26.489549>`_
-   * `Dr. Xinlei (Shery) Wang faculty page <https://people.smu.edu/swang/>`_
+   * `Our paper <https://doi.org/10.1038/s41467-023-37478-w>`_
+   * `Dr. Xinlei (Shery) Wang faculty page <https://www.uta.edu/academics/faculty/profile?username=wangx9>`_
    * `Dr. Tao Wang Lab <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>`_
    * `Database for Actionable Immunology (DBAI) for more computational immunology-related tools <https://dbai.biohpc.swmed.edu/>`_
    * `GitHub Page for project development <https://github.com/kevin931/CytofDR/>`_ 
