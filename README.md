@@ -14,6 +14,12 @@
 CytofDR is a framework of dimension reduction (DR) and its evaluation for both Cytometry by Time-of-Flight (CyTOF) and general-purpose usages. It allows you to
 conveniently run many different DRs at one place and then evaluate them to pick your embedding using our extensive evaluation framework! We aim to provide you with a reliable, extensible, and convenient interface for all your DR needs for both data analyses and future research!
 
+### Key Resources
+
+- For **detailed benchmarks and methodology explanations**, please check out [our paper](https://doi.org/10.1038/s41467-023-37478-w) in *Nature Communications*!
+- For an online version of **interactive results**, please checkout [CytofDR Playground](https://dbai.biohpc.swmed.edu/cytof-dr-playground/).
+- For **documentation**, please visit our free and detailed [documentation page](https://cytofdr.readthedocs.io/en/stable/index.html).
+
 ## Installation
 
 You can install our CytofDR package, which is currentl on ``PyPI``:
@@ -63,7 +69,7 @@ We also have some optional dependencies which are much trickier to install and m
 pip install PyCytoData
 ```
 
-To view how you can perform DR using ``PyCYtoData``, [this tutorial](https://pycytodata.readthedocs.io/en/latest/tutorial/dr.html) walks through every ste
+To view how you can perform DR using ``PyCYtoData``, [this tutorial](https://pycytodata.readthedocs.io/en/latest/tutorial/dr.html) walks through every step.
 
 ## Quick Tutorial
 
@@ -152,16 +158,18 @@ If you run into issues or have questions, feel free to open an issue [here](http
 
 ## References
 
-Our preprint "Comparative Analysis of Dimension Reductions Methods for Cytometry by Time-of-Flight Data" is on bioRxiv and can be accessed [right here](https://doi.org/10.1101/2022.04.26.489549). If you use our package in your research or deployment, a citation of our paper is highly appreciated:
+Our preprint "Comparative Analysis of Dimension Reductions Methods for Cytometry by Time-of-Flight Data" is on bioRxiv and can be accessed [right here](https://doi.org/10.1038/s41467-023-37478-w). If you use our package in your research or deployment, a citation of our paper is highly appreciated:
 
 ```
-@article{wang2022comparison,
-  title={A Comparison of Dimension Reduction Methods for Cytometry by Time-of-Flight Data},
+@article{wang2023comparative,
+  title={Comparative analysis of dimension reduction methods for cytometry by time-of-flight data},
   author={Wang, Kaiwen and Yang, Yuqiu and Wu, Fangjiang and Song, Bing and Wang, Xinlei and Wang, Tao},
-  journal={BioRxiv},
-  pages={2022--04},
-  year={2022},
-  publisher={Cold Spring Harbor Laboratory}
+  journal={Nature Communications},
+  volume={14},
+  number={1},
+  pages={1--18},
+  year={2023},
+  publisher={Nature Publishing Group}
 }
 ```
 
