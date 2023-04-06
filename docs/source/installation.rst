@@ -121,10 +121,6 @@ prefer.
 
 .. warning::
 
-    ``SAUCIE`` does not have an open-source license. Use at your own risk.
-
-.. warning::
-
     ``SAUCIE`` has a known issue of being able to run only once after import using ``CytofDR``. We don't
     yet have a workaround for this.
 
