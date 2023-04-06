@@ -3,7 +3,7 @@ References
 ################
 
 Here, you will find a list of relevant references. For a comprehensive list, please also consult bibliography of
-`our paper <https://doi.org/10.1101/2022.04.26.489549>`_ and our suplementary materials.
+`our paper <https://doi.org/10.1038/s41467-023-37478-w>`_ and our suplementary materials.
 
 -----------------------
 
@@ -15,8 +15,23 @@ If you use this package, citing our paper is highly appreciated!
 
 .. code-block:: text
 
-    Wang, K., Yang, Y., Wu, F., Song, B., Wang, X., & Wang, T. (2022). A Comparison of Dimension Reduction Methods for Cytometry by Time-of-Flight Data. bioRxiv.
+    Wang, K., Yang, Y., Wu, F. et al. Comparative analysis of dimension reduction methods for cytometry by time-of-flight data. Nat Commun 14, 1836 (2023).
+    https://doi.org/10.1038/s41467-023-37478-w
 
+Or if you prefer BibTeX:
+
+.. code-block:: text
+
+    @article{wang2023comparative,
+        title={Comparative analysis of dimension reduction methods for cytometry by time-of-flight data},
+        author={Wang, Kaiwen and Yang, Yuqiu and Wu, Fangjiang and Song, Bing and Wang, Xinlei and Wang, Tao},
+        journal={Nature Communications},
+        volume={14},
+        number={1},
+        pages={1--18},
+        year={2023},
+        publisher={Nature Publishing Group}
+    }
 
 ----------------------
 
