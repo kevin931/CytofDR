@@ -137,17 +137,20 @@ Of course, there are many more customizations and ways you can use ``CytofDR``. 
 
 There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
 
-## Latest Release: v0.2.1
+## Latest Release: v0.2.2
 
 This is a minor maintenance update of v0.2.x with a few improvements on documentation and docstrings.
 
+This is a minor maintenance update of v0.2.x with updated references and documentation.
+
 ### Changes and New Features
 
-- Update licensing information
+- Updated referneces and citation information in all relavent documentaion pages
+- Removed a warning on SAUCIE's installation documentation
 
 ### Improvements
 
-- Improve documentation and docstrings
+- Update-to-date documentation and references
 
 ### Deprecations
 
