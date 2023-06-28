@@ -12,7 +12,7 @@ doing!
 Latest Release: v0.3.0
 ****************************
 
-This is a minor maintenance update of v0.2.x with a few improvements on documentation and docstrings.
+This is a minor maintenance update of v0.2.x with updated references and documentation.
 
 Changes and New Features
 --------------------------
