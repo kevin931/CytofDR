@@ -9,22 +9,21 @@ doing!
 ------------------------
 
 ****************************
-Latest Release: v0.3.0
+Latest Release: v0.3.1
 ****************************
 
-This is a minor maintenance update of v0.2.x with updated references and documentation.
+This is a minor maintenance update of v0.3.x with updated references and documentation.
 
 Changes and New Features
 --------------------------
 
-- Add `minmax` normalization option for the `evaluation.EvaluationMetric.EMD` method
-- Add alternative implementation of `evaluation.EvaluationMetric.NPE` with total variation distance (TVD)
-- Allow both min-max EMD and and TVD NPE for automatic evaluation of DR methods
+- Updated referneces and citation information in all relavent documentaion pages
+- Removed a warning on SAUCIE's installation documentation
 
 Improvements
 --------------
 
-- Docstrings and documentations reformatted for clarity
+- Update-to-date documentation and references
 
 Deprecations
 ----------------

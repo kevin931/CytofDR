@@ -6,7 +6,7 @@
 
 | Branch | Release | CI/CD | Documentation | Code Coverage |
 | --- | --- | --- | --- | --- |
-| dev | ![Badge1](https://img.shields.io/badge/Version-0.3.0-success) |![Tests](https://github.com/kevin931/CytofDR/actions/workflows/ci.yml/badge.svg?branch=dev) | [![Documentation Status](https://readthedocs.org/projects/cytofdr/badge/?version=latest)](https://cytofdr.readthedocs.io/en/latest/?badge=latest) | [![codecov](https://codecov.io/gh/kevin931/CytofDR/branch/dev/graph/badge.svg?token=K9AJQLYU8N)](https://codecov.io/gh/kevin931/CytofDR) |
+| dev | ![Badge1](https://img.shields.io/badge/Version-0.3.1-success) |![Tests](https://github.com/kevin931/CytofDR/actions/workflows/ci.yml/badge.svg?branch=dev) | [![Documentation Status](https://readthedocs.org/projects/cytofdr/badge/?version=latest)](https://cytofdr.readthedocs.io/en/latest/?badge=latest) | [![codecov](https://codecov.io/gh/kevin931/CytofDR/branch/dev/graph/badge.svg?token=K9AJQLYU8N)](https://codecov.io/gh/kevin931/CytofDR) |
 
 
 ## About
@@ -137,19 +137,18 @@ Of course, there are many more customizations and ways you can use ``CytofDR``. 
 
 There you will find ways to install our package and get started! Also, we offer tutorials on customizations, working with DR methods, and finally our detailed evaluation framework. We hope that you can find what you need over there!
 
-## Latest Release: v0.3.0
+## Latest Release: v0.3.1
 
-This releases adds some new features along with some minor improvements and fixes.
+This is a minor maintenance update of v0.3.x with updated references and documentation.
 
 ### Changes and New Features
 
-- Add `minmax` normalization option for the `evaluation.EvaluationMetric.EMD` method
-- Add alternative implementation of `evaluation.EvaluationMetric.NPE` with total variation distance (TVD)
-- Allow both min-max EMD and and TVD NPE for automatic evaluation of DR methods
+- Updated referneces and citation information in all relavent documentaion pages
+- Removed a warning on SAUCIE's installation documentation
 
 ### Improvements
 
-- Docstrings and documentations reformatted for clarity
+- Update-to-date documentation and references
 
 ### Deprecations
 
