@@ -100,7 +100,7 @@ Then, you will need to install the following:
 .. code-block:: shell
 
     conda activate your_environment
-    conda install tensorflow=1.15
+    conda install tensorflow=1.15 scikit-learn
     conda install -c bioconda fcsparser
     pip install fcswrite
 
@@ -122,7 +122,7 @@ prefer.
 .. warning::
 
     ``SAUCIE`` has a known issue of being able to run only once after import using ``CytofDR``. We don't
-    yet have a workaround for this.
+    yet have a workaround for this. Please track this issue `here <https://github.com/kevin931/CytofDR/issues/5>`_.
 
 
 GrandPrix

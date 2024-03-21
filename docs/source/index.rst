@@ -66,7 +66,7 @@ Why wait? Try this example below and start your DR journey:
    Our Paper <https://doi.org/10.1038/s41467-023-37478-w>
    CytofDR Playground <https://dbai.biohpc.swmed.edu/cytof-dr-playground/>
    Cytomulate <https://doi.org/10.1101/2022.06.14.496200>
-   Dr. Xinlei (Shery) Wang <https://www.uta.edu/academics/faculty/profile?username=wangx9>
+   Dr. Xinlei (Sherry) Wang <https://www.uta.edu/academics/faculty/profile?username=wangx9>
    Dr. Tao Wang <https://qbrc.swmed.edu/labs/wanglab/aboutpi.php>
    DBAI <https://dbai.biohpc.swmed.edu/>
    GitHub <https://github.com/kevin931/CytofDR/>
